@@ -1,5 +1,8 @@
 <app-navbar *ngIf="shouldShowMenu()"></app-navbar>
 
+<button (click)="probarConexion()">Probar conexión con Ktor</button>
+<pre>{{ result | json }}</pre>
+
 <div class="main-container">
   <router-outlet></router-outlet>
 </div>

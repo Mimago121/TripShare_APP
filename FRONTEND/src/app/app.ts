@@ -4,6 +4,9 @@ import { NavbarComponent } from './components/navbar/navbar';
 import { FooterComponent } from './components/footer/footer';
 import { CommonModule } from '@angular/common';
 
+import { ApiService, PingResponse } from './core/api.service';
+
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -13,8 +16,11 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent {
   public router = inject(Router);
+  private api = inject(ApiService);  //lo de la prueba de ktor
 
-  // Función para saber si debemos mostrar el menú
+  result: PingResponse | null = null;  //esto tmb
+
+  
   shouldShowMenu(): boolean {
     const currentUrl = this.router.url;
     
@@ -24,5 +30,12 @@ export class AppComponent {
     // Si la URL actual está en la lista de ocultas, devolvemos false (no mostrar)
     // Si NO está en la lista, devolvemos true (mostrar)
     return !hiddenRoutes.includes(currentUrl);
+  }
+
+  probarConexion() {
+    this.api.ping().subscribe({
+      next: (res) => (this.result = res),
+      error: (err) => console.error('ERROR KTOR:', err),
+    });
   }
 }
