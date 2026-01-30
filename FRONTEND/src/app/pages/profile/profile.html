@@ -1,0 +1,87 @@
+<div class="profile-container">
+  
+  <header class="profile-header">
+    <div class="avatar-section">
+      <img [src]="user.avatar || defaultAvatar" alt="Avatar" class="avatar-img">
+      <button class="edit-btn" (click)="openEditModal()">
+        ✏️ Editar
+      </button>
+    </div>
+    
+    <div class="user-info">
+      <h1>{{ user.name }}</h1>
+      <p class="username">{{ user.username }}</p>
+      <p class="bio">{{ user.bio }}</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <strong>{{ user.stats.trips }}</strong>
+        <span>Viajes</span>
+      </div>
+      <div class="stat-item">
+        <strong>{{ user.stats.countries }}</strong>
+        <span>Países</span>
+      </div>
+      <div class="stat-item">
+        <strong>{{ user.stats.friends }}</strong>
+        <span>Amigos</span>
+      </div>
+    </div>
+  </header>
+
+  <hr class="divider">
+
+  <section class="next-trip-section">
+    <h2>Próxima Aventura</h2>
+    <div class="trip-card">
+      <div class="trip-icon">✈️</div>
+      <div class="trip-details">
+        <h3>{{ user.nextTrip.destination }}</h3>
+        <p *ngIf="user.nextTrip.date">{{ user.nextTrip.date | date:'mediumDate' }}</p>
+        <p *ngIf="!user.nextTrip.date">Sin fecha</p>
+      </div>
+    </div>
+  </section>
+
+  <button class="logout-btn" (click)="logout()">Cerrar Sesión</button>
+
+</div>
+
+<div class="modal-overlay" *ngIf="isEditing">
+  <div class="modal-content">
+    <h3>Editar Perfil</h3>
+    
+    <form [formGroup]="editForm" (ngSubmit)="saveProfile()">
+      
+      <div class="form-group">
+        <label>URL de Avatar</label>
+        <input type="text" formControlName="avatar" placeholder="https://...">
+      </div>
+
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" formControlName="name" placeholder="Tu nombre">
+      </div>
+
+      <div class="form-group">
+        <label>Usuario (@)</label>
+        <input type="text" formControlName="username" placeholder="@usuario">
+      </div>
+
+      <div class="form-group">
+        <label>Biografía</label>
+        <textarea formControlName="bio" rows="3" placeholder="Cuéntanos algo sobre ti..."></textarea>
+        <small>{{ editForm.get('bio')?.value?.length || 0 }}/150</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
+        <button type="submit" class="btn-save" [disabled]="isSaving || editForm.invalid">
+          {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
