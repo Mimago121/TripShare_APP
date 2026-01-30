@@ -4,26 +4,33 @@ import { NavbarComponent } from './components/navbar/navbar';
 import { FooterComponent } from './components/footer/footer';
 import { CommonModule } from '@angular/common';
 
-import { ApiService, PingResponse } from './core/api.service';
-
+import { ApiService, PingResponse, TripDto } from './core/api.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, NavbarComponent, FooterComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class AppComponent {
   public router = inject(Router);
-  private api = inject(ApiService);  //lo de la prueba de ktor
+  private api = inject(ApiService); //lo de la prueba de ktor
 
-  result: PingResponse | null = null;  //esto tmb
+  result: PingResponse | null = null; //esto tmb
 
-  
+  trips: TripDto[] = [];
+
+  cargarViajes() {
+    this.api.getTrips().subscribe({
+      next: (res) => (this.trips = res),
+      error: (err) => console.error('ERROR TRIPS:', err),
+    });
+  }
+
   shouldShowMenu(): boolean {
     const currentUrl = this.router.url;
-    
+
     // Lista de rutas donde NO queremos ver el menú (Login, Registro y Raíz)
     const hiddenRoutes = ['/login', '/register', '/'];
 

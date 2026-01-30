@@ -24,7 +24,6 @@ export class TripsComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // --- CAMBIO: Listas separadas ---
   myTrips: Trip[] = [];
   pendingTrips: Trip[] = [];
   

@@ -1,7 +1,17 @@
 <app-navbar *ngIf="shouldShowMenu()"></app-navbar>
 
-<button (click)="probarConexion()">Probar conexión con Ktor</button>
-<pre>{{ result | json }}</pre>
+<!-- <button (click)="probarConexion()">Probar conexión con Ktor</button>
+<pre>{{ result | json }}</pre> -->
+
+<button (click)="cargarViajes()">Cargar viajes</button>
+
+<ul>
+  <li *ngFor="let t of trips">
+    <strong>{{ t.name }}</strong> — {{ t.destination }}
+    ({{ t.startDate }} → {{ t.endDate }})
+  </li>
+</ul>
+
 
 <div class="main-container">
   <router-outlet></router-outlet>
