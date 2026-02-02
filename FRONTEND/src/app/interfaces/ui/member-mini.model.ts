@@ -1,5 +1,5 @@
 export interface MemberMini {
-  id: string;
+  id: number;
   name: string;
   avatarUrl?: string | null;
   status?: 'pending' | 'accepted';
