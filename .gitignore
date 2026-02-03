@@ -1,0 +1,17 @@
+# IntelliJ y Kotlin
+.idea/
+*.iml
+out/
+.kotlin/
+build/
+
+# Node / Angular
+node_modules/
+.angular/
+dist/
+.vscode/
+
+# Logs y SO
+*.log
+.DS_Store
+Thumbs.db

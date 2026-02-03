@@ -59,7 +59,7 @@ export class RegisterComponent {
 
       // 2. CREAR CUENTA EN AUTH (Email y Contraseña)
       const credencial = await this.authService.register(email, password);
-      const uid = credencial.user.uid;
+      const uid = credencial.user.email;
 
       // 3. ¡AQUÍ SE CREA LA COLECCIÓN! 
       // Guardamos el documento con el mismo ID que el usuario

@@ -3,13 +3,14 @@ import { Router, RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
 import { FooterComponent } from './components/footer/footer';
 import { CommonModule } from '@angular/common';
+import { UserListComponent } from './pages/user-list/user-list';
 
 import { ApiService, PingResponse, TripDto } from './core/api.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, NavbarComponent, FooterComponent],
+  imports: [UserListComponent,CommonModule, RouterOutlet, NavbarComponent, FooterComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
