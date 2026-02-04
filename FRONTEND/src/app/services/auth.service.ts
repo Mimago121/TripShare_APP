@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+/*import { Injectable, inject } from '@angular/core';
 import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, authState, User } from '@angular/fire/auth';
 import { Observable } from 'rxjs';
 
@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
+ 
+ 
   private auth: Auth = inject(Auth);
 
   // --- ESTA ES LA LÍNEA QUE FALTABA ---
@@ -26,4 +28,33 @@ export class AuthService {
   logout() {
     return signOut(this.auth);
   }
+}*/
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  // Simulamos un usuario activo para que la App no nos mande a Login
+  private userSubject = new BehaviorSubject<any>({ userName: 'Admin de Pruebas', id: 1 });
+  readonly user$ = this.userSubject.asObservable();
+
+  // Siempre devolvemos true para que los Guards nos dejen pasar
+  isLoggedIn(): boolean {
+    return true; 
+  }
+
+  login(email: string, pass: string) {
+    return of(true); // Siempre loguea bien
+  }
+
+  logout() {
+    console.log('Logout simulado');
+  }
+  // Añade esto dentro de la clase AuthService
+async register(email: string, pass: string) {
+  console.log('Registro simulado para:', email);
+  return { user: { email: email } }; // Devolvemos un objeto falso para que no de error
+}
 }
