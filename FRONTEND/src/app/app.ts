@@ -4,25 +4,45 @@ import { NavbarComponent } from './components/navbar/navbar';
 import { FooterComponent } from './components/footer/footer';
 import { CommonModule } from '@angular/common';
 
+import { ApiService, PingResponse, TripDto } from './core/api.service';
+
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, NavbarComponent, FooterComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class AppComponent {
   public router = inject(Router);
+  private api = inject(ApiService); //lo de la prueba de ktor
 
-  // Función para saber si debemos mostrar el menú
+  result: PingResponse | null = null; //esto tmb
+
+  trips: TripDto[] = [];
+
+  cargarViajes() {
+    this.api.getTrips().subscribe({
+      next: (res) => (this.trips = res),
+      error: (err) => console.error('ERROR TRIPS:', err),
+    });
+  }
+
   shouldShowMenu(): boolean {
     const currentUrl = this.router.url;
-    
+
     // Lista de rutas donde NO queremos ver el menú (Login, Registro y Raíz)
     const hiddenRoutes = ['/login', '/register', '/'];
 
     // Si la URL actual está en la lista de ocultas, devolvemos false (no mostrar)
     // Si NO está en la lista, devolvemos true (mostrar)
     return !hiddenRoutes.includes(currentUrl);
+  }
+
+  probarConexion() {
+    this.api.ping().subscribe({
+      next: (res) => (this.result = res),
+      error: (err) => console.error('ERROR KTOR:', err),
+    });
   }
 }

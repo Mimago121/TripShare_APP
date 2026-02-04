@@ -36,10 +36,10 @@ export class TripsComponent implements OnInit {
   private tripsService = inject(TripsService);
   private router = inject(Router);
 
-  // Listas separadas (como ya tenías)
-  myTrips: TripCard[] = [];
-  pendingTrips: TripCard[] = [];
-
+  myTrips: Trip[] = [];
+  pendingTrips: Trip[] = [];
+  
+  templates: any[] = []; 
   loading = true;
   errorMsg = '';
 
