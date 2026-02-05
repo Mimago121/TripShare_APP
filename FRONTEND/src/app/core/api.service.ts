@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+// Conexion con KTOR, crear interfaces iguales que el backend y pedirlas con http
+
+
 export interface PingResponse {
   ok: boolean;
   message: string;

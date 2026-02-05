@@ -1,1 +1,43 @@
-<p>user-list works!</p>
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h3 class="mb-0">Gestión de Usuarios</h3>
+      <span class="badge bg-light text-dark">{{ users.length }} registrados</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Avatar</th>
+              <th>Nombre de Usuario</th>
+              <th>Email</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td><strong>#{{ user.id }}</strong></td>
+              <td>
+                <img [src]="user.avatarUrl || 'https://via.placeholder.com/40'" 
+                     alt="Avatar" class="rounded-circle" width="40" height="40">
+              </td>
+              <td>{{ user.userName }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-info me-2">Ver</button>
+                <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="users.length === 0">
+              <td colspan="5" class="text-center py-4 text-muted">
+                No se han encontrado usuarios en la base de datos.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
