@@ -1,6 +1,6 @@
-import { MemberMini } from '../ui/member-mini.model';
+//esto es para entender lo que el back devuelve
 
-//esto es lo que el back devolvera
+import { MemberMini } from "../models/user.model";
 
 export interface TripResponse {
   id: number;
