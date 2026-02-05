@@ -1,9 +1,11 @@
 package com.tuproyecto.plugins
 
+import database.CreateActivityRequest
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
+import io.ktor.server.request.receive
 import repository.UserRepository
 
 fun Application.configureRouting() {
@@ -55,6 +57,12 @@ fun Application.configureRouting() {
         // --- ENDPOINTS DE PRUEBA DE CONEXIÓN ---
         get("/health") {
             call.respond(mapOf("status" to "OK", "database" to "Connected"))
+        }
+
+        post("/activities") {
+            val request = call.receive<CreateActivityRequest>()
+            val newActivity = repository.createActivity(request)
+            call.respond(HttpStatusCode.Created, newActivity)
         }
     }
 }

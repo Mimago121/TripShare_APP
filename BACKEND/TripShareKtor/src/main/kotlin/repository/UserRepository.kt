@@ -1,7 +1,9 @@
 package repository
 
 import database.*
+import java.time.*
 import database.DatabaseFactory.dbQuery
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class UserRepository {
@@ -16,12 +18,54 @@ class UserRepository {
     }
 
     // --- VIAJES ---
-    suspend fun getAllTrips(): List<TripModel> = dbQuery {
-        TripEntity.all().map { it.toModel() }
+    suspend fun getAllTrips(): List<TripResponse> = dbQuery {
+        TripEntity.all().map {
+            TripResponse(
+                id = it.id.value,
+                name = it.name,
+                destination = it.destination,
+                origin = it.origin,
+                startDate = it.startDate.toString(),
+                endDate = it.endDate.toString(),
+                createdByUserId = it.createdBy.id.value
+            )
+        }
     }
 
     suspend fun getTripsByUserId(userId: Long): List<TripModel> = dbQuery {
         TripEntity.find { Trips.createdBy eq userId }.map { it.toModel() }
+    }
+
+    suspend fun getActivitiesByTrip(tripId: Long): List<ActivityResponse> = dbQuery {
+        ActivityEntity.find { Activities.tripId eq tripId }.map { entity ->
+            ActivityResponse(
+                id = entity.id.value,
+                tripId = entity.tripId.value,
+                title = entity.title,
+                startDatetime = entity.startDatetime.toString(),
+                endDatetime = entity.endDatetime.toString(),
+                createdByUserId = entity.createdBy.id.value
+            )
+        }
+    }
+
+    suspend fun createActivity(request: CreateActivityRequest): ActivityResponse = dbQuery {
+        ActivityEntity.new {
+            tripId = EntityID(request.tripId, Trips)
+            createdBy = UserEntity[request.createdByUserId]
+            title = request.title
+            startDatetime = LocalDateTime.parse(request.startDatetime)
+            endDatetime = LocalDateTime.parse(request.endDatetime)
+        }.let {
+            ActivityResponse(
+                id = it.id.value, // Aquí aplicas lo mismo que te funcionó antes
+                tripId = it.tripId.value,
+                title = it.title,
+                startDatetime = it.startDatetime.toString(),
+                endDatetime = it.endDatetime.toString(),
+                createdByUserId = it.createdBy.id.value
+            )
+        }
     }
 
     // --- GASTOS (Solo debe haber UNA función con este nombre) ---
@@ -53,6 +97,7 @@ class UserRepository {
         }
     }
 
+
     // --- FUNCIONES DE EXTENSIÓN PARA MAPEO ---
     private fun UserEntity.toModel() = UserModel(
         id = id.value,
@@ -73,4 +118,7 @@ class UserRepository {
         endDate = endDate.toString(),
         createdByUserId = createdBy.id.value
     )
+
+
+
 }

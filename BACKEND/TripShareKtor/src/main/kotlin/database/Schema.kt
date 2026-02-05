@@ -124,6 +124,27 @@ class ExpenseEntity(id: EntityID<Long>) : LongEntity(id) {
     var createdAt by Expenses.createdAt
 }
 
+class TripInviteEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<TripInviteEntity>(TripInvites)
+
+    var tripId by TripInvites.tripId
+    var userId by TripInvites.id
+    var status by TripInvites.status
+    var createdAt by TripInvites.createdAt
+}
+
+class ActivityEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<ActivityEntity>(Activities)
+
+    var tripId by Activities.tripId
+    var title by Activities.title
+    var startDatetime by Activities.startDatetime
+    var endDatetime by Activities.endDatetime
+
+    // ESTA ES LA LÍNEA CLAVE: Debe ser referencedOn, no solo 'by Activities.createdBy'
+    var createdBy by UserEntity referencedOn Activities.createdBy
+}
+
 // 2. El Modelo (Para que el Frontend reciba los datos)
 @Serializable
 data class ExpenseModel(
@@ -147,7 +168,7 @@ class MemoryEntity(id: EntityID<Long>) : LongEntity(id) {
     var createdAt by Memories.createdAt
 }
 
-// Modelo Serializable para el Frontend
+// DTOs
 @Serializable
 data class MemoryModel(
     val id: Long,
@@ -184,4 +205,55 @@ data class UserModel(
 )
 
 
-// 4. MODELOS SERIALIZABLES (Para el JSON del Frontend)
+// --- USUARIOS ---
+@Serializable
+data class UserResponse(
+    val id: Long,
+    val userName: String,
+    val email: String,
+    val avatarUrl: String?,
+    val bio: String?,
+    val createdAt: String
+)
+
+// --- VIAJES ---
+@Serializable
+data class TripResponse(
+    val id: Long,
+    val name: String,
+    val destination: String,
+    val origin: String?,
+    val startDate: String,
+    val endDate: String,
+    val createdByUserId: Long
+)
+
+// DTO para cuando tu amigo quiera CREAR un viaje desde Angular
+@Serializable
+data class CreateTripRequest(
+    val name: String,
+    val destination: String,
+    val origin: String?,
+    val startDate: String,
+    val endDate: String,
+    val createdByUserId: Long
+)
+
+@Serializable
+data class ActivityResponse(
+    val id: Long, // <--- Asegúrate de que sea Long
+    val tripId: Long,
+    val title: String,
+    val startDatetime: String,
+    val endDatetime: String,
+    val createdByUserId: Long
+)
+
+@Serializable
+data class CreateActivityRequest(
+    val tripId: Long,
+    val title: String,
+    val startDatetime: String, // Recibimos el String de la fecha
+    val endDatetime: String,
+    val createdByUserId: Long
+)
