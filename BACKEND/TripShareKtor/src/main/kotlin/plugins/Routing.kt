@@ -1,12 +1,13 @@
 package com.tuproyecto.plugins
 
-import database.CreateActivityRequest
+import domain.*
+import repository.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
 import io.ktor.server.request.receive
-import repository.UserRepository
+
 
 fun Application.configureRouting() {
     val repository = UserRepository()

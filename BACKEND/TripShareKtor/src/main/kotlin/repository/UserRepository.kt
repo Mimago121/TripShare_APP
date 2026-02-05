@@ -1,10 +1,11 @@
 package repository
 
-import database.*
-import java.time.*
+
+import data.* // Importa UserEntity, TripEntity, Trips, Activities, etc.
+import domain.* // Importa UserModel, TripResponse, ActivityResponse, etc.
 import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import java.time.LocalDateTime
 
 class UserRepository {
 
@@ -13,6 +14,7 @@ class UserRepository {
         UserEntity.all().map { it.toModel() }
     }
 
+    //--- OBTENER USUARIO POR ID ---
     suspend fun getUserById(id: Long): UserModel? = dbQuery {
         UserEntity.findById(id)?.toModel()
     }
