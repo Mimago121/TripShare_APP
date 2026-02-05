@@ -1,9 +1,10 @@
+/*
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router, RouterModule } from '@angular/router'; 
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
 import { Trip } from '../../interfaces/Trip';
-import { MemberMini } from '../../interfaces/MemberMini';
+
 import { 
   Firestore, collection, addDoc, query, orderBy, onSnapshot, where, getDocs, 
   doc, updateDoc, arrayUnion, arrayRemove // <--- AÑADIDOS para editar invitaciones
@@ -271,4 +272,4 @@ export class TripsComponent implements OnInit {
     if (!o || !d) return null;
     return o !== d ? null : { samePlace: true };
   }
-}
+}*/

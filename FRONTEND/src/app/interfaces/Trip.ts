@@ -1,13 +1,8 @@
-import { MemberMini } from "./MemberMini";
-
 export interface Trip {
-  id: string;
+  id?: number;
   name: string;
-  origin: string;
   destination: string;
+  origin?: string;
   startDate: string;
   endDate: string;
-  imageUrl?: string;
-  members: MemberMini[];
-  createdAt: number;
 }
