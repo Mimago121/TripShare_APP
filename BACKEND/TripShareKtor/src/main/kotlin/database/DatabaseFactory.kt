@@ -1,15 +1,6 @@
 package database
 
-// AGREGA ESTOS IMPORTS PARA QUE RECONOZCA LAS TABLAS
-import database.Users
-import database.Trips
-import database.TripMembers
-import database.Activities
-import database.Expenses
-import database.ExpenseSplits
-import database.Memories
-import database.TripInvites
-
+import data.*
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
