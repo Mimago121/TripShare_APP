@@ -1,4 +1,4 @@
-package com.tuproyecto
+package com.tripshare
 
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*

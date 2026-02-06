@@ -1,45 +1,47 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router'; // Añadimos RouterModule
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common'; // Para el *ngIf
 
 @Component({
   selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule], // Importante RouterModule
+  standalone: true, // Si usas una versión moderna de Angular
+  imports: [ReactiveFormsModule, CommonModule], // Importante para que funcionen los formularios
   templateUrl: './login.html',
-  styleUrl: './login.css'
+  styleUrls: ['./login.css']
 })
 export class LoginComponent {
+  // Definimos el tipo FormGroup
   loginForm: FormGroup;
-  isLoading = false;
-  
-  private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  errorMessage: string = '';
 
-  constructor() {
+  constructor(
+    private fb: FormBuilder, 
+    private auth: AuthService, 
+    private router: Router
+  ) {
+    // Inicializamos el formulario en el constructor
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]]
     });
   }
 
-  async onLogin() {
+  onSubmit() {
     if (this.loginForm.valid) {
-      this.isLoading = true;
       const { email, password } = this.loginForm.value;
-      
-      try {
-        await this.authService.login(email, password);
-        this.router.navigate(['/trips']); 
-      } catch (error) {
-        console.error(error);
-        alert('Email o contraseña incorrectos.');
-      } finally {
-        this.isLoading = false;
-      }
+      // Usamos el ! para asegurar a TS que los valores no son null
+      this.auth.login(email!, password!).subscribe({
+        next: (res) => {
+          console.log('Bienvenido!', res);
+          this.router.navigate(['/dashboard']); 
+        },
+        error: (err) => {
+          this.errorMessage = 'Usuario o contraseña incorrectos';
+          console.error(err);
+        }
+      });
     }
   }
 }
