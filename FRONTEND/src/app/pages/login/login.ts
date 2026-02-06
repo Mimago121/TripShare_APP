@@ -29,22 +29,28 @@ export class LoginComponent {
     });
   }
 
- onSubmit() {
-    if (this.loginForm.valid) {
-      this.isLoading = true; // Activa spinner o texto
-      const { email, pass } = this.loginForm.value;
+onSubmit() {
+  // Si el formulario no es válido, cortamos aquí mismo
+  if (this.loginForm.invalid) return;
+
+  this.isLoading = true;
+  const { email, pass } = this.loginForm.value;
+
+  this.auth.login(email!, pass!).subscribe({
+    next: (res) => {
+      // 1. Guardamos los datos
+      localStorage.setItem('user', JSON.stringify(res));
       
-      this.auth.login(email!, pass!).subscribe({
-        next: (res) => {
-          this.isLoading = false;
-          this.router.navigate(['/home']);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = 'No hemos encontrado esa cuenta.';
-        }
-      });
+      // 2. Navegamos (esto hará que el componente se desconecte correctamente)
+      this.router.navigate(['/home']);
+    },
+    error: (err) => {
+      this.isLoading = false;
+      this.errorMessage = 'Credenciales inválidas';
+      console.error('Error en login:', err);
     }
-  }
+  });
 }
+  }
+
   
