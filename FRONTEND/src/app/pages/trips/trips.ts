@@ -1,25 +1,12 @@
-/*
+
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router, RouterModule } from '@angular/router'; 
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
-import { Trip } from '../../interfaces/Trip';
-
-import { 
-  Firestore, collection, addDoc, query, orderBy, onSnapshot, where, getDocs, 
-  doc, updateDoc, arrayUnion, arrayRemove // <--- AÑADIDOS para editar invitaciones
-} from '@angular/fire/firestore';
+import { Trip } from '../../interfaces/models';
+import { MemberMini, User } from '../../interfaces/models/user.model';
 import { AuthService } from '../../services/auth.service';
-
-// Modelos UI / Domain
-import { TripCard } from '../../interfaces/ui/trip-card.model';
-import { MemberMini } from '../../interfaces/ui/member-mini.model';
-
-// DTO de request (lo que mandas al backend al crear)
-import { CreateTripRequest } from '../../interfaces/api/create-trip.request';
-
-// Firebase User (solo si seguís usando Firebase Auth para identificar al usuario)
-import { User } from '@angular/fire/auth';
+import { TripService } from '../../services/trip.service';
 
 @Component({
   selector: 'app-trips-page',
@@ -31,7 +18,7 @@ import { User } from '@angular/fire/auth';
 export class TripsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private tripsService = inject(TripsService);
+  private tripsService = inject(TripService);
   private router = inject(Router);
 
   myTrips: Trip[] = [];
@@ -48,9 +35,6 @@ export class TripsComponent implements OnInit {
   tripForm!: FormGroup;
 
   currentUser: MemberMini | null = null;
-
-  // Plantillas (si las sigues usando)
-  templates: any[] = [];
 
   // Notificaciones (si las lleváis a backend luego; de momento lo dejamos apagado)
   hasNotifications = false;

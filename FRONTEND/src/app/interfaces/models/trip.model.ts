@@ -1,14 +1,15 @@
-import { MemberMini } from "./user.model";
+import { MemberMini } from './user.model';
 
 export interface Trip {
   id: number;
   name: string;
   origin: string | null;
   destination: string;
-  startDate: string; // ISO date
+  startDate: string;
   endDate: string;
-  createdAt: string;
-  // imageUrl?: string | null;
+
+  // datos extra para la UI
+  createdAt?: string;
+  imageUrl?: string | null;
   members: MemberMini[];
-  // myStatus?: 'pending' | 'accepted'; // si el backend lo manda
 }

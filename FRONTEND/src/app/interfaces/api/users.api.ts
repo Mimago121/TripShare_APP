@@ -1,10 +1,4 @@
-export interface MemberMini {
-  id: number;
-  userName: string;
-  avatarUrl: string | null;
-}
-
-export interface User {
+export interface UserResponse {
   id: number;
   userName: string;
   email: string;
@@ -12,4 +6,3 @@ export interface User {
   bio: string | null;
   createdAt: string;
 }
-
