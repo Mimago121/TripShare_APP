@@ -8,6 +8,9 @@ data class LoginRequest(
     val email: String,
     val pass: String
 )
+
+@Serializable
+data class RegisterRequest(val userName: String, val email: String, val pass: String)
 @Serializable
 data class ExpenseModel(
     val id: Long,

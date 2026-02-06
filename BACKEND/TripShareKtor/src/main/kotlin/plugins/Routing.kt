@@ -38,46 +38,68 @@ fun Application.configureRouting() {
             }
         }
 
-        // --- ENDPOINTS DE USUARIOS ---
-        route("/users") {
-            get {
-                val users = repository.getAllUsers()
-                call.respond(users)
-            }
+        // Dentro de configureRouting.kt
+        route("/register") {
+            post {
+                try {
+                    val request = call.receive<RegisterRequest>()
+                    println("Recibido registro: ${request.userName}, ${request.email}")
 
-            get("{id}") {
-                val id = call.parameters["id"]?.toLongOrNull()
-                if (id == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID de usuario inválido")
-                    return@get
+                    val success = repository.createUser(request.userName, request.email, request.pass)
+
+                    if (success) {
+                        call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
+                    } else {
+                        // Este es el error que ves en rojo en tu captura
+                        call.respond(HttpStatusCode.Conflict, "El email ya existe")
+                    }
+                } catch (e: Exception) {
+                    println("ERROR DE FORMATO: ${e.message}")
+                    call.respond(HttpStatusCode.BadRequest, "Datos inválidos")
                 }
-                val user = repository.getUserById(id)
-                if (user != null) call.respond(user)
-                else call.respond(HttpStatusCode.NotFound, "Usuario no encontrado")
-            }
-        }
-
-        // --- ENDPOINTS DE VIAJES ---
-        route("/trips") {
-            get {
-                val trips = repository.getAllTrips()
-                call.respond(trips)
             }
 
-            get("/user/{userId}") {
-                val userId = call.parameters["userId"]?.toLongOrNull()
-                if (userId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID de usuario inválido")
-                    return@get
+            // --- ENDPOINTS DE USUARIOS ---
+            route("/users") {
+                get {
+                    val users = repository.getAllUsers()
+                    call.respond(users)
                 }
-                val trips = repository.getTripsByUserId(userId)
-                call.respond(trips)
-            }
-        }
 
-        // --- HEALTH CHECK ---
-        get("/health") {
-            call.respond(mapOf("status" to "OK", "database" to "Connected"))
+                get("{id}") {
+                    val id = call.parameters["id"]?.toLongOrNull()
+                    if (id == null) {
+                        call.respond(HttpStatusCode.BadRequest, "ID de usuario inválido")
+                        return@get
+                    }
+                    val user = repository.getUserById(id)
+                    if (user != null) call.respond(user)
+                    else call.respond(HttpStatusCode.NotFound, "Usuario no encontrado")
+                }
+            }
+
+            // --- ENDPOINTS DE VIAJES ---
+            route("/trips") {
+                get {
+                    val trips = repository.getAllTrips()
+                    call.respond(trips)
+                }
+
+                get("/user/{userId}") {
+                    val userId = call.parameters["userId"]?.toLongOrNull()
+                    if (userId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "ID de usuario inválido")
+                        return@get
+                    }
+                    val trips = repository.getTripsByUserId(userId)
+                    call.respond(trips)
+                }
+            }
+
+            // --- HEALTH CHECK ---
+            get("/health") {
+                call.respond(mapOf("status" to "OK", "database" to "Connected"))
+            }
         }
     }
 }

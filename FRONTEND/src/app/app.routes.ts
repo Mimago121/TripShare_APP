@@ -11,10 +11,12 @@ import { ChatRoomComponent } from './pages/chat-room/chat-room';
 import { adminGuard } from './guards/admin.guard';
 import { TripDetailComponent } from './pages/trip-detail/trip-detail';
 import { Home } from './pages/home/home'; // Asegúrate de que la clase se llame 'Home' o 'HomeComponent'
+import { RegisterComponent } from './pages/register/register';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
   { path: 'home', component: Home }, // La movemos arriba para que sea accesible
   { path: 'profile', component: ProfileComponent },
   { path: 'itinerary', component: ItineraryComponent },

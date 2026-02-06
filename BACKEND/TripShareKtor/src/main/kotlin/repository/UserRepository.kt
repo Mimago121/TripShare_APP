@@ -1,43 +1,54 @@
 package repository
 
-
-import data.* // Importa UserEntity, TripEntity, Trips, Activities, etc.
-import domain.* // Importa UserModel, TripResponse, ActivityResponse, etc.
-import database.DatabaseFactory.dbQuery
+import data.* import domain.* import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 
 class UserRepository {
 
-    // Dentro de tu class UserRepository
-    fun validateUser(email: String, pass: String): UserModel? {
-        return transaction { // Asegúrate de importar org.jetbrains.exposed.sql.transactions.transaction
-            Users // Tu tabla de Users
-                .select { (Users.email eq email) and (Users.passwordHash eq pass) }
-                .map {
-                    UserModel(
-                        id = it[Users.id].value,
-                        email = it[Users.email],
-                        userName = it[Users.userName],
-                        avatarUrl = it[Users.avatarUrl],
-                        bio = it[Users.bio],
-                        provider = it[Users.provider],
-                        createdAt = it[Users.createdAt].toString()
-                    )
-                }
-                .singleOrNull() // Si no existe o hay varios, devuelve null
-        }
+    // 1. VALIDAR LOGIN (Cambiado a suspend para usar dbQuery)
+    suspend fun validateUser(email: String, pass: String): UserModel? = dbQuery {
+        Users
+            .select { (Users.email eq email) and (Users.passwordHash eq pass) }
+            .map {
+                UserModel(
+                    id = it[Users.id].value,
+                    email = it[Users.email],
+                    userName = it[Users.userName],
+                    avatarUrl = it[Users.avatarUrl],
+                    bio = it[Users.bio],
+                    provider = it[Users.provider],
+                    createdAt = it[Users.createdAt].toString()
+                )
+            }
+            .singleOrNull()
     }
 
-    // --- USUARIOS ---
+    // 2. CREAR USUARIO (Corregida la llave que faltaba)
+    suspend fun createUser(name: String, email: String, pass: String): Boolean = dbQuery {
+        try {
+            Users.insert {
+                it[this.userName] = name
+                it[this.email] = email
+                it[this.passwordHash] = pass
+                it[this.provider] = "local"
+            }
+            true
+        } catch (e: Exception) {
+            println("Error al insertar usuario: ${e.message}")
+            false
+        }
+    } // Aquí faltaba cerrar la función correctamente
+
+    // --- FUNCIONES DE USUARIOS ---
     suspend fun getAllUsers(): List<UserModel> = dbQuery {
         UserEntity.all().map { it.toModel() }
     }
 
-    //--- OBTENER USUARIO POR ID ---
     suspend fun getUserById(id: Long): UserModel? = dbQuery {
         UserEntity.findById(id)?.toModel()
     }
@@ -61,6 +72,7 @@ class UserRepository {
         TripEntity.find { Trips.createdBy eq userId }.map { it.toModel() }
     }
 
+    // --- ACTIVIDADES ---
     suspend fun getActivitiesByTrip(tripId: Long): List<ActivityResponse> = dbQuery {
         ActivityEntity.find { Activities.tripId eq tripId }.map { entity ->
             ActivityResponse(
@@ -75,25 +87,25 @@ class UserRepository {
     }
 
     suspend fun createActivity(request: CreateActivityRequest): ActivityResponse = dbQuery {
-        ActivityEntity.new {
+        val entity = ActivityEntity.new {
             tripId = EntityID(request.tripId, Trips)
             createdBy = UserEntity[request.createdByUserId]
             title = request.title
             startDatetime = LocalDateTime.parse(request.startDatetime)
             endDatetime = LocalDateTime.parse(request.endDatetime)
-        }.let {
-            ActivityResponse(
-                id = it.id.value, // Aquí aplicas lo mismo que te funcionó antes
-                tripId = it.tripId.value,
-                title = it.title,
-                startDatetime = it.startDatetime.toString(),
-                endDatetime = it.endDatetime.toString(),
-                createdByUserId = it.createdBy.id.value
-            )
         }
+
+        ActivityResponse(
+            id = entity.id.value,
+            tripId = entity.tripId.value,
+            title = entity.title,
+            startDatetime = entity.startDatetime.toString(),
+            endDatetime = entity.endDatetime.toString(),
+            createdByUserId = entity.createdBy.id.value
+        )
     }
 
-    // --- GASTOS (Solo debe haber UNA función con este nombre) ---
+    // --- GASTOS ---
     suspend fun getExpensesByTrip(tripId: Long): List<ExpenseModel> = dbQuery {
         ExpenseEntity.find { Expenses.tripId eq tripId }.map {
             ExpenseModel(
@@ -107,7 +119,7 @@ class UserRepository {
         }
     }
 
-    // --- RECUERDOS (Solo debe haber UNA función con este nombre) ---
+    // --- RECUERDOS ---
     suspend fun getMemoriesByTrip(tripId: Long): List<MemoryModel> = dbQuery {
         MemoryEntity.find { Memories.tripId eq tripId }.map {
             MemoryModel(
@@ -122,8 +134,7 @@ class UserRepository {
         }
     }
 
-
-    // --- FUNCIONES DE EXTENSIÓN PARA MAPEO ---
+    // --- MAPEO ---
     private fun UserEntity.toModel() = UserModel(
         id = id.value,
         email = email,
@@ -143,7 +154,4 @@ class UserRepository {
         endDate = endDate.toString(),
         createdByUserId = createdBy.id.value
     )
-
-
-
 }

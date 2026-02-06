@@ -9,7 +9,7 @@
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       
       <div class="input-group" [class.has-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-        <input type="email" formControlName="email" placeholder="Correo electrónico, teléfono o Skype">
+        <input type="email" formControlName="email" placeholder="Correo electrónico">
         <div class="error-text" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
           Escribe una dirección de correo válida.
         </div>
@@ -22,9 +22,7 @@
         </div>
       </div>
 
-      <div class="forgot-pass">
-        <a href="#">¿No puedes acceder a tu cuenta?</a>
-      </div>
+      
 
       <div class="actions">
         <button type="button" class="btn-back" routerLink="/register">Crear cuenta</button>
@@ -42,9 +40,5 @@
     </div>
   </div>
   
-  <div class="ms-footer">
-    <span>Términos de uso</span>
-    <span>Privacidad y cookies</span>
-    <span>...</span>
-  </div>
+  
 </div>

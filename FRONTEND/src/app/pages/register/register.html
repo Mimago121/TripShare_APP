@@ -1,82 +1,34 @@
-<div class="login-background">
-  <div class="login-card">
-    
-    <div class="brand-header">
-      <h1>Únete al viaje 🌍</h1>
-      <p class="slogan">Crea tu cuenta en segundos</p>
+<div class="ms-login-container">
+  <div class="ms-card fade-in">
+    <div class="card-header">
+      <div class="logo-circle">✈️</div>
+      <h2>Crear cuenta</h2>
+      <p>Únete a TripShare hoy mismo</p>
     </div>
 
-    <form [formGroup]="registerForm" class="login-form">
-      
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
       <div class="input-group">
-        <label>Nombre de Usuario</label>
-        <input 
-          type="text" 
-          formControlName="username" 
-          placeholder="ej: viajero_juan"
-          [class.input-error]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
-        >
-        
-        <small class="hint-text">Letras, números y guion bajo (_). Mínimo 3 caracteres.</small>
-
-        <div *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.invalid">
-            <span class="error-msg" *ngIf="registerForm.get('username')?.hasError('required')">
-              El usuario es obligatorio.
-            </span>
-            <span class="error-msg" *ngIf="registerForm.get('username')?.hasError('minlength')">
-              Mínimo 3 caracteres.
-            </span>
-            <span class="error-msg" *ngIf="registerForm.get('username')?.hasError('pattern')">
-              ❌ No uses espacios ni símbolos raros.
-            </span>
-        </div>
+        <input type="text" formControlName="userName" placeholder="Nombre de usuario">
       </div>
 
       <div class="input-group">
-        <label>Email</label>
-        <input 
-          type="email" 
-          formControlName="email" 
-          placeholder="tucorreo@ejemplo.com"
-        >
-        <span class="error-msg" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
-          Introduce un correo válido.
-        </span>
+        <input type="email" formControlName="email" placeholder="Correo electrónico">
       </div>
 
       <div class="input-group">
-        <label>Contraseña</label>
-        <input 
-          type="password" 
-          formControlName="password" 
-          placeholder="******"
-        >
-        
-        <small class="hint-text">Mínimo 6 caracteres.</small>
-        
-        <span class="error-msg" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('minlength')">
-           La contraseña es muy corta.
-        </span>
+        <input type="password" formControlName="pass" placeholder="Contraseña">
       </div>
 
       <div class="actions">
-        <button 
-          type="button" 
-          (click)="onRegister()" 
-          [disabled]="isLoading"
-          class="btn-primary">
-          {{ isLoading ? 'Creando cuenta...' : 'Registrarse' }}
+        <button type="button" class="btn-back" routerLink="/login">Atrás</button>
+        <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading">
+          Registrar
         </button>
-
-        <div class="divider">
-          <span>¿Ya tienes cuenta?</span>
-        </div>
-
-        <a routerLink="/login" class="btn-secondary">
-          Volver a Iniciar Sesión
-        </a>
       </div>
-
     </form>
+
+    <div *ngIf="errorMessage" class="server-error">
+      {{ errorMessage }}
+    </div>
   </div>
 </div>

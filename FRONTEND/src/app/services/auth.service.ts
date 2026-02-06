@@ -23,9 +23,8 @@ export class AuthService {
     console.log('Sesión cerrada');
   }
 
-  // 3. Ajustamos el register para que acepte los argumentos que envías
-  register(email: string, pass: string): Observable<any> {
-    const newUser = { user: { email: email } };
-    return of(newUser);
-  }
+  register(userName: string, email: string, pass: string): Observable<any> {
+  // Enviamos los datos al puerto 8080 del Ktor
+  return this.http.post('http://localhost:8080/register', { userName, email, pass });
+}
 }
