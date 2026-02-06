@@ -1,26 +1,9 @@
-<!--<app-navbar *ngIf="shouldShowMenu()"></app-navbar>
-
- <button (click)="probarConexion()">Probar conexión con Ktor</button>
-<pre>{{ result | json }}</pre> 
-
-<button (click)="cargarViajes()">Cargar viajes</button>
-
-<ul>
-  <li *ngFor="let t of trips">
-    <strong>{{ t.name }}</strong> — {{ t.destination }}
-    ({{ t.startDate }} → {{ t.endDate }})
-  </li>
-</ul>
-
-
-<div class="main-container">
-  <router-outlet></router-outlet>
-</div>
-
-<app-footer *ngIf="shouldShowMenu()"></app-footer>-->
-
+<!-- PRUEBA USUARIOS DOCKER 
 <div style="padding: 20px; font-family: sans-serif;">
   <h1>Test de Conexión: Ktor + Angular</h1>
   <hr>
   <app-user-list></app-user-list>
 </div>
+-->
+
+<router-outlet></router-outlet>

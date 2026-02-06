@@ -8,7 +8,6 @@ import io.ktor.server.routing.*
 import io.ktor.http.*
 import io.ktor.server.request.receive
 
-
 fun Application.configureRouting() {
     val repository = UserRepository()
 
@@ -16,6 +15,27 @@ fun Application.configureRouting() {
         // Inicio
         get("/") {
             call.respondText("¡API de TripShare Conectada y Operativa!")
+        }
+
+        // --- AUTH / LOGIN REAL ---
+        route("/login") {
+            post {
+                try {
+                    val request = call.receive<LoginRequest>()
+
+                    // Buscamos al usuario en la base de datos por email y password
+                    val user = repository.validateUser(request.email, request.pass)
+
+                    if (user != null) {
+                        call.respond(HttpStatusCode.OK, user) // Devolvemos el objeto UserModel completo
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized, "Email o contraseña incorrectos")
+                    }
+                } catch (e: Exception) {
+                    // Si llegas aquí es que el JSON está mal formado o falta un campo
+                    call.respond(HttpStatusCode.BadRequest, "Error en el formato de datos: ${e.message}")
+                }
+            }
         }
 
         // --- ENDPOINTS DE USUARIOS ---
@@ -55,15 +75,9 @@ fun Application.configureRouting() {
             }
         }
 
-        // --- ENDPOINTS DE PRUEBA DE CONEXIÓN ---
+        // --- HEALTH CHECK ---
         get("/health") {
             call.respond(mapOf("status" to "OK", "database" to "Connected"))
-        }
-
-        post("/activities") {
-            val request = call.receive<CreateActivityRequest>()
-            val newActivity = repository.createActivity(request)
-            call.respond(HttpStatusCode.Created, newActivity)
         }
     }
 }

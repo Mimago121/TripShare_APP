@@ -1,4 +1,4 @@
-
+/*
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router, RouterModule } from '@angular/router'; 
@@ -89,7 +89,7 @@ export class TripsComponent implements OnInit {
    *
    * Aquí es donde el componente "recibe" los datos:
    * realmente los recibe dentro del subscribe.
-   */
+   
   loadTrips(): void {
     this.loading = true;
     this.errorMsg = '';
@@ -111,7 +111,7 @@ export class TripsComponent implements OnInit {
   /**
    * Plantillas: idealmente vienen de backend (GET /trip-templates).
    * Si aún no lo tienes, puedes dejarlo vacío o hardcodear en local.
-   */
+   
   loadTemplates(): void {
     this.tripsService.getTripTemplates().subscribe({
       next: (templates) => (this.templates = templates),

@@ -1,25 +1,23 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
 import { ProfileComponent } from './pages/profile/profile';
-//import { TripsComponent } from './pages/trips/trips';
 import { ItineraryComponent } from './pages/itinerary/itinerary';
 import { ExpensesComponent } from './pages/expenses/expenses';
 import { MemoriesComponent } from './pages/memories/memories';
-import { RegisterComponent } from './pages/register/register';
 import { FriendsComponent } from './pages/friends/friends';
 import { ChatsComponent } from './pages/chats/chats';
 import { AdminDashboardComponent } from './pages/admin/admin-dashboard/admin-dashboard';
 import { ChatRoomComponent } from './pages/chat-room/chat-room';
 import { adminGuard } from './guards/admin.guard';
 import { TripDetailComponent } from './pages/trip-detail/trip-detail';
+import { Home } from './pages/home/home'; // Asegúrate de que la clase se llame 'Home' o 'HomeComponent'
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'home', component: Home }, // La movemos arriba para que sea accesible
   { path: 'profile', component: ProfileComponent },
-  //{ path: 'trips', component: TripsComponent },
   { path: 'itinerary', component: ItineraryComponent },
-  { path: 'register', component: RegisterComponent }, // <--- NUEVA RUTA
   { path: 'expenses', component: ExpensesComponent },
   { path: 'memories', component: MemoriesComponent },
   { path: 'chats', component: ChatsComponent },
@@ -31,5 +29,6 @@ export const routes: Routes = [
     component: AdminDashboardComponent,
     canActivate: [adminGuard],
   },
-  { path: '**', redirectTo: 'login' },
+  // IMPORTANTE: El comodín '**' SIEMPRE debe ser la última ruta
+  { path: '**', redirectTo: 'login' }
 ];

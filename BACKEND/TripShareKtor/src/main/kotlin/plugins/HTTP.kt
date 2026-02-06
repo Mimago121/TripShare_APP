@@ -4,27 +4,24 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.CORS
 
-
 fun Application.configureHTTP() {
     install(CORS) {
-        // Permite que Angular (puerto 4200) acceda a la API
+        // En lugar de anyHost(), especificamos claramente el de Angular
         allowHost("localhost:4200")
 
-        // Métodos que usaremos
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
 
-        // Cabeceras necesarias para enviar y recibir JSON
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
 
-        // Importante si vas a usar autenticación más adelante
+        // Si usas allowCredentials, DEBES especificar el host arriba (ya lo hemos hecho)
         allowCredentials = true
 
-        // En desarrollo, esto evita muchos dolores de cabeza
-        anyHost()
+        // Esta línea permite que Angular lea las cabeceras de respuesta
+        exposeHeader(HttpHeaders.Authorization)
     }
 }

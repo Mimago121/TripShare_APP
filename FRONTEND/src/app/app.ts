@@ -4,13 +4,14 @@ import { NavbarComponent } from './pages/navbar/navbar';
 import { FooterComponent } from './pages/footer/footer';
 import { CommonModule } from '@angular/common';
 import { UserListComponent } from './pages/user-list/user-list';
-
+import { LoginComponent } from './pages/login/login';
 import { ApiService, PingResponse, TripDto } from './core/api.service';
+
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [UserListComponent,CommonModule, RouterOutlet, NavbarComponent, FooterComponent],
+  imports: [UserListComponent, CommonModule, RouterOutlet, NavbarComponent, FooterComponent, LoginComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

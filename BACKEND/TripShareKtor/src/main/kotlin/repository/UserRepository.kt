@@ -5,9 +5,32 @@ import data.* // Importa UserEntity, TripEntity, Trips, Activities, etc.
 import domain.* // Importa UserModel, TripResponse, ActivityResponse, etc.
 import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 
 class UserRepository {
+
+    // Dentro de tu class UserRepository
+    fun validateUser(email: String, pass: String): UserModel? {
+        return transaction { // Asegúrate de importar org.jetbrains.exposed.sql.transactions.transaction
+            Users // Tu tabla de Users
+                .select { (Users.email eq email) and (Users.passwordHash eq pass) }
+                .map {
+                    UserModel(
+                        id = it[Users.id].value,
+                        email = it[Users.email],
+                        userName = it[Users.userName],
+                        avatarUrl = it[Users.avatarUrl],
+                        bio = it[Users.bio],
+                        provider = it[Users.provider],
+                        createdAt = it[Users.createdAt].toString()
+                    )
+                }
+                .singleOrNull() // Si no existe o hay varios, devuelve null
+        }
+    }
 
     // --- USUARIOS ---
     suspend fun getAllUsers(): List<UserModel> = dbQuery {

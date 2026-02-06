@@ -8,7 +8,7 @@ import { User } from '../interfaces/models/user.model';
 })
 export class UserService {
   // Usamos la ruta que configuramos en el Routing de Ktor
-  private apiUrl = 'http://localhost:8080/api/users'; 
+  private apiUrl = 'http://localhost:8080/users'; 
 
   constructor(private http: HttpClient) { }
 

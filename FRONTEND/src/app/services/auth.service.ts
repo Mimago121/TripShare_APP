@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
+
 
 @Injectable({
   providedIn: 'root'
@@ -9,16 +11,11 @@ export class AuthService {
   private userSubject = new BehaviorSubject<any>(null);
   public user$ = this.userSubject.asObservable();
 
-  constructor() {
-    // Simulamos que hay un usuario logueado para que no veas todo vacío
-    this.userSubject.next({ email: 'test@test.com', displayName: 'Usuario Prueba', photoURL: '' });
-  }
+  constructor(private http: HttpClient) {}
 
-  login(email: string, pass: string): Observable<any> {
-    const mockUser = { email: email, displayName: 'Sergi', photoURL: '' };
-    this.userSubject.next(mockUser); // Notificamos a toda la app
-    return of(mockUser);
-  }
+  login(email: string, pass: string) {
+  return this.http.post('http://localhost:8080/login', { email, pass });
+}
 
   // 2. Añadimos el logout que pide el Navbar y Profile
   async logout() {

@@ -1,9 +1,50 @@
-<div class="login-container">
-  <h2>Iniciar Sesión</h2>
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-    <input type="email" formControlName="email" placeholder="Email (test@test.com)">
-    <input type="password" formControlName="password" placeholder="Contraseña (123)">
-    <button type="submit" [disabled]="loginForm.invalid">Entrar</button>
-  </form>
-  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+<div class="ms-login-container">
+  <div class="ms-card fade-in">
+    
+    <div class="card-header">
+      <div class="logo-circle">✈️</div> <h2>Iniciar sesión</h2>
+      <p>Ir a TripShare</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
+      <div class="input-group" [class.has-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        <input type="email" formControlName="email" placeholder="Correo electrónico, teléfono o Skype">
+        <div class="error-text" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          Escribe una dirección de correo válida.
+        </div>
+      </div>
+
+      <div class="input-group" [class.has-error]="loginForm.get('pass')?.invalid && loginForm.get('pass')?.touched">
+        <input type="password" formControlName="pass" placeholder="Contraseña">
+        <div class="error-text" *ngIf="loginForm.get('pass')?.invalid && loginForm.get('pass')?.touched">
+          La contraseña es obligatoria.
+        </div>
+      </div>
+
+      <div class="forgot-pass">
+        <a href="#">¿No puedes acceder a tu cuenta?</a>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-back" routerLink="/register">Crear cuenta</button>
+        
+        <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading">
+          <span *ngIf="!isLoading">Siguiente</span>
+          <span *ngIf="isLoading">Cargando...</span>
+        </button>
+      </div>
+
+    </form>
+    
+    <div *ngIf="errorMessage" class="server-error">
+      {{ errorMessage }}
+    </div>
+  </div>
+  
+  <div class="ms-footer">
+    <span>Términos de uso</span>
+    <span>Privacidad y cookies</span>
+    <span>...</span>
+  </div>
 </div>

@@ -3,7 +3,11 @@ package domain
 
 import kotlinx.serialization.Serializable
 
-
+@Serializable
+data class LoginRequest(
+    val email: String,
+    val pass: String
+)
 @Serializable
 data class ExpenseModel(
     val id: Long,
