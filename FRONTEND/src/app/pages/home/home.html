@@ -1,34 +1,16 @@
-<div class="home-wrapper">
-  <nav class="main-nav">
-    <div class="logo">✈️ TripShare</div>
-    <div class="user-controls" *ngIf="user">
-      <span class="welcome-txt">Bienvenido, <strong>{{ user.userName }}</strong></span>
-      <button class="logout-btn" (click)="logout()">Salir</button>
-    </div>
-  </nav>
+<div class="page-wrapper">
+  
+  <app-navbar></app-navbar>
 
-  <main class="content">
-    <header class="section-header">
-      <h2>Tus Próximas Aventuras</h2>
-      <button class="add-btn" (click)="createNewTrip()">+ Nuevo Viaje</button>
+  <main class="main-content">
+    
+    <header class="content-header">
+       <h2>👋 Hola {{ user?.userName }}, ¿dónde vamos hoy?</h2>
+       <button class="btn-new" (click)="createNewTrip()">+ Crear Viaje</button>
     </header>
 
-    <div class="trips-container">
-      <div *ngIf="isLoading" class="msg">Cargando viajes...</div>
-      
-      <div class="trip-grid" *ngIf="!isLoading">
-        <div class="trip-card" *ngFor="let trip of trips" (click)="goToTrip(trip.id)">
-          <div class="card-img">📍</div>
-          <div class="card-body">
-            <h3>{{ trip.name }}</h3>
-            <p>{{ trip.destination }}</p>
-          </div>
-        </div>
+    </main>
 
-        <div class="no-trips" *ngIf="trips.length === 0 && !isLoading">
-          <p>Aún no tienes viajes registrados.</p>
-        </div>
-      </div>
-    </div>
-  </main>
+  <app-footer></app-footer>
+
 </div>

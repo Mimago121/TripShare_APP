@@ -1,84 +1,85 @@
 .trip-footer {
-  background-color: #003644; /* Un tono un poco más oscuro que el navbar */
-  color: white;
-  padding: 3rem 1rem 1.5rem 1rem;
+  background-color: #1f2937; /* Gris oscuro profesional */
+  color: #f3f4f6;
+  padding: 3rem 0;
   margin-top: auto; /* Empuja el footer al fondo si hay poco contenido */
-  border-top: 4px solid #26C6DA; /* Línea de acento Cyan */
+  border-top: 1px solid #374151;
 }
 
 .footer-content {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+}
+
+/* Diseño responsive: En PC se divide en 3 columnas */
+@media (min-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: left;
+    align-items: start;
+  }
 }
 
 .footer-brand h3 {
   font-size: 1.5rem;
-  margin-bottom: 5px;
-  color: white;
-  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(90deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .footer-brand p {
-  color: #b0c4de;
+  color: #9ca3af;
   font-size: 0.9rem;
-  max-width: 400px;
-  margin: 0 auto;
+  line-height: 1.5;
 }
 
 .footer-links {
   display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin: 15px 0;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .footer-links { align-items: center; /* Centrado en la columna del medio */ }
 }
 
 .footer-links a {
-  color: white;
+  color: #d1d5db;
   text-decoration: none;
-  font-size: 0.9rem;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: color 0.2s;
+  font-size: 0.95rem;
 }
 
 .footer-links a:hover {
-  opacity: 1;
-  color: #26C6DA;
+  color: #818cf8; /* Color acento al pasar el ratón */
+  text-decoration: underline;
 }
 
 .footer-credits {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 20px;
   font-size: 0.85rem;
-  color: #8899a6;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.devs {
-  margin-top: 5px;
-}
-
-.names {
-  color: #ff69b4; /* El rosa que pediste para los nombres */
-  font-weight: 600;
-}
-
-/* Responsive */
 @media (min-width: 768px) {
-  .footer-content {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-  }
-  
-  .footer-brand p { margin: 0; }
-  
-  .footer-credits {
-    border-top: none;
-    padding-top: 0;
-    text-align: right;
-  }
+  .footer-credits { align-items: flex-end; text-align: right; }
+}
+
+/* Efecto especial para vuestros nombres */
+.names {
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #34d399, #3b82f6); /* Verde a Azul */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

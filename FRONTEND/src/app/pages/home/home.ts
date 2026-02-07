@@ -1,14 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth.service';
+import { NavbarComponent } from '../navbar/navbar'; // <--- Importante
+import { FooterComponent } from '../footer/footer'; // <--- Importante
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { HttpClient } from '@angular/common/http';
-
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NavbarComponent, FooterComponent], // <--- Añado los componentes aquí
   templateUrl: './home.html',
   styleUrls: ['./home.css']
 })

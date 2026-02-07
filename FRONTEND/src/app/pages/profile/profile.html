@@ -1,87 +1,53 @@
-<div class="profile-container">
+<div class="page-layout">
   
-  <header class="profile-header">
-    <div class="avatar-section">
-      <img [src]="user.avatar || defaultAvatar" alt="Avatar" class="avatar-img">
-      <button class="edit-btn" (click)="openEditModal()">
-        ✏️ Editar
-      </button>
-    </div>
+  <app-navbar></app-navbar>
+
+  <main class="main-content">
     
-    <div class="user-info">
-      <h1>{{ user.name }}</h1>
-      <p class="username">{{ user.username }}</p>
-      <p class="bio">{{ user.bio }}</p>
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando tu perfil...</p>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-item">
-        <strong>{{ user.stats.trips }}</strong>
-        <span>Viajes</span>
-      </div>
-      <div class="stat-item">
-        <strong>{{ user.stats.countries }}</strong>
-        <span>Países</span>
-      </div>
-      <div class="stat-item">
-        <strong>{{ user.stats.friends }}</strong>
-        <span>Amigos</span>
-      </div>
-    </div>
-  </header>
-
-  <hr class="divider">
-
-  <section class="next-trip-section">
-    <h2>Próxima Aventura</h2>
-    <div class="trip-card">
-      <div class="trip-icon">✈️</div>
-      <div class="trip-details">
-        <h3>{{ user.nextTrip.destination }}</h3>
-        <p *ngIf="user.nextTrip.date">{{ user.nextTrip.date | date:'mediumDate' }}</p>
-        <p *ngIf="!user.nextTrip.date">Sin fecha</p>
-      </div>
-    </div>
-  </section>
-
-  <button class="logout-btn" (click)="logout()">Cerrar Sesión</button>
-
-</div>
-
-<div class="modal-overlay" *ngIf="isEditing">
-  <div class="modal-content">
-    <h3>Editar Perfil</h3>
-    
-    <form [formGroup]="editForm" (ngSubmit)="saveProfile()">
+    <div class="profile-card fade-in" *ngIf="!isLoading && user">
       
-      <div class="form-group">
-        <label>URL de Avatar</label>
-        <input type="text" formControlName="avatar" placeholder="https://...">
+      <div class="profile-header-bg"></div>
+
+      <div class="profile-avatar-wrapper">
+        <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" alt="Avatar" class="profile-avatar">
+        <div *ngIf="!user.avatarUrl" class="avatar-placeholder">
+          {{ user.userName.charAt(0).toUpperCase() }}
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>Nombre</label>
-        <input type="text" formControlName="name" placeholder="Tu nombre">
+      <div class="profile-body">
+        <h1 class="user-name">{{ user.userName }}</h1>
+        <p class="user-email">📧 {{ user.email }}</p>
+        
+        <div class="divider"></div>
+
+        <div class="info-section">
+          <h3>Sobre mí</h3>
+          <p class="bio" *ngIf="user.bio">{{ user.bio }}</p>
+          <p class="bio empty" *ngIf="!user.bio">Este usuario aún no ha escrito su biografía.</p>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Miembro desde</span>
+            <span class="value">{{ user.createdAt | date:'longDate' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Cuenta</span>
+            <span class="value badge">{{ user.provider || 'Local' }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>Usuario (@)</label>
-        <input type="text" formControlName="username" placeholder="@usuario">
-      </div>
+    </div>
 
-      <div class="form-group">
-        <label>Biografía</label>
-        <textarea formControlName="bio" rows="3" placeholder="Cuéntanos algo sobre ti..."></textarea>
-        <small>{{ editForm.get('bio')?.value?.length || 0 }}/150</small>
-      </div>
+  </main>
 
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
-        <button type="submit" class="btn-save" [disabled]="isSaving || editForm.invalid">
-          {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
-        </button>
-      </div>
+  <app-footer></app-footer>
 
-    </form>
-  </div>
 </div>
