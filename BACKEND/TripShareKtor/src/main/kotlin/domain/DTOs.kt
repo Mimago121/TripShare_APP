@@ -4,6 +4,13 @@ package domain
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class UpdateUserRequest(
+    val userName: String,
+    val bio: String,
+    val avatarUrl: String
+)
+
+@Serializable
 data class LoginRequest(
     val email: String,
     val pass: String

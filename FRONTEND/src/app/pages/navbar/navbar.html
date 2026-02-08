@@ -1,23 +1,21 @@
-<nav class="navbar">
-  <div class="nav-container">
+<nav class="navbar-container">
+  <div class="navbar-content">
     
-    <a routerLink="/home" class="nav-brand">
-      <img src="assets/logo.png" alt="Logo" class="logo-img">
-      <span class="brand-text">TripShare</span>
+    <a routerLink="/home" class="brand">
+      <img src="assets/logo.png" alt="Logo" class="logo" priority>
+      <span class="brand-name">Trip<span class="blue">Share</span></span>
     </a>
 
     <div class="nav-links">
-      <a routerLink="/home" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Inicio</a>
-      <a routerLink="/trips" routerLinkActive="active-link">Mis Viajes</a>
-      <a routerLink="/friends" routerLinkActive="active-link">Amigos</a>
-      <a routerLink="/profile" routerLinkActive="active-link">Perfil</a>
+      <a routerLink="/home" routerLinkActive="active">Inicio</a>
+      <a routerLink="/trips" routerLinkActive="active">Viajes</a>
+      <a routerLink="/friends" routerLinkActive="active">Amigos</a>
+      <a routerLink="/profile" routerLinkActive="active">Perfil</a>
     </div>
 
-    <div class="nav-actions">
-      <button class="btn-logout" (click)="logout()">
-        🚪 Salir
-      </button>
-    </div>
+    <button class="btn-logout" (click)="logout()">
+      <span class="icon">🚪</span> Salir
+    </button>
 
   </div>
 </nav>

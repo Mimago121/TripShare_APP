@@ -26,6 +26,7 @@ export const routes: Routes = [
   { path: 'chat/:uid', component: ChatRoomComponent },
   { path: 'trips/:id', component: TripDetailComponent },
   { path: 'friends', component: FriendsComponent },
+  { path: 'trips', component: FriendsComponent },
   {
     path: 'admin',
     component: AdminDashboardComponent,

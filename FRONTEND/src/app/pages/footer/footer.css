@@ -1,85 +1,29 @@
-.trip-footer {
-  background-color: #1f2937; /* Gris oscuro profesional */
-  color: #f3f4f6;
-  padding: 3rem 0;
-  margin-top: auto; /* Empuja el footer al fondo si hay poco contenido */
-  border-top: 1px solid #374151;
-}
-
 .footer-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  flex-wrap: wrap;
 }
 
-/* Diseño responsive: En PC se divide en 3 columnas */
-@media (min-width: 768px) {
-  .footer-content {
-    grid-template-columns: 1fr 1fr 1fr;
-    text-align: left;
-    align-items: start;
-  }
-}
-
-.footer-brand h3 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(90deg, #818cf8, #c084fc);
+.names {
+  font-weight: bold;
+  /* Degradado moderno para vuestros nombres */
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.footer-brand p {
-  color: #9ca3af;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.footer-links {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  align-items: center;
-}
-
-@media (min-width: 768px) {
-  .footer-links { align-items: center; /* Centrado en la columna del medio */ }
+  font-size: 1.1rem;
 }
 
 .footer-links a {
-  color: #d1d5db;
+  margin: 0 10px;
+  color: #a0aec0;
   text-decoration: none;
-  transition: color 0.2s;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .footer-links a:hover {
-  color: #818cf8; /* Color acento al pasar el ratón */
-  text-decoration: underline;
-}
-
-.footer-credits {
-  font-size: 0.85rem;
-  color: #6b7280;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-@media (min-width: 768px) {
-  .footer-credits { align-items: flex-end; text-align: right; }
-}
-
-/* Efecto especial para vuestros nombres */
-.names {
-  font-weight: bold;
-  color: #fff;
-  background: linear-gradient(90deg, #34d399, #3b82f6); /* Verde a Azul */
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: white;
 }

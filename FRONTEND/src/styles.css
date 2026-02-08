@@ -1,1 +1,19 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
+/* Esto es lo que hace la magia */
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ocupa el 100% de la altura de la ventana */
+}
+
+.content-grow {
+  flex: 1; /* Esto empuja al footer hacia abajo */
+}
+
+/* Estilo para tu footer */
+.trip-footer {
+  background-color: #1a202c;
+  color: white;
+  padding: 2rem 0;
+  width: 100%;
+}

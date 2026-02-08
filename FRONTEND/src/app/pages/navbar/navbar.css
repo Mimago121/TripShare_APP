@@ -1,70 +1,102 @@
-.navbar {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e1e4e8;
+/* Contenedor que da el aire alrededor de la barra */
+.navbar-container {
+  padding: 15px 20px;
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  z-index: 1000;
+  background-color: #f8f9fa; /* Color de fondo de la página para que resalte la barra blanca */
 }
 
-.nav-container {
-  max-width: 1200px;
+/* La barra blanca redondeada */
+.navbar-content {
+  max-width: 1100px;
   margin: 0 auto;
+  background: white;
   display: flex;
-  justify-content: space-between; /* Esto separa Logo - Links - Botón */
+  justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 2rem;
+  padding: 10px 25px;
+  border-radius: 50px; /* Bordes muy redondeados */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Sombra suave */
 }
 
-.nav-brand {
+/* Logo y Texto */
+.brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   text-decoration: none;
-  font-weight: bold;
-  font-size: 1.3rem;
-  color: #0067b8; /* Azul Microsoft */
+  gap: 10px;
 }
 
-.logo-img {
+.logo {
   height: 35px;
   width: auto;
 }
 
+.brand-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #333;
+  letter-spacing: -1px;
+}
+
+.blue {
+  color: #007bff;
+}
+
+/* Links de Navegación */
 .nav-links {
   display: flex;
-  gap: 25px;
+  gap: 20px;
 }
 
 .nav-links a {
   text-decoration: none;
-  color: #555;
-  font-weight: 500;
-  transition: color 0.3s;
-  padding-bottom: 5px;
+  color: #666;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  transition: all 0.3s;
 }
 
 .nav-links a:hover {
-  color: #0067b8;
+  color: #007bff;
 }
 
-.nav-links a.active-link {
-  color: #0067b8;
-  border-bottom: 2px solid #0067b8;
+.nav-links a.active {
+  color: #007bff;
+  position: relative;
 }
 
+/* Rayita azul debajo del link activo */
+.nav-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background: #007bff;
+  border-radius: 10px;
+}
+
+/* Botón de Salir Rojo */
 .btn-logout {
-  background: white;
-  border: 1px solid #ffcccc;
-  color: #d9534f;
-  padding: 6px 15px;
-  border-radius: 20px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+  transition: transform 0.2s, background 0.2s;
 }
 
 .btn-logout:hover {
-  background: #d9534f;
-  color: white;
+  background: #fa5252;
+  transform: scale(1.05);
 }

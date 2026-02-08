@@ -85,6 +85,26 @@ fun Application.configureRouting() {
             }
         }
 
+        put("/users/{id}") {
+            val id = call.parameters["id"]?.toLongOrNull()
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                return@put
+            }
+
+            try {
+                val request = call.receive<UpdateUserRequest>()
+                val updated = repository.updateUser(id, request.userName, request.bio, request.avatarUrl)
+
+                if (updated) {
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Usuario no encontrado")
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Error al actualizar: ${e.message}")
+            }
+        }
         // --- ENDPOINTS DE VIAJES ---
         route("/trips") {
             // GET /trips

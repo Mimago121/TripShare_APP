@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.time.LocalDateTime
 
 class UserRepository {
@@ -42,7 +43,15 @@ class UserRepository {
             println("Error al insertar usuario: ${e.message}")
             false
         }
-    } // Aquí faltaba cerrar la función correctamente
+    }
+
+    suspend fun updateUser(id: Long, name: String, bio: String, avatarUrl: String): Boolean = dbQuery {
+        Users.update({ Users.id eq id }) {
+            it[userName] = name
+            it[this.bio] = bio
+            it[this.avatarUrl] = avatarUrl
+        } > 0 // Devuelve true si se actualizó al menos una fila
+    }
 
     // --- FUNCIONES DE USUARIOS ---
     suspend fun getAllUsers(): List<UserModel> = dbQuery {

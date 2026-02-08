@@ -1,152 +1,147 @@
-/* Layout Global */
+/* --- LAYOUT GENERAL --- */
 .page-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #f3f4f6; /* Gris muy suave de fondo */
 }
 
-.main-content {
-  flex: 1;
+.profile-container {
+  flex: 1; /* Empuja el footer abajo */
   display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Alineado arriba con margen */
+  justify-content: center; /* Centra horizontalmente */
+  align-items: flex-start; /* Alinea arriba con margen */
   padding: 40px 20px;
 }
 
-/* Tarjeta de Perfil */
+/* --- TARJETA DE PERFIL --- */
 .profile-card {
   background: white;
   width: 100%;
-  max-width: 600px;
-  border-radius: 16px;
-  overflow: hidden; /* Para que el header no se salga */
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  border: 1px solid #e1e4e8;
+  max-width: 500px; /* Ancho máximo elegante */
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
   position: relative;
 }
 
-/* Header de color (Estilo LinkedIn/Twitter) */
 .profile-header-bg {
-  height: 120px;
-  background: linear-gradient(135deg, #0067b8, #00a4ef);
+  height: 130px;
+  background: linear-gradient(135deg, #007bff, #00c6ff);
 }
 
-/* Contenedor del Avatar */
-.profile-avatar-wrapper {
+.avatar-wrapper {
   position: absolute;
-  top: 70px; /* Ajustado para que quede mitad arriba mitad abajo */
+  top: 70px; /* Mitad arriba, mitad abajo del header */
   left: 50%;
   transform: translateX(-50%);
-  padding: 4px;
+  padding: 5px;
   background: white;
   border-radius: 50%;
 }
 
-.profile-avatar, .avatar-placeholder {
-  width: 100px;
-  height: 100px;
+.avatar-img, .avatar-placeholder {
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   object-fit: cover;
   display: block;
 }
 
 .avatar-placeholder {
-  background: #f3f4f6;
-  color: #0067b8;
+  background: #e0e7ff;
+  color: #007bff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: bold;
 }
 
-/* Cuerpo de la tarjeta */
 .profile-body {
-  padding: 60px 30px 30px; /* Padding top alto para dejar espacio al avatar */
+  padding: 70px 30px 40px; /* Padding top alto para salvar el avatar */
   text-align: center;
 }
 
-.user-name {
-  margin: 0;
-  font-size: 1.8rem;
-  color: #1f2937;
+.user-name { margin: 0; font-size: 1.8rem; color: #1f2937; }
+.user-email { color: #6b7280; margin-top: 5px; }
+
+/* Botón Editar en la tarjeta */
+.btn-edit {
+  margin-top: 15px;
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.user-email {
-  color: #6b7280;
-  margin-top: 5px;
+.btn-edit:hover {
+  background: #f9fafb;
+  border-color: #007bff;
+  color: #007bff;
 }
 
-.divider {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 20px 0;
-}
+.divider { border: 0; border-top: 1px solid #e5e7eb; margin: 25px 0; }
 
-.info-section {
-  margin-bottom: 25px;
-  text-align: left;
-}
-
-.info-section h3 {
-  font-size: 1rem;
-  color: #111827;
-  margin-bottom: 8px;
-}
-
-.bio {
-  color: #4b5563;
-  line-height: 1.5;
-}
-
-.bio.empty {
-  color: #9ca3af;
-  font-style: italic;
-}
-
-/* Grid de detalles */
-.info-grid {
+.details-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  text-align: left;
+  gap: 15px;
+  margin-bottom: 25px;
 }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
+.label { display: block; font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+.value { font-weight: 600; color: #111827; }
+.badge { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; }
+
+.bio-section { text-align: left; background: #f9fafb; padding: 15px; border-radius: 10px; }
+.bio-section h3 { margin: 0 0 10px; font-size: 1rem; color: #374151; }
+.bio-text { color: #4b5563; line-height: 1.5; margin: 0; }
+.bio-empty { color: #9ca3af; font-style: italic; margin: 0; }
+
+/* --- VENTANA MODAL (POPUP) --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Fondo oscuro transparente */
+  display: flex; justify-content: center; align-items: center;
+  z-index: 2000; /* Encima de todo */
+  backdrop-filter: blur(4px);
 }
 
-.label {
-  font-size: 0.8rem;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 90%; max-width: 450px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
 }
 
-.value {
-  font-weight: 600;
-  color: #1f2937;
-}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.btn-close-x { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; }
 
-.badge {
-  background: #e0f2fe;
-  color: #0284c7;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  display: inline-block;
-  width: fit-content;
+.form-group { margin-bottom: 20px; text-align: left; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 1rem; box-sizing: border-box;
 }
+.form-group input:focus, .form-group textarea:focus { outline: 2px solid #007bff; border-color: transparent; }
 
-/* Animación de entrada */
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
-}
+.hint { font-size: 0.8rem; color: #6b7280; display: block; margin-top: 5px; }
+.error-text { color: #ef4444; font-size: 0.8rem; margin-top: 5px; display: block; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
+.btn-save { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.btn-save:disabled { background: #93c5fd; cursor: not-allowed; }
+.btn-cancel { background: #f3f4f6; color: #374151; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+/* Animaciones simples */
+.fade-in { animation: fadeIn 0.5s ease-out; }
+.scale-in { animation: scaleIn 0.2s ease-out; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }

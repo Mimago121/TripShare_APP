@@ -2,19 +2,19 @@
   
   <app-navbar></app-navbar>
 
-  <main class="main-content">
+  <main class="profile-container">
     
-    <div *ngIf="isLoading" class="loading">
+    <div *ngIf="isLoading" class="loading-state">
       <div class="spinner"></div>
-      <p>Cargando tu perfil...</p>
+      <p>Cargando perfil...</p>
     </div>
 
     <div class="profile-card fade-in" *ngIf="!isLoading && user">
       
       <div class="profile-header-bg"></div>
 
-      <div class="profile-avatar-wrapper">
-        <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" alt="Avatar" class="profile-avatar">
+      <div class="avatar-wrapper">
+        <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="avatar-img" alt="Avatar">
         <div *ngIf="!user.avatarUrl" class="avatar-placeholder">
           {{ user.userName.charAt(0).toUpperCase() }}
         </div>
@@ -22,32 +22,72 @@
 
       <div class="profile-body">
         <h1 class="user-name">{{ user.userName }}</h1>
-        <p class="user-email">📧 {{ user.email }}</p>
-        
-        <div class="divider"></div>
+        <p class="user-email">{{ user.email }}</p>
 
-        <div class="info-section">
-          <h3>Sobre mí</h3>
-          <p class="bio" *ngIf="user.bio">{{ user.bio }}</p>
-          <p class="bio empty" *ngIf="!user.bio">Este usuario aún no ha escrito su biografía.</p>
+        <button class="btn-edit" (click)="openEditModal()">
+          ✏️ Editar Perfil
+        </button>
+
+        <hr class="divider">
+
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Miembro desde</span>
+            <span class="value">{{ user.createdAt | date:'mediumDate' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Tipo de cuenta</span>
+            <span class="badge">Viajero</span>
+          </div>
         </div>
 
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Miembro desde</span>
-            <span class="value">{{ user.createdAt | date:'longDate' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Cuenta</span>
-            <span class="value badge">{{ user.provider || 'Local' }}</span>
-          </div>
+        <div class="bio-section">
+          <h3>Sobre mí</h3>
+          <p *ngIf="user.bio" class="bio-text">{{ user.bio }}</p>
+          <p *ngIf="!user.bio" class="bio-empty">Aún no has escrito nada sobre ti.</p>
         </div>
       </div>
-
     </div>
 
   </main>
 
   <app-footer></app-footer>
+
+  <div class="modal-overlay" *ngIf="isEditModalOpen">
+    <div class="modal-content scale-in">
+      <div class="modal-header">
+        <h2>Editar Perfil</h2>
+        <button class="btn-close-x" (click)="closeEditModal()">×</button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="saveProfile()">
+        
+        <div class="form-group">
+          <label>Nombre de Usuario</label>
+          <input type="text" formControlName="userName" placeholder="Tu nombre">
+          <small class="error-text" *ngIf="editForm.get('userName')?.invalid && editForm.get('userName')?.touched">
+            El nombre es obligatorio.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>URL de Foto de Perfil</label>
+          <input type="text" formControlName="avatarUrl" placeholder="https://ejemplo.com/foto.jpg">
+          <small class="hint">Pega un enlace de imagen (ej: de Unsplash o Google Images)</small>
+        </div>
+
+        <div class="form-group">
+          <label>Biografía</label>
+          <textarea formControlName="bio" rows="4" placeholder="Cuéntanos qué tipo de viajero eres..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
+          <button type="submit" class="btn-save" [disabled]="editForm.invalid">Guardar Cambios</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
 
 </div>
