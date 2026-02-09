@@ -3,24 +3,21 @@
 <div class="friends-container fade-in">
   
   <div class="friends-header">
-    
+    <h1>Social</h1>
     <div class="tabs">
-      <button 
-        [class.active]="activeTab === 'my-friends'" 
-        (click)="setTab('my-friends')">
+      <button [class.active]="activeTab === 'my-friends'" (click)="setTab('my-friends')">
         Mis Amigos ({{ myFriends.length }})
       </button>
-      <button 
-        [class.active]="activeTab === 'explore'" 
-        (click)="setTab('explore')">
+      <button [class.active]="activeTab === 'explore'" (click)="setTab('explore')">
         Explorar
       </button>
     </div>
   </div>
 
   <div *ngIf="activeTab === 'my-friends'" class="tab-content">
+    
     <div *ngIf="myFriends.length === 0" class="empty-state">
-      <p>Aún no tienes amigos. ¡Ve a la pestaña Explorar!</p>
+      <p>Aún no tienes amigos agregados.</p>
     </div>
 
     <div class="users-grid">
@@ -30,7 +27,8 @@
           <h3>{{ friend.userName }}</h3>
           <p class="friend-badge">✅ Agregado</p>
         </div>
-        <button class="btn-chat">💬 Chat</button> </div>
+        <button class="btn-chat" (click)="openChat(friend)">💬 Chat</button>
+      </div>
     </div>
   </div>
 
@@ -61,5 +59,11 @@
     </div>
   </div>
 
-</div>
+</div> <app-chat 
+  *ngIf="chatFriend" 
+  [friend]="chatFriend" 
+  [myId]="currentUser.id"
+  (close)="closeChat()">
+</app-chat>
+
 <app-footer></app-footer>

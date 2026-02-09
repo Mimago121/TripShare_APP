@@ -3,9 +3,10 @@
 /* ========================================= */
 /* Esto fuerza a que el componente ocupe toda la pantalla y tenga el color de fondo correcto */
 :host {
-  display: block;
-  min-height: 100vh;
-  background-color: var(--bg-color); /* <--- CLAVE: El fondo oscuro */
+  display: flex;             /* <--- Flexbox al rescate */
+  flex-direction: column;    /* <--- Orden vertical */
+  min-height: 100vh;         /* <--- Altura mínima: 100% de la ventana */
+  background-color: var(--bg-color);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -14,7 +15,9 @@
 /* 2. CONTENEDOR PRINCIPAL                   */
 /* ========================================= */
 .friends-container {
-  max-width: 1200px; /* Un poco más ancho para que quepan más tarjetas */
+  flex: 1;                   /* <--- ESTO ES LA MAGIA: Ocupa todo el espacio disponible */
+  width: 100%;               /* <--- Asegura ancho completo */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
 }

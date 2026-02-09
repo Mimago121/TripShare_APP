@@ -33,6 +33,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
     implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
     implementation("io.ktor:ktor-server-cors:2.3.12")
+
 }
 
 java {

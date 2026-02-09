@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { UserService } from '../../services/user.service';
+import { ChatService, ChatNotification } from '../../services/chat.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,55 +12,130 @@ import { UserService } from '../../services/user.service';
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css']
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
+  // Estado
   isLoggedIn: boolean = false;
   isDropdownOpen: boolean = false;
   isNotificationsOpen: boolean = false;
 
+  // Datos Usuario
   userAvatar: string = '';
   userName: string = '';
   currentUserId: number = 0;
 
-  notificationCount: number = 0;
+  // Notificaciones de AMISTAD
   pendingRequests: any[] = [];
+  
+  // Notificaciones de CHAT
+  chatNotifications: ChatNotification[] = [];
+
+  // Control del intervalo
+  private intervalId: any;
 
   constructor(
     private router: Router, 
     public themeService: ThemeService,
-    private userService: UserService
+    private userService: UserService,
+    private chatService: ChatService
   ) {}
 
   ngOnInit() {
     this.checkLoginStatus();
+
     if (this.isLoggedIn) {
-      this.loadNotifications();
+      // 1. Carga inicial inmediata
+      this.refreshAllNotifications();
+
+      // 2. Configurar actualización cada 3 segundos (Polling)
+      this.intervalId = setInterval(() => {
+        this.refreshAllNotifications();
+      }, 3000);
     }
   }
+
+  ngOnDestroy() {
+    // IMPORTANTE: Limpiar intervalo al salir para evitar fugas de memoria
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  // ==========================================
+  // LOGICA DE DATOS
+  // ==========================================
 
   checkLoginStatus() {
     if (typeof localStorage !== 'undefined') {
       const userStr = localStorage.getItem('user');
       if (userStr) {
-        this.isLoggedIn = true;
         const user = JSON.parse(userStr);
+        this.isLoggedIn = true;
         this.currentUserId = user.id;
-        this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         this.userName = user.userName || 'Usuario';
+        this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
       }
     }
   }
 
-  loadNotifications() {
-    console.log('Cargando notificaciones para usuario:', this.currentUserId);
+  refreshAllNotifications() {
+    if (!this.currentUserId) return;
+    this.loadFriendRequests();
+    this.loadChatNotifications();
+  }
+
+  // Cargar Solicitudes de Amistad
+  loadFriendRequests() {
     this.userService.getMyNotifications(this.currentUserId).subscribe({
       next: (requests) => {
-        console.log('DATOS RECIBIDOS DEL BACKEND:', requests); // <--- MIRA ESTO EN CONSOLA
         this.pendingRequests = requests || [];
-        this.notificationCount = this.pendingRequests.length;
       },
-      error: (err) => console.error('Error al cargar notificaciones:', err)
+      error: () => {} // Silencioso para no ensuciar consola
     });
   }
+
+  // Cargar Mensajes no leídos
+  loadChatNotifications() {
+    this.chatService.getUnreadNotifications(this.currentUserId).subscribe({
+      next: (notifs) => {
+        this.chatNotifications = notifs || [];
+      },
+      error: () => {}
+    });
+  }
+
+  // Getter para saber el total de globos rojos (Amigos + Chat)
+  get totalNotificationsCount(): number {
+    return this.pendingRequests.length + this.chatNotifications.length;
+  }
+
+  // ==========================================
+  // ACCIONES DE AMISTAD
+  // ==========================================
+
+  acceptRequest(reqId: number) {
+    if (!reqId) return;
+    this.userService.acceptFriendRequest(reqId).subscribe({
+      next: () => {
+        // Actualizamos la lista localmente para que sea rápido
+        this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId);
+      },
+      error: (e) => console.error('Error al aceptar:', e)
+    });
+  }
+
+  rejectRequest(reqId: number) {
+    if (!reqId) return;
+    this.userService.rejectFriendRequest(reqId).subscribe({
+      next: () => {
+        this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId);
+      },
+      error: (e) => console.error('Error al rechazar:', e)
+    });
+  }
+
+  // ==========================================
+  // MENÚS Y NAVEGACIÓN
+  // ==========================================
 
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -76,46 +152,36 @@ export class NavbarComponent implements OnInit {
     this.isNotificationsOpen = false;
   }
 
-  acceptRequest(reqId: number) {
-    console.log('Intentando aceptar ID:', reqId); // <--- DEBUG CLICK
-    
-    if (!reqId) {
-      console.error('ERROR: El ID es inválido o undefined');
-      return;
-    }
-
-    this.userService.acceptFriendRequest(reqId).subscribe({
-      next: () => {
-        console.log('Solicitud aceptada correctamente');
-        // Filtramos la lista para quitar la aceptada
-        this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId);
-        this.notificationCount = this.pendingRequests.length;
-      },
-      error: (e) => console.error('Error al aceptar:', e)
-    });
-  }
-
-  rejectRequest(reqId: number) {
-    console.log('Intentando rechazar ID:', reqId); // <--- DEBUG CLICK
-    
-    if (!reqId) return;
-
-    this.userService.rejectFriendRequest(reqId).subscribe({
-      next: () => {
-        console.log('Solicitud rechazada correctamente');
-        this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId);
-        this.notificationCount = this.pendingRequests.length;
-      },
-      error: (e) => console.error('Error al rechazar:', e)
-    });
-  }
-
   logout() {
     this.closeAllMenus();
+    if (this.intervalId) clearInterval(this.intervalId); // Parar polling
+    
     localStorage.removeItem('user');
     this.isLoggedIn = false;
+    
     this.router.navigate(['/login']).then(() => {
       window.location.reload();
+    });
+  }
+
+  openChatFromNotification(notification: ChatNotification) {
+    if (!this.currentUserId) return;
+
+    // 1. Marcar como leído y limpiar lista (Visual)
+    this.chatService.markAsRead(this.currentUserId, notification.fromUserId).subscribe({
+      next: () => {
+        this.chatNotifications = this.chatNotifications.filter(
+          n => n.fromUserId !== notification.fromUserId
+        );
+      },
+      error: () => {}
+    });
+
+    this.closeAllMenus();
+
+    // 2. NAVEGAR A AMIGOS CON EL PARÁMETRO 'chatWith'
+    this.router.navigate(['/friends'], { 
+      queryParams: { chatWith: notification.fromUserId } 
     });
   }
 }

@@ -13,7 +13,8 @@ USE trip_share_db;
 -- =========================================================
 
 -- Orden de borrado (primero las que tienen FKs)
-DROP TABLE IF EXISTS friend_requests; -- <--- NUEVA TABLA
+DROP TABLE IF EXISTS messages;        -- <--- NUEVA TABLA (CHAT)
+DROP TABLE IF EXISTS friend_requests;
 DROP TABLE IF EXISTS trip_invites;
 DROP TABLE IF EXISTS memories;
 DROP TABLE IF EXISTS expense_splits;
@@ -46,12 +47,12 @@ CREATE TABLE users (
 ) ENGINE=InnoDB;
 
 -- -------------------------
--- FRIEND REQUESTS (NUEVA TABLA ADAPTADA)
+-- FRIEND REQUESTS
 -- -------------------------
 CREATE TABLE friend_requests (
   request_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  from_user_id    BIGINT UNSIGNED NOT NULL, -- Debe ser UNSIGNED para coincidir con users.user_id
-  to_user_id      BIGINT UNSIGNED NOT NULL, -- Debe ser UNSIGNED para coincidir con users.user_id
+  from_user_id    BIGINT UNSIGNED NOT NULL,
+  to_user_id      BIGINT UNSIGNED NOT NULL,
   status          VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
   created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -68,6 +69,24 @@ CREATE TABLE friend_requests (
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+-- -------------------------
+-- MESSAGES (NUEVA TABLA PARA EL CHAT)
+-- -------------------------
+CREATE TABLE messages (
+  message_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  from_user_id    BIGINT UNSIGNED NOT NULL,
+  to_user_id      BIGINT UNSIGNED NOT NULL,
+  content         TEXT NOT NULL,
+  timestamp       VARCHAR(100) NOT NULL, -- Texto para evitar errores de fecha
+  is_read         BOOLEAN DEFAULT FALSE, -- Para las notificaciones (0 = no leído, 1 = leído)
+
+  PRIMARY KEY (message_id),
+  KEY idx_messages_from (from_user_id),
+  KEY idx_messages_to (to_user_id),
+
+  CONSTRAINT fk_messages_from FOREIGN KEY (from_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_messages_to FOREIGN KEY (to_user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 -- -------------------------
 -- TRIPS
 -- -------------------------
@@ -244,17 +263,23 @@ INSERT INTO users (email, user_name, avatar_url, bio, provider, provider_uid, pa
 VALUES
   ('ana@gmail.com',   'Ana',   'https://cdn-icons-png.flaticon.com/512/149/149071.png',   'Me encanta viajar', 'google', 'google_ana_001', NULL),
   ('juan@gmail.com',  'Juan',  'https://cdn-icons-png.flaticon.com/512/149/149071.png',  NULL,               'local',  NULL,            '$2b$12$fakehashjuan'),
-  ('marta@gmail.com', 'Marta', NULL,                                     'Foodie',           'google', 'google_marta_002', NULL),
-  ('pablo@gmail.com', 'Pablo', NULL,                                     NULL,              'local',  NULL,            '$2b$12$fakehashpablo');
+  ('marta@gmail.com', 'Marta', NULL,                                         'Foodie',           'google', 'google_marta_002', NULL),
+  ('pablo@gmail.com', 'Pablo', NULL,                                         NULL,              'local',  NULL,            '$2b$12$fakehashpablo');
 
 -- FRIEND REQUESTS (DATOS DE PRUEBA)
--- Marta le envía solicitud a Ana
-INSERT INTO friend_requests (from_user_id, to_user_id, status)
-VALUES (3, 1, 'pending');
+-- Marta y Pablo piden a Ana. 
+-- Vamos a hacer que Ana y Juan sean amigos YA para probar el chat
+INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (3, 1, 'pending');
+INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (4, 1, 'pending');
+INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (1, 2, 'accepted'); -- Ana y Juan son amigos
 
--- Pablo le envía solicitud a Ana
-INSERT INTO friend_requests (from_user_id, to_user_id, status)
-VALUES (4, 1, 'pending');
+-- MESSAGES (CHAT DE PRUEBA)
+-- Conversación entre Ana (1) y Juan (2)
+INSERT INTO messages (from_user_id, to_user_id, content, timestamp) VALUES 
+(1, 2, 'Hola Juan! Listo para el viaje?', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+(2, 1, 'Hola Ana, sí! Ya tengo todo preparado.', DATE_SUB(NOW(), INTERVAL 55 MINUTE)),
+(1, 2, 'Perfecto, nos vemos en el aeropuerto.', DATE_SUB(NOW(), INTERVAL 10 MINUTE));
+
 
 -- TRIPS
 INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id)

@@ -1,21 +1,33 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  // Usamos señales (signals) de Angular 17+ para reactividad instantánea
+  // Señal principal
   currentTheme = signal<'light' | 'dark'>('light');
 
+  // 👇 ESTO ES LO QUE FALTABA: Un "getter" para que el HTML entienda 'isDarkMode'
+  // Devuelve true si el tema actual es 'dark'
+  get isDarkMode(): boolean {
+    return this.currentTheme() === 'dark';
+  }
+
   constructor() {
-    // Al iniciar, leemos la preferencia guardada o el sistema operativo
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-    if (savedTheme) {
-      this.setTheme(savedTheme);
-    } else {
-      // Detectar preferencia del sistema operativo
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.setTheme(prefersDark ? 'dark' : 'light');
+    this.initTheme();
+  }
+
+  private initTheme() {
+    // Comprobamos que estamos en el navegador (evita errores si usas SSR)
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+      
+      if (savedTheme) {
+        this.setTheme(savedTheme);
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        this.setTheme(prefersDark ? 'dark' : 'light');
+      }
     }
   }
 
@@ -25,14 +37,23 @@ export class ThemeService {
   }
 
   private setTheme(theme: 'light' | 'dark') {
-    this.currentTheme.set(theme);
-    localStorage.setItem('theme', theme);
+    this.currentTheme.set(theme); // Actualiza la señal
     
-    // Aplicamos la clase al <html> o <body>
-    if (theme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme', theme);
+    }
+    
+    if (typeof document !== 'undefined') {
+      // 1. Método moderno (Atributo data-theme)
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      // 2. Método clásico (Clase en el body)
+      // Añadimos esto para asegurar compatibilidad con el CSS que te pasé antes (.dark-theme)
+      if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+      }
     }
   }
 }

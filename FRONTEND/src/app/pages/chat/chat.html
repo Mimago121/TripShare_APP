@@ -1,0 +1,42 @@
+<div class="chat-window fade-in">
+  
+  <div class="chat-header" (click)="close.emit()">
+    <div class="friend-info">
+      <div class="online-indicator"></div>
+      <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
+      <span class="friend-name">{{ friend.userName }}</span>
+    </div>
+    <button class="close-btn" (click)="close.emit(); $event.stopPropagation()">✖</button>
+  </div>
+
+  <div class="chat-messages" #scrollContainer>
+    <div class="chat-start" *ngIf="messages.length === 0">
+      <p>👋 ¡Saluda a {{ friend.userName }}!</p>
+    </div>
+
+    <div *ngFor="let msg of messages" 
+         class="message-row"
+         [class.mine]="msg.isMine" 
+         [class.theirs]="!msg.isMine">
+      
+      <div class="bubble">
+        {{ msg.content }}
+      </div>
+      <span class="time">{{ msg.timestamp | date:'shortTime' }}</span>
+    
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input 
+      type="text" 
+      [(ngModel)]="newMessage" 
+      (keyup.enter)="sendMessage()" 
+      placeholder="Escribe un mensaje..."
+      autofocus>
+    <button (click)="sendMessage()" [disabled]="!newMessage.trim()">
+      ➤
+    </button>
+  </div>
+
+</div>

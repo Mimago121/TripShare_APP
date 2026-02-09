@@ -224,5 +224,60 @@ fun Application.configureRouting() {
         get("/health") {
             call.respond(mapOf("status" to "OK", "database" to "Connected"))
         }
+
+        // --- CHAT ---
+        route("/chat") {
+            // Enviar mensaje: POST /chat/send
+            post("/send") {
+                val params = call.receive<Map<String, String>>()
+                val fromId = params["fromId"]?.toLongOrNull()
+                val toId = params["toId"]?.toLongOrNull()
+                val content = params["content"]
+
+                if (fromId != null && toId != null && content != null) {
+                    repository.saveMessage(fromId, toId, content)
+                    call.respond(HttpStatusCode.OK, "Mensaje enviado")
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "Datos incompletos")
+                }
+            }
+
+            // Obtener conversación: GET /chat/{myId}/{friendId}
+            get("/{myId}/{friendId}") {
+                val myId = call.parameters["myId"]?.toLongOrNull()
+                val friendId = call.parameters["friendId"]?.toLongOrNull()
+
+                if (myId != null && friendId != null) {
+                    val messages = repository.getConversation(myId, friendId)
+                    call.respond(messages)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
+                }
+            }
+
+            get("/notifications/{myId}") {
+                val myId = call.parameters["myId"]?.toLongOrNull()
+                if (myId != null) {
+                    val notifs = repository.getUnreadChatNotifications(myId)
+                    call.respond(notifs)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                }
+            }
+
+            // PUT: Marcar como leído al abrir chat
+            put("/read/{myId}/{friendId}") {
+                val myId = call.parameters["myId"]?.toLongOrNull()
+                val friendId = call.parameters["friendId"]?.toLongOrNull()
+                if (myId != null && friendId != null) {
+                    repository.markMessagesAsRead(myId, friendId)
+                    call.respond(HttpStatusCode.OK, "Leído")
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
+                }
+            }
+        }
     }
+
+
 }

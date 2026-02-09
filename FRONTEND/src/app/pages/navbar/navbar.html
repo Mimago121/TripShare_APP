@@ -1,74 +1,88 @@
-<nav class="navbar-container">
-  <div class="navbar-content">
+<nav class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/friends">🌍 TripShare</a>
+  </div>
+
+  <div class="navbar-links" *ngIf="isLoggedIn">
+    <a routerLink="/home" routerLinkActive="active">Inicio</a>
+    <a routerLink="/trips" routerLinkActive="active">Viajes</a>
+  </div>
+
+  <div class="navbar-actions">
     
-    <a routerLink="/home" class="brand">
-      <span class="brand-text">Trip<span class="highlight">Share</span></span>
-    </a>
+    <button class="icon-btn theme-toggle" (click)="themeService.toggleTheme()">
+      {{ themeService.isDarkMode ? '☀️' : '🌙' }}
+    </button>
 
-    <div class="nav-links" *ngIf="isLoggedIn">
-      <a routerLink="/home" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Inicio</a>
-      <a routerLink="/trips" routerLinkActive="active-link">Mis Viajes</a>
-    </div>
+    <ng-container *ngIf="isLoggedIn">
 
-    <div class="nav-actions">
-      
-      <button class="icon-btn theme-btn" (click)="themeService.toggleTheme()">
-        {{ themeService.currentTheme() === 'dark' ? '☀️' : '🌙' }}
-      </button>
+      <div class="nav-item dropdown">
+        <button class="icon-btn notification-btn" (click)="toggleNotifications()">
+          🔔
+          <span class="badge" *ngIf="(pendingRequests.length + chatNotifications.length) > 0">
+            {{ pendingRequests.length + chatNotifications.length }}
+          </span>
+        </button>
 
-      <ng-container *ngIf="!isLoggedIn">
-        <button class="btn-login" routerLink="/login">Entrar</button>
-        <button class="btn-register" routerLink="/register">Registrarse</button>
-      </ng-container>
+        <div class="dropdown-menu notifications-menu" *ngIf="isNotificationsOpen">
+          <div class="dropdown-header">Notificaciones</div>
 
-      <div class="user-controls" *ngIf="isLoggedIn">
-        
-        <div class="notification-wrapper">
-          <button type="button" class="icon-btn notification-btn" (click)="toggleNotifications()">
-            🔔 <span class="badge-dot" *ngIf="notificationCount > 0"></span>
-          </button>
+          <div class="empty-state" *ngIf="pendingRequests.length === 0 && chatNotifications.length === 0">
+            <p>No tienes notificaciones nuevas</p>
+          </div>
 
-          <div class="notification-dropdown fade-in" *ngIf="isNotificationsOpen">
-            <div class="notif-header">Notificaciones</div>
-            <div class="notif-list" *ngIf="pendingRequests.length > 0">
-              <div class="notif-item" *ngFor="let req of pendingRequests">
-                <div class="notif-content">
-                  <span class="notif-text"><strong>{{ req.fromUserName }}</strong> te envió solicitud.</span>
-                  <div class="notif-actions">
-                    <button class="btn-accept" (click)="acceptRequest(req.id)">Aceptar</button>
-                    <button class="btn-reject" (click)="rejectRequest(req.id)">Rechazar</button>
-                  </div>
-                </div>
+          <div class="notif-section" *ngIf="chatNotifications.length > 0">
+            <small class="section-title">💬 Mensajes</small>
+            
+            <div class="notif-item chat-item" 
+                 *ngFor="let chat of chatNotifications"
+                 (click)="openChatFromNotification(chat)"> <img [src]="chat.fromUserAvatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="avatar-mini">
+              <div class="notif-info">
+                <strong>{{ chat.fromUserName }}</strong>
+                <span>{{ chat.count }} mensaje(s) nuevo(s)</span>
               </div>
             </div>
-            <div class="notif-empty" *ngIf="pendingRequests.length === 0">
-              <p>No tienes notificaciones.</p>
+          </div>
+
+          <div class="notif-section" *ngIf="pendingRequests.length > 0">
+            <small class="section-title">👥 Solicitudes de Amistad</small>
+            
+            <div class="notif-item request-item" *ngFor="let req of pendingRequests">
+              <div class="req-info">
+                <strong>{{ req.fromUserName }}</strong>
+                <span>quiere ser tu amigo</span>
+              </div>
+              <div class="req-actions">
+                <button class="btn-accept" (click)="acceptRequest(req.id)">✅</button>
+                <button class="btn-reject" (click)="rejectRequest(req.id)">❌</button>
+              </div>
             </div>
           </div>
+
         </div>
-
-        <div class="avatar-dropdown-wrapper">
-          <button type="button" class="avatar-btn" (click)="toggleDropdown()">
-            <img [src]="userAvatar" class="nav-avatar" alt="Avatar">
-          </button>
-          
-          <div class="dropdown-menu fade-in" *ngIf="isDropdownOpen">
-            <div class="dropdown-header">
-              <span class="dropdown-name">{{ userName }}</span>
-              <span class="dropdown-email">Viajero</span>
-            </div>
-            <hr>
-            
-<a routerLink="/profile" (click)="closeAllMenus()" class="dropdown-item">👤 Mi Perfil</a>
-<a routerLink="/friends" (click)="closeAllMenus()" class="dropdown-item">👥 Mis Amigos</a>
-            
-            <a (click)="logout()" class="dropdown-item text-danger">🚪 Cerrar Sesión</a>
-          </div>
-        </div>
-
-        <div class="overlay" *ngIf="isDropdownOpen || isNotificationsOpen" (click)="closeAllMenus()"></div>
-
       </div>
-    </div>
+
+      <div class="nav-item dropdown">
+        <div class="user-profile" (click)="toggleDropdown()">
+          <span class="user-name">{{ userName }}</span>
+          <img [src]="userAvatar" alt="Avatar" class="avatar-main">
+        </div>
+
+        <div class="dropdown-menu profile-menu" *ngIf="isDropdownOpen">
+          <a routerLink="/profile" (click)="closeAllMenus()">👤 Mi Perfil</a>
+          <a routerLink="/friends" (click)="closeAllMenus()">👥 Mis Amigos</a>
+          <div class="divider"></div>
+          <button class="logout-btn" (click)="logout()">🚪 Cerrar Sesión</button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <ng-container *ngIf="!isLoggedIn">
+      <a routerLink="/login" class="login-link">Iniciar Sesión</a>
+    </ng-container>
+
   </div>
+
+  <div class="overlay" *ngIf="isDropdownOpen || isNotificationsOpen" (click)="closeAllMenus()"></div>
 </nav>
