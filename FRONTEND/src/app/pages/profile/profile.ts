@@ -1,61 +1,52 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms'; // Para los inputs del modal
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
-import { UserService } from '../../services/user.service';
-import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'; // <--- IMPORTANTE
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, FooterComponent, ReactiveFormsModule], // <--- AÑADE ReactiveFormsModule
+  imports: [CommonModule, NavbarComponent, FooterComponent, FormsModule],
   templateUrl: './profile.html',
   styleUrls: ['./profile.css']
 })
 export class ProfileComponent implements OnInit {
-  user: any = null;
-  isLoading = true;
-  isEditModalOpen = false; // Controla si se ve el modal
-  editForm: FormGroup;
+  user: any = {};
+  isEditModalOpen: boolean = false;
+  activeTab: string = 'trips'; // 'trips' | 'photos' | 'map'
 
-  constructor(
-    private userService: UserService, 
-    private router: Router,
-    private fb: FormBuilder // Para el formulario
-  ) {
-    // Inicializamos formulario vacío
-    this.editForm = this.fb.group({
-      userName: ['', Validators.required],
-      bio: [''],
-      avatarUrl: ['']
-    });
-  }
+  // Datos simulados para rellenar el perfil profesional
+  stats = {
+    countries: 12,
+    trips: 8,
+    followers: 145
+  };
 
-  ngOnInit() {
-    this.loadUserData();
-  }
+  myTrips = [
+    { title: 'Verano en Italia', date: 'Ago 2023', image: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000' },
+    { title: 'Escapada a Londres', date: 'Nov 2023', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2000' },
+    { title: 'Ruta por Tailandia', date: 'Ene 2024', image: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?q=80&w=2000' }
+  ];
 
-  loadUserData() {
-    const localUser = localStorage.getItem('user');
-    if (localUser) {
-      const parsedUser = JSON.parse(localUser);
-      this.userService.getUserById(parsedUser.id).subscribe({
-        next: (data) => {
-          this.user = data;
-          this.isLoading = false;
-          // Rellenamos el formulario con los datos actuales
-          this.editForm.patchValue({
-            userName: data.userName,
-            bio: data.bio || '',
-            avatarUrl: data.avatarUrl || ''
-          });
-        },
-        error: (err) => this.isLoading = false
-      });
+  constructor() {}
+
+  ngOnInit(): void {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      this.user = JSON.parse(userData);
+    } else {
+      // Usuario default por si no hay login
+      this.user = {
+        userName: 'Invitado',
+        email: 'invitado@tripshare.com',
+        bio: 'Amante de los viajes y la fotografía.',
+        avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+      };
     }
   }
 
+  // --- Lógica del Modal de Edición ---
   openEditModal() {
     this.isEditModalOpen = true;
   }
@@ -65,20 +56,13 @@ export class ProfileComponent implements OnInit {
   }
 
   saveProfile() {
-    if (this.editForm.valid) {
-      this.userService.updateUser(this.user.id, this.editForm.value).subscribe({
-        next: () => {
-          alert('¡Perfil actualizado!');
-          this.isEditModalOpen = false;
-          this.loadUserData(); // Recargamos para ver los cambios
-          
-          // Opcional: Actualizar el localStorage también para que el Navbar se entere
-          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-          localUser.userName = this.editForm.value.userName;
-          localStorage.setItem('user', JSON.stringify(localUser));
-        },
-        error: (err) => alert('Error al guardar')
-      });
-    }
+    localStorage.setItem('user', JSON.stringify(this.user));
+    this.closeEditModal();
+    // Opcional: Recargar o mostrar notificación
+  }
+
+  // --- Lógica de Pestañas ---
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
   }
 }
