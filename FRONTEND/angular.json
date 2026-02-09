@@ -57,7 +57,8 @@
               "buildTarget": "gestor-viajes:build:production"
             },
             "development": {
-              "buildTarget": "gestor-viajes:build:development"
+              "buildTarget": "gestor-viajes:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
