@@ -303,3 +303,10 @@ INSERT INTO trip_invites (trip_id, email, token, status, expires_at)
 VALUES
   (1, 'amigo1@example.com', 'tok_roma_0001', 'pending', '2026-03-31 23:59:59'),
   (2, 'amigo2@example.com', 'tok_lisboa_0001', 'pending', '2026-02-01 23:59:59');
+
+-- =========================================================
+-- 4) PERMISSIONS
+-- =========================================================
+
+GRANT ALL PRIVILEGES ON trip_share_db.* TO 'johan'@'%';
+FLUSH PRIVILEGES;
