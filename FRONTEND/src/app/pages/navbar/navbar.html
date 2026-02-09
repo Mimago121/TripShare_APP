@@ -13,6 +13,10 @@
 
     <div class="nav-actions">
       
+      <button class="icon-btn theme-btn" (click)="themeService.toggleTheme()">
+        {{ themeService.currentTheme() === 'dark' ? '☀️' : '🌙' }}
+      </button>
+
       <ng-container *ngIf="!isLoggedIn">
         <button class="btn-login" routerLink="/login">Entrar</button>
         <button class="btn-register" routerLink="/register">Registrarse</button>
@@ -20,16 +24,15 @@
 
       <div class="user-controls" *ngIf="isLoggedIn">
         
-        <button class="icon-btn notification-btn" 
-                (click)="toggleNotifications()"
-                [class.disabled]="!notificationsEnabled"
-                title="Click para activar/desactivar">
-          {{ notificationsEnabled ? '🔔' : '🔕' }}
-          <span class="badge-dot" *ngIf="notificationsEnabled"></span>
+        <button type="button" class="icon-btn notification-btn">
+          🔔 <span class="badge-dot"></span>
         </button>
 
         <div class="avatar-dropdown-wrapper">
-          <img [src]="userAvatar" alt="User" class="nav-avatar" (click)="toggleDropdown()">
+          
+          <button type="button" class="avatar-btn" (click)="toggleDropdown()">
+            <img [src]="userAvatar" class="nav-avatar" alt="Perfil">
+          </button>
           
           <div class="dropdown-menu fade-in" *ngIf="isDropdownOpen">
             <div class="dropdown-header">
@@ -37,19 +40,15 @@
               <span class="dropdown-email">Viajero</span>
             </div>
             <hr>
-            <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">
-              👤 Mi Perfil
-            </a>
-            <a (click)="logout()" class="dropdown-item text-danger">
-              🚪 Cerrar Sesión
-            </a>
+            <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">👤 Mi Perfil</a>
+            <a (click)="logout()" class="dropdown-item text-danger">🚪 Cerrar Sesión</a>
           </div>
+
         </div>
 
         <div class="overlay" *ngIf="isDropdownOpen" (click)="closeDropdown()"></div>
 
       </div>
-
     </div>
   </div>
 </nav>

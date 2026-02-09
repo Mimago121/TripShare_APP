@@ -1,141 +1,199 @@
-/* Layout Global (Igual que en Home) */
+/* --- LAYOUT GENERAL --- */
 .page-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: var(--bg-color); /* Fondo según tema */
+  color: var(--text-main);           /* Texto según tema */
+  transition: background 0.3s, color 0.3s;
 }
 
 .main-content {
   flex: 1;
-  padding: 40px 2rem;
   max-width: 1200px;
-  width: 100%;
   margin: 0 auto;
+  padding: 40px 20px;
+  width: 100%;
   box-sizing: border-box;
 }
 
-/* Header de la sección */
+/* --- HEADER DE LA SECCIÓN --- */
 .friends-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+  align-items: flex-end;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.friends-header h2 {
-  color: #1f2937;
-  margin-bottom: 5px;
+.header-text h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 5px 0;
+  color: var(--text-main);
 }
 
-.friends-header p {
-  color: #6b7280;
+.header-text p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 1.1rem;
 }
 
-.stats span {
-  background: #e0e7ff;
-  color: #4338ca;
-  padding: 5px 12px;
+.stats {
+  background: var(--card-bg);
+  padding: 8px 16px;
   border-radius: 20px;
-  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
   font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+  box-shadow: 0 2px 5px var(--shadow);
 }
 
-/* GRID DE TARJETAS */
+/* --- GRID DE TARJETAS --- */
 .friends-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adaptable */
+  gap: 30px;
 }
 
+/* --- TARJETA DE USUARIO --- */
 .friend-card {
-  background: white;
-  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-align: center;
   position: relative;
-  border: 1px solid #e5e7eb;
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 10px var(--shadow);
 }
 
 .friend-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px var(--shadow);
+  border-color: var(--primary);
 }
 
-/* Fondo decorativo arriba de la tarjeta */
+/* Fondo decorativo superior */
 .card-header-bg {
-  height: 60px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  width: 100%;
+  height: 90px;
+  background: linear-gradient(135deg, var(--primary), #00c6ff);
+  opacity: 0.9;
 }
 
-/* Avatar */
+/* Contenedor del Avatar (para superponerlo) */
 .avatar-container {
-  margin-top: -40px; /* Para que suba encima del fondo */
-  display: flex;
-  justify-content: center;
+  margin-top: -45px; /* Sube el avatar para que pise el fondo */
+  width: 90px;
+  height: 90px;
+  position: relative;
+  z-index: 2;
+  border-radius: 50%;
+  padding: 4px;
+  background: var(--card-bg); /* Crea un borde del color de la tarjeta */
 }
 
 .avatar-img, .avatar-placeholder {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  border: 4px solid white;
   object-fit: cover;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: block;
 }
 
 .avatar-placeholder {
-  background-color: #f3f4f6;
-  color: #4f46e5;
+  background: #e0e7ff;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-/* Info del usuario */
+/* Información del Usuario */
 .user-info {
+  text-align: center;
   padding: 15px 20px;
+  flex: 1; /* Empuja el botón hacia abajo */
 }
 
 .user-info h3 {
   margin: 10px 0 5px;
-  color: #111827;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  color: var(--text-main);
+  font-weight: 700;
 }
 
 .email-text {
-  color: #6b7280;
   font-size: 0.85rem;
-  margin-bottom: 10px;
-}
-
-.bio-text {
-  font-size: 0.9rem;
-  color: #374151;
-  font-style: italic;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
-/* Botón de acción */
+.bio-text {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.5;
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limita a 2 líneas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.8;
+}
+
+/* Botón de Añadir */
 .btn-add {
-  width: 80%;
-  margin: 0 auto 20px;
-  padding: 8px 0;
-  border: 1px solid #e5e7eb;
-  background: white;
-  color: #374151;
-  border-radius: 6px;
-  cursor: pointer;
+  margin: 0 20px 25px; /* Margen abajo */
+  background: var(--bg-color);
+  color: var(--text-main);
+  border: 2px solid var(--border-color);
+  padding: 10px 25px;
+  border-radius: 50px;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s;
+  width: 80%;
 }
 
 .btn-add:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
+
+/* --- ESTADOS DE CARGA Y VACÍO --- */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border-left-color: var(--primary);
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Ajuste Dark Mode específico para el spinner */
+[data-theme="dark"] .spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--primary);
 }

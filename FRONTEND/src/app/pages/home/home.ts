@@ -50,7 +50,7 @@ export class HomeComponent implements OnInit {
   // DATOS PARA LANDING PAGE (NO LOGUEADO)
   testimonials = [
     {
-      name: 'Marta García',
+      name: 'Lucia Gómez',
       comment: 'TripShare es la app que siempre soñé. Por fin dejamos de usar Excel para las cuentas del grupo.',
       avatar: 'https://i.pravatar.cc/150?u=marta'
     },
@@ -60,7 +60,7 @@ export class HomeComponent implements OnInit {
       avatar: 'https://i.pravatar.cc/150?u=pablo'
     },
     {
-      name: 'Iker & Johan',
+      name: 'Manolo Sánchez',
       comment: 'Organizamos nuestro viaje a Italia en una tarde. La función de gastos compartidos es magia.',
       avatar: 'https://i.pravatar.cc/150?u=iker'
     }

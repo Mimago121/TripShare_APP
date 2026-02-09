@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+// IMPORTANTE: NUNCA pongas .ts aquí, Angular se rompe
+import { ThemeService } from '../../services/theme.service'; 
 
 @Component({
   selector: 'app-navbar',
@@ -12,48 +14,37 @@ import { RouterModule, Router } from '@angular/router';
 export class NavbarComponent implements OnInit {
   isLoggedIn: boolean = false;
   isDropdownOpen: boolean = false;
-  notificationsEnabled: boolean = true; // Nueva variable para notificaciones
-  
   userAvatar: string = '';
   userName: string = '';
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, public themeService: ThemeService) {}
 
   ngOnInit() {
     this.checkLoginStatus();
   }
 
   checkLoginStatus() {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      this.isLoggedIn = true;
-      const user = JSON.parse(userStr);
-      this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-      this.userName = user.userName || 'Usuario';
-    } else {
-      this.isLoggedIn = false;
+    // Evitamos error si no hay localStorage (SSR)
+    if (typeof localStorage !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        this.isLoggedIn = true;
+        const user = JSON.parse(userStr);
+        this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        this.userName = user.userName || 'Usuario';
+      } else {
+        this.isLoggedIn = false;
+      }
     }
   }
 
-  // --- LÓGICA DEL DESPLEGABLE ---
   toggleDropdown() {
+    console.log('Click en Avatar detectado'); // Mira la consola (F12)
     this.isDropdownOpen = !this.isDropdownOpen;
   }
 
   closeDropdown() {
     this.isDropdownOpen = false;
-  }
-
-  // --- LÓGICA DE NOTIFICACIONES ---
-  toggleNotifications() {
-    this.notificationsEnabled = !this.notificationsEnabled;
-    
-    // Mostramos un mensaje simple (puedes cambiarlo por algo más visual luego)
-    if (this.notificationsEnabled) {
-      alert('🔔 ¡Notificaciones ACTIVADAS!');
-    } else {
-      alert('🔕 Notificaciones DESACTIVADAS');
-    }
   }
 
   logout() {
