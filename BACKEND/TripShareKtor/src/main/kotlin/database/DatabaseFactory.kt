@@ -14,12 +14,17 @@ object DatabaseFactory {
         val database = Database.connect(createHikariDataSource())
 
         transaction(database) {
-            // Esto creará las tablas en MySQL automáticamente si no existen
-            SchemaUtils.create(
-                Users, Trips, TripMembers, Activities,
-                Expenses, ExpenseSplits, Memories, TripInvites, FriendRequests
-            )
+            exec("SELECT 1")
         }
+    //esto se quita porque hace que el back cambie y modifique tablas automticamente --> solo deberia usar init.sql
+        //BACKEND no debe modificar la DATABASE
+//        transaction(database) {
+//            // Esto creará las tablas en MySQL automáticamente si no existen
+//            SchemaUtils.create(
+//                Users, Trips, TripMembers, Activities,
+//                Expenses, ExpenseSplits, Memories, TripInvites, FriendRequests
+//            )
+//        }
     }
 
     private fun createHikariDataSource(): HikariDataSource {
