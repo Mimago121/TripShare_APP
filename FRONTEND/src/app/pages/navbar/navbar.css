@@ -1,102 +1,184 @@
-/* Contenedor que da el aire alrededor de la barra */
-.navbar-container {
-  padding: 15px 20px;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background-color: #f8f9fa; /* Color de fondo de la página para que resalte la barra blanca */
+/* Estructura base igual que antes */
+.navbar-container { padding: 15px 20px; position: sticky; top: 0; z-index: 1000; background-color: #f8f9fa; }
+.navbar-content { max-width: 1200px; margin: 0 auto; background: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; border-radius: 50px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06); position: relative; }
+
+/* Marca */
+.brand { text-decoration: none; min-width: 140px; }
+.brand-text { font-size: 1.5rem; font-weight: 800; color: #333; letter-spacing: -0.5px; }
+.highlight { color: #007bff; }
+
+/* Links Centrales */
+.nav-links { display: flex; gap: 30px; }
+.nav-links a { text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; padding: 5px 0; position: relative; }
+.nav-links a:hover { color: #007bff; }
+.active-link { color: #007bff !important; }
+.active-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background-color: #007bff; border-radius: 2px; }
+
+/* Area Derecha */
+.nav-actions { display: flex; align-items: center; gap: 15px; min-width: 140px; justify-content: flex-end; }
+
+/* Botones Públicos */
+.btn-login { background: transparent; color: #007bff; border: 2px solid #007bff; padding: 8px 20px; border-radius: 50px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+.btn-login:hover { background: #f0f7ff; }
+.btn-register { background: #007bff; color: white; border: none; padding: 10px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); transition: 0.3s; }
+.btn-register:hover { background: #0056b3; transform: translateY(-2px); }
+
+/* --- NUEVOS ESTILOS: USUARIO LOGUEADO --- */
+.user-controls { display: flex; align-items: center; gap: 20px; }
+
+/* Campana de Notificaciones */
+.icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative; padding: 5px; transition: transform 0.2s; }
+.icon-btn:hover { transform: scale(1.1); }
+.badge-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: #ff4757; border-radius: 50%; border: 2px solid white; }
+
+/* Avatar y Dropdown */
+.avatar-dropdown-wrapper { position: relative; display: flex; align-items: center; }
+.nav-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: 0.3s; }
+.nav-avatar:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-1px); border-color: #007bff; }
+
+/* Menú Desplegable */
+.dropdown-menu {
+  position: absolute; top: 55px; right: 0; width: 200px;
+  background: white; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #f1f3f5;
+  padding: 10px 0; z-index: 2000; overflow: hidden;
 }
 
-/* La barra blanca redondeada */
-.navbar-content {
-  max-width: 1100px;
-  margin: 0 auto;
-  background: white;
+.dropdown-header { padding: 10px 20px; background: #f8f9fa; margin-bottom: 5px; }
+.dropdown-name { display: block; font-weight: 700; color: #333; font-size: 0.95rem; }
+.dropdown-email { display: block; font-size: 0.8rem; color: #888; }
+
+.dropdown-item {
+  display: block; padding: 10px 20px; color: #444; text-decoration: none;
+  font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+}
+.dropdown-item:hover { background: #f1f3f5; color: #007bff; }
+.text-danger:hover { background: #fff5f5; color: #e03131; }
+
+hr { border: 0; border-top: 1px solid #eee; margin: 5px 0; }
+
+/* Overlay para cerrar al hacer clic fuera */
+.overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1500; cursor: default; }
+
+/* Animación */
+.fade-in { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .navbar-content { padding: 10px 15px; }
+  .brand-text { font-size: 1.2rem; }
+}
+
+.user-controls {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 25px;
-  border-radius: 50px; /* Bordes muy redondeados */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Sombra suave */
+  gap: 15px;
 }
 
-/* Logo y Texto */
-.brand {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  gap: 10px;
-}
-
-.logo {
-  height: 35px;
-  width: auto;
-}
-
-.brand-name {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #333;
-  letter-spacing: -1px;
-}
-
-.blue {
-  color: #007bff;
-}
-
-/* Links de Navegación */
-.nav-links {
-  display: flex;
-  gap: 20px;
-}
-
-.nav-links a {
-  text-decoration: none;
-  color: #666;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 8px 12px;
-  transition: all 0.3s;
-}
-
-.nav-links a:hover {
-  color: #007bff;
-}
-
-.nav-links a.active {
-  color: #007bff;
-  position: relative;
-}
-
-/* Rayita azul debajo del link activo */
-.nav-links a.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 12px;
-  right: 12px;
-  height: 3px;
-  background: #007bff;
-  border-radius: 10px;
-}
-
-/* Botón de Salir Rojo */
-.btn-logout {
-  background: #ff6b6b;
-  color: white;
+/* Notificaciones */
+.icon-btn {
+  background: none;
   border: none;
-  padding: 8px 20px;
-  border-radius: 25px;
-  font-weight: 700;
+  font-size: 1.3rem;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
-  transition: transform 0.2s, background 0.2s;
+  position: relative;
+  transition: transform 0.2s;
+  padding: 5px;
 }
 
-.btn-logout:hover {
-  background: #fa5252;
-  transform: scale(1.05);
+.icon-btn:hover { transform: scale(1.1); }
+
+/* Estilo cuando está desactivado */
+.icon-btn.disabled {
+  opacity: 0.5;
+  filter: grayscale(100%);
 }
+
+.badge-dot {
+  position: absolute;
+  top: 5px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #ff4757;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+/* IMPORTANTE: Wrapper relativo para que el menú se posicione respecto a esto */
+.avatar-dropdown-wrapper {
+  position: relative; 
+  display: flex;
+  align-items: center;
+}
+
+.nav-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: 0.3s;
+}
+
+.nav-avatar:hover {
+  border-color: #007bff;
+}
+
+/* El menú desplegable */
+.dropdown-menu {
+  position: absolute;
+  top: 50px; /* Justo debajo del avatar */
+  right: 0;  /* Alineado a la derecha */
+  width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  border: 1px solid #f0f0f0;
+  padding: 10px 0;
+  z-index: 2000; /* Muy alto para estar encima de todo */
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-header {
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+}
+
+.dropdown-name { font-weight: bold; display: block; color: #333; }
+.dropdown-email { font-size: 0.8rem; color: #777; }
+
+.dropdown-item {
+  padding: 10px 20px;
+  text-decoration: none;
+  color: #333;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover { background-color: #f0f7ff; color: #007bff; }
+.text-danger:hover { background-color: #fff5f5; color: red; }
+
+hr { border: 0; border-top: 1px solid #eee; margin: 5px 0; }
+
+/* Overlay invisible fijo */
+.overlay {
+  position: fixed; /* Fijo a la pantalla completa */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1500; /* Menor que el menú (2000) pero mayor que el resto */
+  background: transparent;
+  cursor: default;
+}
+
+/* Animación de entrada */
+.fade-in { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }

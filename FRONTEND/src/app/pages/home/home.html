@@ -1,16 +1,168 @@
-<div class="page-wrapper">
-  
+<div class="page-layout">
   <app-navbar></app-navbar>
 
-  <main class="main-content">
+  <main class="dashboard-area fade-in" *ngIf="isLoggedIn; else publicLanding">
     
-    <header class="content-header">
-       <h2>👋 Hola {{ user?.userName }}, ¿dónde vamos hoy?</h2>
-       <button class="btn-new" (click)="createNewTrip()">+ Crear Viaje</button>
+    <header class="dash-header">
+      <h1>Hola, {{ userName }} 👋</h1>
+      <p>¿Listo para tu próxima aventura?</p>
     </header>
 
+    <section class="dash-section">
+      <div class="section-header">
+        <h2>Tus Viajes</h2>
+        <button class="btn-create-small" routerLink="/trips">+ Nuevo Viaje</button>
+      </div>
+
+      <div class="trips-scroll-container">
+        <div class="trip-card create-card" routerLink="/trips">
+          <div class="plus-icon">➕</div>
+          <span>Planear nuevo viaje</span>
+        </div>
+
+        <div class="trip-card" *ngFor="let trip of demoTrips">
+          <div class="card-image">
+            <img [src]="trip.image" [alt]="trip.destination">
+            <span class="days-badge">{{ trip.days }} días</span>
+          </div>
+          <div class="card-details">
+            <h3>{{ trip.destination }}</h3>
+            <p class="dates">{{ trip.dates }}</p>
+            <div class="collaborators">
+              <img *ngFor="let friend of trip.friends" [src]="friend" alt="Amigo">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section">
+      <h2>Destinos populares esta semana</h2>
+      <p class="subtitle">Inspiración basada en lo que otros viajeros están planeando.</p>
+      
+      <div class="popular-grid">
+        <div class="popular-card" *ngFor="let place of popularDestinations">
+          <img [src]="place.image" [alt]="place.name">
+          <div class="place-overlay">
+            <h3>{{ place.name }}</h3>
+            <span>{{ place.country }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <ng-template #publicLanding>
+    <main class="content-area">
+      
+      <section class="hero-brand">
+        <div class="brand-center">
+          <div class="logo-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/3284/3284649.png" alt="TripShare Logo" class="big-logo floating">
+          </div>
+          
+          <h1 class="brand-title">Trip<span class="highlight">Share</span></h1>
+          <p class="brand-slogan">
+            La forma moderna de viajar con amigos.<br>
+            Planifica, divide gastos y disfruta sin estrés.
+          </p>
+          
+          <div class="hero-btns">
+            <button class="btn-primary-hero" routerLink="/register">Empezar Aventura</button>
+            <button class="btn-outline-hero" (click)="scrollToFeatures()">Descubrir más</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="press-section">
+        <p>CON LA CONFIANZA DE VIAJEROS EN</p>
+        <div class="logos-grid">
+          <span>✈️ Skyscanner</span>
+          <span>🏨 Booking</span>
+          <span>🌍 Airbnb</span>
+          <span>🗺️ Google Maps</span>
+        </div>
+      </section>
+
+      <section id="features" class="features-section">
+        <h2 class="section-title">Todo lo que necesitas en una sola App</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="icon-box icon-blue">🗺️</div>
+            <h3>Itinerario Visual</h3>
+            <p>Visualiza tu ruta en el mapa y arrastra actividades fácilmente.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box icon-green">💸</div>
+            <h3>Gastos Compartidos</h3>
+            <p>Olvídate del Excel. TripShare calcula quién debe a quién.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box icon-purple">👥</div>
+            <h3>Colaboración Real</h3>
+            <p>Invita a tus amigos y editad el plan todos a la vez.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box icon-orange">📄</div>
+            <h3>Documentos</h3>
+            <p>Guarda billetes y reservas para acceder sin conexión.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box icon-red">🗳️</div>
+            <h3>Encuestas</h3>
+            <p>¿Playa o Montaña? Votad y decidid democráticamente.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box icon-teal">📸</div>
+            <h3>Recuerdos</h3>
+            <p>Un álbum compartido para todas las fotos del grupo.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <div class="stats-container">
+          <div class="stat-item">
+            <span class="stat-number">10K+</span>
+            <span class="stat-label">Viajes Creados</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">4.9 ★</span>
+            <span class="stat-label">Valoración Usuarios</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">0€</span>
+            <span class="stat-label">Coste (Es Gratis)</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="testimonials-section">
+        <h2 class="section-title">Lo que dicen nuestros viajeros</h2>
+        <div class="testimonials-grid">
+          <div class="testimonial-card" *ngFor="let t of testimonials">
+            <div class="stars">★★★★★</div>
+            <p class="comment">"{{ t.comment }}"</p>
+            <div class="user-meta">
+              <img [src]="t.avatar" alt="Avatar">
+              <div class="user-info">
+                <span class="name">{{ t.name }}</span>
+                <span class="role">Viajero Experto</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <h2>¿Listo para despegar?</h2>
+        <p>Únete hoy y empieza a planificar tu próximo gran viaje.</p>
+        <button class="btn-primary-hero" routerLink="/register">Crear cuenta gratis</button>
+      </section>
+
     </main>
+  </ng-template>
 
   <app-footer></app-footer>
-
 </div>

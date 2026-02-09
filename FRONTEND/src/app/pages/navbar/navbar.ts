@@ -1,23 +1,67 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service'; // Ajusta la ruta a tu servicio
+import { RouterModule, Router } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterModule],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css']
 })
-export class NavbarComponent {
-  isMenuOpen = false; // Para móvil si lo necesitaras
+export class NavbarComponent implements OnInit {
+  isLoggedIn: boolean = false;
+  isDropdownOpen: boolean = false;
+  notificationsEnabled: boolean = true; // Nueva variable para notificaciones
+  
+  userAvatar: string = '';
+  userName: string = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private router: Router) {}
+
+  ngOnInit() {
+    this.checkLoginStatus();
+  }
+
+  checkLoginStatus() {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      this.isLoggedIn = true;
+      const user = JSON.parse(userStr);
+      this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+      this.userName = user.userName || 'Usuario';
+    } else {
+      this.isLoggedIn = false;
+    }
+  }
+
+  // --- LÓGICA DEL DESPLEGABLE ---
+  toggleDropdown() {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  closeDropdown() {
+    this.isDropdownOpen = false;
+  }
+
+  // --- LÓGICA DE NOTIFICACIONES ---
+  toggleNotifications() {
+    this.notificationsEnabled = !this.notificationsEnabled;
+    
+    // Mostramos un mensaje simple (puedes cambiarlo por algo más visual luego)
+    if (this.notificationsEnabled) {
+      alert('🔔 ¡Notificaciones ACTIVADAS!');
+    } else {
+      alert('🔕 Notificaciones DESACTIVADAS');
+    }
+  }
 
   logout() {
-    this.auth.logout(); // Asegúrate de tener este método en tu servicio
+    this.closeDropdown();
     localStorage.removeItem('user');
-    this.router.navigate(['/login']);
+    this.isLoggedIn = false;
+    this.router.navigate(['/home']).then(() => {
+      window.location.reload();
+    });
   }
 }

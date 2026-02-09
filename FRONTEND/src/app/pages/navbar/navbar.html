@@ -2,20 +2,54 @@
   <div class="navbar-content">
     
     <a routerLink="/home" class="brand">
-      <img src="assets/logo.png" alt="Logo" class="logo" priority>
-      <span class="brand-name">Trip<span class="blue">Share</span></span>
+      <span class="brand-text">Trip<span class="highlight">Share</span></span>
     </a>
 
-    <div class="nav-links">
-      <a routerLink="/home" routerLinkActive="active">Inicio</a>
-      <a routerLink="/trips" routerLinkActive="active">Viajes</a>
-      <a routerLink="/friends" routerLinkActive="active">Amigos</a>
-      <a routerLink="/profile" routerLinkActive="active">Perfil</a>
+    <div class="nav-links" *ngIf="isLoggedIn">
+      <a routerLink="/home" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Inicio</a>
+      <a routerLink="/trips" routerLinkActive="active-link">Mis Viajes</a>
+      <a routerLink="/friends" routerLinkActive="active-link">Amigos</a>
     </div>
 
-    <button class="btn-logout" (click)="logout()">
-      <span class="icon">🚪</span> Salir
-    </button>
+    <div class="nav-actions">
+      
+      <ng-container *ngIf="!isLoggedIn">
+        <button class="btn-login" routerLink="/login">Entrar</button>
+        <button class="btn-register" routerLink="/register">Registrarse</button>
+      </ng-container>
 
+      <div class="user-controls" *ngIf="isLoggedIn">
+        
+        <button class="icon-btn notification-btn" 
+                (click)="toggleNotifications()"
+                [class.disabled]="!notificationsEnabled"
+                title="Click para activar/desactivar">
+          {{ notificationsEnabled ? '🔔' : '🔕' }}
+          <span class="badge-dot" *ngIf="notificationsEnabled"></span>
+        </button>
+
+        <div class="avatar-dropdown-wrapper">
+          <img [src]="userAvatar" alt="User" class="nav-avatar" (click)="toggleDropdown()">
+          
+          <div class="dropdown-menu fade-in" *ngIf="isDropdownOpen">
+            <div class="dropdown-header">
+              <span class="dropdown-name">{{ userName }}</span>
+              <span class="dropdown-email">Viajero</span>
+            </div>
+            <hr>
+            <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">
+              👤 Mi Perfil
+            </a>
+            <a (click)="logout()" class="dropdown-item text-danger">
+              🚪 Cerrar Sesión
+            </a>
+          </div>
+        </div>
+
+        <div class="overlay" *ngIf="isDropdownOpen" (click)="closeDropdown()"></div>
+
+      </div>
+
+    </div>
   </div>
 </nav>
