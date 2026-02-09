@@ -153,3 +153,25 @@ class MemoryEntity(id: EntityID<Long>) : LongEntity(id) {
     var mediaUrl by Memories.mediaUrl
     var createdAt by Memories.createdAt
 }
+
+// ... (Tus otros objetos Users, Trips, etc...)
+
+// 1. DEFINICIÓN DE LA TABLA (Añádelo antes de las clases Entity)
+object FriendRequests : LongIdTable("friend_requests", "request_id") {
+    val fromUser = reference("from_user_id", Users)
+    val toUser = reference("to_user_id", Users)
+    val status = varchar("status", 20).default("pending")
+    val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+}
+
+// ... (Tus otras clases Entity) ...
+
+// 2. CORRECCIÓN DE LA ENTIDAD (Sustituye tu clase FriendRequestEntity por esta)
+class FriendRequestEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<FriendRequestEntity>(FriendRequests)
+
+    var fromUser by UserEntity referencedOn FriendRequests.fromUser // <--- Aquí tenías el error "Frie"
+    var toUser by UserEntity referencedOn FriendRequests.toUser
+    var status by FriendRequests.status
+    var createdAt by FriendRequests.createdAt
+}

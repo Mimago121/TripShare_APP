@@ -8,7 +8,6 @@
     <div class="nav-links" *ngIf="isLoggedIn">
       <a routerLink="/home" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Inicio</a>
       <a routerLink="/trips" routerLinkActive="active-link">Mis Viajes</a>
-      <a routerLink="/friends" routerLinkActive="active-link">Amigos</a>
     </div>
 
     <div class="nav-actions">
@@ -24,14 +23,33 @@
 
       <div class="user-controls" *ngIf="isLoggedIn">
         
-        <button type="button" class="icon-btn notification-btn">
-          🔔 <span class="badge-dot"></span>
-        </button>
+        <div class="notification-wrapper">
+          <button type="button" class="icon-btn notification-btn" (click)="toggleNotifications()">
+            🔔 <span class="badge-dot" *ngIf="notificationCount > 0"></span>
+          </button>
+
+          <div class="notification-dropdown fade-in" *ngIf="isNotificationsOpen">
+            <div class="notif-header">Notificaciones</div>
+            <div class="notif-list" *ngIf="pendingRequests.length > 0">
+              <div class="notif-item" *ngFor="let req of pendingRequests">
+                <div class="notif-content">
+                  <span class="notif-text"><strong>{{ req.fromUserName }}</strong> te envió solicitud.</span>
+                  <div class="notif-actions">
+                    <button class="btn-accept" (click)="acceptRequest(req.id)">Aceptar</button>
+                    <button class="btn-reject" (click)="rejectRequest(req.id)">Rechazar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="notif-empty" *ngIf="pendingRequests.length === 0">
+              <p>No tienes notificaciones.</p>
+            </div>
+          </div>
+        </div>
 
         <div class="avatar-dropdown-wrapper">
-          
           <button type="button" class="avatar-btn" (click)="toggleDropdown()">
-            <img [src]="userAvatar" class="nav-avatar" alt="Perfil">
+            <img [src]="userAvatar" class="nav-avatar" alt="Avatar">
           </button>
           
           <div class="dropdown-menu fade-in" *ngIf="isDropdownOpen">
@@ -40,13 +58,15 @@
               <span class="dropdown-email">Viajero</span>
             </div>
             <hr>
-            <a routerLink="/profile" (click)="closeDropdown()" class="dropdown-item">👤 Mi Perfil</a>
+            
+<a routerLink="/profile" (click)="closeAllMenus()" class="dropdown-item">👤 Mi Perfil</a>
+<a routerLink="/friends" (click)="closeAllMenus()" class="dropdown-item">👥 Mis Amigos</a>
+            
             <a (click)="logout()" class="dropdown-item text-danger">🚪 Cerrar Sesión</a>
           </div>
-
         </div>
 
-        <div class="overlay" *ngIf="isDropdownOpen" (click)="closeDropdown()"></div>
+        <div class="overlay" *ngIf="isDropdownOpen || isNotificationsOpen" (click)="closeAllMenus()"></div>
 
       </div>
     </div>

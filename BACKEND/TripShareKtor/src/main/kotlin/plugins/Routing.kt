@@ -18,6 +18,10 @@ fun Application.configureRouting() {
             call.respondText("¡API de TripShare Conectada y Operativa!")
         }
 
+        // ===========================
+        // AUTENTICACIÓN
+        // ===========================
+
         // --- LOGIN ---
         post("/login") {
             try {
@@ -51,17 +55,18 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, "Datos inválidos")
             }
         }
-        // ¡OJO! AQUÍ SE CIERRA EL REGISTER.
-        // Antes tenías todo lo de abajo metido aquí dentro.
 
-        // --- OBTENER TODOS LOS USUARIOS (Ahora sí está en /users) ---
+        // ===========================
+        // USUARIOS
+        // ===========================
+
+        // --- OBTENER TODOS LOS USUARIOS ---
         get("/users") {
             try {
                 val users = repository.getAllUsers()
                 if (users.isNotEmpty()) {
                     call.respond(HttpStatusCode.OK, users)
                 } else {
-                    // Respondemos lista vacía 200 OK, no error
                     call.respond(HttpStatusCode.OK, emptyList<UserModel>())
                 }
             } catch (e: Exception) {
@@ -85,6 +90,7 @@ fun Application.configureRouting() {
             }
         }
 
+        // --- ACTUALIZAR USUARIO ---
         put("/users/{id}") {
             val id = call.parameters["id"]?.toLongOrNull()
             if (id == null) {
@@ -105,15 +111,18 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, "Error al actualizar: ${e.message}")
             }
         }
-        // --- ENDPOINTS DE VIAJES ---
+
+        // ===========================
+        // VIAJES (TRIPS)
+        // ===========================
         route("/trips") {
-            // GET /trips
+            // GET /trips (Todos)
             get {
                 val trips = repository.getAllTrips()
                 call.respond(trips)
             }
 
-            // GET /trips/user/{userId}
+            // GET /trips/user/{userId} (Por usuario)
             get("/user/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull()
                 if (userId == null) {
@@ -122,6 +131,92 @@ fun Application.configureRouting() {
                 }
                 val trips = repository.getTripsByUserId(userId)
                 call.respond(trips)
+            }
+        }
+
+        // ===========================
+        // AMIGOS (FRIENDS) - ¡NUEVO!
+        // ===========================
+        route("/friends") {
+
+            // 1. ENVIAR SOLICITUD: POST /friends/request
+            post("/request") {
+                try {
+                    val params = call.receive<CreateRequestParams>()
+                    val success = repository.sendFriendRequest(params.fromId, params.toId)
+
+                    if (success) {
+                        call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
+                    } else {
+                        call.respond(HttpStatusCode.Conflict, "La solicitud ya existe")
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
+                }
+            }
+
+            // 2. VER PENDIENTES: GET /friends/pending/{userId}
+            get("/pending/{userId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull()
+                if (userId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                    return@get
+                }
+
+                try {
+                    val requests = repository.getPendingRequestsForUser(userId)
+                    call.respond(requests)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
+                }
+            }
+
+            // 3. ACEPTAR SOLICITUD: PUT /friends/accept/{id}
+            put("/accept/{id}") {
+                val requestId = call.parameters["id"]?.toLongOrNull()
+                if (requestId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                    return@put
+                }
+
+                val updated = repository.acceptFriendRequest(requestId)
+                if (updated) {
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "accepted"))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Solicitud no encontrada")
+                }
+            }
+
+            // 4. RECHAZAR SOLICITUD: DELETE /friends/reject/{id}
+            delete("/reject/{id}") {
+                val requestId = call.parameters["id"]?.toLongOrNull()
+                if (requestId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                    return@delete
+                }
+
+                val deleted = repository.rejectFriendRequest(requestId)
+                if (deleted) {
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "rejected"))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Solicitud no encontrada")
+                }
+            }
+
+            // GET: Obtener mis amigos aceptados -> /friends/accepted/{userId}
+            get("/accepted/{userId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull()
+                if (userId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                    return@get
+                }
+
+                try {
+                    val friends = repository.getAcceptedFriends(userId)
+                    call.respond(friends)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
+                }
             }
         }
 

@@ -118,3 +118,16 @@ data class CreateActivityRequest(
     val endDatetime: String,
     val createdByUserId: Long
 )
+
+@Serializable
+data class FriendRequestDto(
+    val id: Long,
+    val fromUserName: String,
+    val status: String
+)
+
+@Serializable
+data class CreateRequestParams(
+    val fromId: Long,
+    val toId: Long
+)

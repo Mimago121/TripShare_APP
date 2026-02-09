@@ -1,14 +1,15 @@
-/* 1. CONTENEDOR PRINCIPAL */
+/* ========================================= */
+/* 1. LAYOUT PRINCIPAL                       */
+/* ========================================= */
 .navbar-container {
   padding: 15px 20px;
   position: sticky;
   top: 0;
-  z-index: 99999; /* Máxima prioridad */
   background-color: var(--bg-color);
+  z-index: 1000; /* Nivel base */
   transition: background 0.3s;
 }
 
-/* 2. BARRA DE CONTENIDO */
 .navbar-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -20,88 +21,105 @@
   border-radius: 50px;
   box-shadow: 0 8px 20px var(--shadow);
   position: relative;
-  z-index: 10000;
-  overflow: visible !important; /* CRUCIAL: Si esto es hidden, el menú no sale */
+  z-index: 1001; /* Un poco por encima del contenedor */
+  
+  /* --- ¡AQUÍ ESTABA EL ERROR! --- */
+  /* Antes tenías hidden, eso cortaba el menú. */
+  overflow: visible !important; 
 }
 
-/* Marca */
+/* ========================================= */
+/* 2. OVERLAY (FONDO TRANSPARENTE)           */
+/* ========================================= */
+/* Esta capa sirve para detectar clics fuera */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* IMPORTANTE: Debe ser MENOR que el menú (2000) pero MAYOR que la página */
+  z-index: 990; 
+  cursor: default;
+  background: transparent; /* Ojo: puedes poner rgba(0,0,0,0.1) para probar si ocupa toda la pantalla */
+}
+
+/* ========================================= */
+/* 3. LOGO Y LINKS                           */
+/* ========================================= */
 .brand { text-decoration: none; min-width: 140px; }
 .brand-text { font-size: 1.5rem; font-weight: 800; color: var(--text-main); }
 .highlight { color: var(--primary); }
 
-/* Links */
 .nav-links { display: flex; gap: 30px; }
-.nav-links a { text-decoration: none; color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; padding: 5px 0; position: relative; }
-.nav-links a:hover { color: var(--primary); }
-.active-link { color: var(--primary) !important; }
+.nav-links a { text-decoration: none; color: var(--text-secondary); font-weight: 600; font-size: 0.95rem; transition: 0.3s; padding: 5px 0; }
+.nav-links a:hover, .active-link { color: var(--primary); }
 
-/* Acciones */
-.nav-actions { display: flex; align-items: center; gap: 15px; min-width: 140px; justify-content: flex-end; }
+/* ========================================= */
+/* 4. ACCIONES Y BOTONES                     */
+/* ========================================= */
+.nav-actions { display: flex; align-items: center; gap: 15px; }
+.user-controls { display: flex; align-items: center; gap: 15px; position: relative; }
 
-/* Botones Públicos */
-.btn-login { background: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 8px 20px; border-radius: 50px; font-weight: 700; cursor: pointer; }
-.btn-register { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; }
+.icon-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-main); position: relative; padding: 5px; }
+.badge-dot { position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: #ff4757; border-radius: 50%; border: 2px solid var(--card-bg); }
 
-/* CONTROLES DE USUARIO */
-.user-controls { display: flex; align-items: center; gap: 15px; }
-
-/* Botones Iconos (Campana/Tema) */
-.icon-btn {
-  background: none; border: none; font-size: 1.2rem; cursor: pointer;
-  padding: 8px; position: relative; z-index: 101; color: var(--text-main);
-}
-.badge-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ff4757; border-radius: 50%; border: 2px solid var(--card-bg); }
-
-/* Avatar y Dropdown */
 .avatar-dropdown-wrapper { position: relative; display: flex; align-items: center; }
+.avatar-btn { background: none; border: none; padding: 0; cursor: pointer; }
+.nav-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--card-bg); box-shadow: 0 2px 8px var(--shadow); transition: 0.3s; }
+.avatar-btn:hover .nav-avatar { transform: scale(1.05); border-color: var(--primary); }
 
-.avatar-btn {
-  background: none; border: none; padding: 0; cursor: pointer; z-index: 101;
-}
-
-.nav-avatar {
-  width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--card-bg); box-shadow: 0 2px 8px var(--shadow);
-  transition: 0.3s;
-}
-.avatar-btn:hover .nav-avatar { border-color: var(--primary); transform: scale(1.05); }
-
-/* MENÚ DESPLEGABLE */
-.dropdown-menu {
+/* ========================================= */
+/* 5. MENÚS DESPLEGABLES (SOLUCIÓN FINAL)    */
+/* ========================================= */
+.dropdown-menu, .notification-dropdown {
   position: absolute;
-  top: 60px; /* Debajo del avatar */
-  right: 0;
-  width: 220px;
+  top: 60px; /* Separación desde arriba */
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  padding: 10px 0;
-  z-index: 20000; /* Encima de todo */
-  display: block;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  border: 1px solid var(--border-color);
+  
+  /* IMPORTANTE: Z-Index altísimo para flotar sobre TODO (incluido el overlay) */
+  z-index: 20000; 
+  
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+  display: block; /* Aseguramos que se muestre */
 }
 
-.dropdown-header { padding: 12px 20px; background: var(--bg-color); margin-bottom: 5px; }
+/* Posición Específica */
+.dropdown-menu { right: 0; width: 200px; }
+.notification-dropdown { right: -60px; width: 300px; }
+
+/* Contenido de los menús */
+.dropdown-header, .notif-header { padding: 15px; background: var(--bg-color); border-bottom: 1px solid var(--border-color); }
 .dropdown-name { display: block; font-weight: 700; color: var(--text-main); }
 .dropdown-email { display: block; font-size: 0.8rem; color: var(--text-secondary); }
 
-.dropdown-item {
-  display: block; padding: 12px 20px; color: var(--text-main); text-decoration: none; cursor: pointer;
+.dropdown-item { 
+  display: block; padding: 12px 20px; color: var(--text-main); 
+  text-decoration: none; cursor: pointer; font-size: 0.95rem; 
+  position: relative; z-index: 20001; /* Aseguramos que el clic llegue */
 }
 .dropdown-item:hover { background: var(--bg-color); color: var(--primary); }
-.text-danger:hover { background: rgba(255,0,0,0.1); color: red; }
+.text-danger:hover { background: rgba(255, 0, 0, 0.1); color: red; }
 
-hr { border: 0; border-top: 1px solid var(--border-color); margin: 5px 0; }
+/* Notificaciones Items */
+.notif-list { max-height: 300px; overflow-y: auto; }
+.notif-item { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; }
+.notif-content { flex: 1; }
+.notif-text { font-size: 0.9rem; color: var(--text-main); display: block; margin-bottom: 5px; }
+.notif-actions { display: flex; gap: 5px; }
+.btn-accept, .btn-reject { flex: 1; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+.btn-accept { background: var(--primary); color: white; }
+.btn-reject { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+.notif-empty { padding: 20px; text-align: center; color: var(--text-secondary); }
 
-/* OVERLAY */
-.overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 15000; cursor: default; }
-
-/* Animación */
-.fade-in { animation: fadeIn 0.2s ease-out; }
+/* Animación y botones login */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.btn-login { background: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 8px 15px; border-radius: 20px; font-weight: 700; cursor: pointer; }
+.btn-register { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; }
+hr { border: 0; border-top: 1px solid var(--border-color); margin: 0; }
 
-/* Responsive */
-@media (max-width: 850px) {
-  .nav-links { display: none; }
-  .navbar-content { padding: 8px 20px; }
-}
+@media (max-width: 768px) { .nav-links { display: none; } }
