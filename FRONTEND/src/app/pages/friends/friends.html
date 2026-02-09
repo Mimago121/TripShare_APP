@@ -1,56 +1,65 @@
-<div class="page-layout">
+<app-navbar></app-navbar>
+
+<div class="friends-container fade-in">
   
-  <app-navbar></app-navbar>
-
-  <main class="main-content">
+  <div class="friends-header">
     
-    <header class="friends-header">
-      <div class="header-text">
-        <h2>Comunidad TripShare</h2>
-        <p>Descubre a otros viajeros y conéctate con ellos.</p>
-      </div>
-      <div class="stats">
-        <span>{{ users.length }} Usuarios registrados</span>
-      </div>
-    </header>
+    <div class="tabs">
+      <button 
+        [class.active]="activeTab === 'my-friends'" 
+        (click)="setTab('my-friends')">
+        Mis Amigos ({{ myFriends.length }})
+      </button>
+      <button 
+        [class.active]="activeTab === 'explore'" 
+        (click)="setTab('explore')">
+        Explorar
+      </button>
+    </div>
+  </div>
 
-    <div *ngIf="isLoading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Buscando viajeros en la base de datos...</p>
+  <div *ngIf="activeTab === 'my-friends'" class="tab-content">
+    <div *ngIf="myFriends.length === 0" class="empty-state">
+      <p>Aún no tienes amigos. ¡Ve a la pestaña Explorar!</p>
     </div>
 
-    <div class="friends-grid" *ngIf="!isLoading">
-      
-      <div class="friend-card" *ngFor="let user of users">
-        <div class="card-header-bg"></div>
-        
-        <div class="avatar-container">
-          <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="avatar-img">
-          <div *ngIf="!user.avatarUrl" class="avatar-placeholder">
-            {{ user.userName.charAt(0).toUpperCase() }}
-          </div>
+    <div class="users-grid">
+      <div class="user-card friend-card" *ngFor="let friend of myFriends">
+        <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
+        <div class="user-info">
+          <h3>{{ friend.userName }}</h3>
+          <p class="friend-badge">✅ Agregado</p>
         </div>
+        <button class="btn-chat">💬 Chat</button> </div>
+    </div>
+  </div>
 
+  <div *ngIf="activeTab === 'explore'" class="tab-content">
+    
+    <div class="search-bar">
+      <input type="text" placeholder="Buscar personas..." [(ngModel)]="searchTerm" (input)="filterUsers()">
+    </div>
+
+    <div *ngIf="isLoading" class="loading">Cargando usuarios...</div>
+
+    <div class="users-grid" *ngIf="!isLoading">
+      <div class="user-card" *ngFor="let user of filteredExplore">
+        <img [src]="user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
         <div class="user-info">
           <h3>{{ user.userName }}</h3>
-          <p class="email-text">{{ user.email }}</p>
-          <p class="bio-text" *ngIf="user.bio">{{ user.bio }}</p>
-          <p class="bio-text" *ngIf="!user.bio">¡Listo para viajar!</p>
+          <p *ngIf="user.bio">{{ user.bio }}</p>
         </div>
-
-        <button class="btn-add">
-          👤 Añadir amigo
+        
+        <button 
+          class="btn-add" 
+          [disabled]="user.requestStatus === 'pending'"
+          [class.pending]="user.requestStatus === 'pending'"
+          (click)="sendRequest(user)">
+          {{ user.requestStatus === 'pending' ? 'Pendiente 🕒' : 'Añadir ➕' }}
         </button>
       </div>
-
     </div>
-
-    <div *ngIf="users.length === 0 && !isLoading" class="empty-state">
-      <p>Vaya, parece que eres el primer viajero aquí.</p>
-    </div>
-
-  </main>
-
-  <app-footer></app-footer>
+  </div>
 
 </div>
+<app-footer></app-footer>

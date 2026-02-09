@@ -17,7 +17,7 @@ object DatabaseFactory {
             // Esto creará las tablas en MySQL automáticamente si no existen
             SchemaUtils.create(
                 Users, Trips, TripMembers, Activities,
-                Expenses, ExpenseSplits, Memories, TripInvites
+                Expenses, ExpenseSplits, Memories, TripInvites, FriendRequests
             )
         }
     }

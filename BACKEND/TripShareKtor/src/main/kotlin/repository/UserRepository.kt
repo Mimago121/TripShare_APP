@@ -1,17 +1,19 @@
 package repository
 
-import data.* import domain.* import database.DatabaseFactory.dbQuery
+import data.*
+import domain.*
+import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.* // Importa JoinType, select, insert, etc.
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.time.LocalDateTime
 
 class UserRepository {
 
-    // 1. VALIDAR LOGIN (Cambiado a suspend para usar dbQuery)
+    // ==========================================
+    // 1. AUTENTICACIÓN Y USUARIOS
+    // ==========================================
+
     suspend fun validateUser(email: String, pass: String): UserModel? = dbQuery {
         Users
             .select { (Users.email eq email) and (Users.passwordHash eq pass) }
@@ -29,7 +31,6 @@ class UserRepository {
             .singleOrNull()
     }
 
-    // 2. CREAR USUARIO (Corregida la llave que faltaba)
     suspend fun createUser(name: String, email: String, pass: String): Boolean = dbQuery {
         try {
             Users.insert {
@@ -50,10 +51,9 @@ class UserRepository {
             it[userName] = name
             it[this.bio] = bio
             it[this.avatarUrl] = avatarUrl
-        } > 0 // Devuelve true si se actualizó al menos una fila
+        } > 0
     }
 
-    // --- FUNCIONES DE USUARIOS ---
     suspend fun getAllUsers(): List<UserModel> = dbQuery {
         UserEntity.all().map { it.toModel() }
     }
@@ -62,7 +62,82 @@ class UserRepository {
         UserEntity.findById(id)?.toModel()
     }
 
-    // --- VIAJES ---
+    // ==========================================
+    // 2. SISTEMA DE AMIGOS (FRIENDS)
+    // ==========================================
+
+    suspend fun sendFriendRequest(fromId: Long, toId: Long): Boolean = dbQuery {
+        // Evitar duplicados
+        val existing = FriendRequests.select {
+            ((FriendRequests.fromUser eq fromId) and (FriendRequests.toUser eq toId))
+        }.count()
+
+        if (existing > 0) return@dbQuery false
+
+        FriendRequests.insert {
+            it[fromUser] = fromId
+            it[toUser] = toId
+            it[status] = "pending"
+        }
+        true
+    }
+
+    // ESTA FUNCIÓN SOLUCIONA QUE NO SE VEA EL NOMBRE
+    suspend fun getPendingRequestsForUser(userId: Long): List<FriendRequestDto> = dbQuery {
+        // Hacemos JOIN explícito para obtener el nombre del usuario que ENVÍA (fromUser)
+        FriendRequests.join(
+            Users,
+            JoinType.INNER,
+            onColumn = FriendRequests.fromUser,
+            otherColumn = Users.id
+        )
+            .slice(FriendRequests.id, Users.userName, FriendRequests.status)
+            .select {
+                (FriendRequests.toUser eq userId) and (FriendRequests.status eq "pending")
+            }
+            .map {
+                FriendRequestDto(
+                    id = it[FriendRequests.id].value,
+                    fromUserName = it[Users.userName], // Aquí obtenemos el nombre correcto
+                    status = it[FriendRequests.status]
+                )
+            }
+    }
+
+    suspend fun acceptFriendRequest(requestId: Long): Boolean = dbQuery {
+        FriendRequests.update({ FriendRequests.id eq requestId }) {
+            it[status] = "accepted"
+        } > 0
+    }
+
+    suspend fun rejectFriendRequest(requestId: Long): Boolean = dbQuery {
+        FriendRequests.deleteWhere { FriendRequests.id eq requestId } > 0
+    }
+
+    // 5. OBTENER LISTA DE AMIGOS (ACEPTADOS)
+    suspend fun getAcceptedFriends(userId: Long): List<UserModel> = dbQuery {
+        // A) A quienes YO envié y aceptaron
+        val sentIds = FriendRequests.slice(FriendRequests.toUser)
+            .select { (FriendRequests.fromUser eq userId) and (FriendRequests.status eq "accepted") }
+            .map { it[FriendRequests.toUser] }
+
+        // B) Quienes ME enviaron y acepté
+        val receivedIds = FriendRequests.slice(FriendRequests.fromUser)
+            .select { (FriendRequests.toUser eq userId) and (FriendRequests.status eq "accepted") }
+            .map { it[FriendRequests.fromUser] }
+
+        // Unimos las dos listas y quitamos duplicados
+        val allFriendIds = (sentIds + receivedIds).distinct()
+
+        if (allFriendIds.isEmpty()) return@dbQuery emptyList()
+
+        // Buscamos los datos de esos usuarios
+        UserEntity.find { Users.id inList allFriendIds }.map { it.toModel() }
+    }
+    // ==========================================
+    // 3. VIAJES (TRIPS)
+    // ==========================================
+
     suspend fun getAllTrips(): List<TripResponse> = dbQuery {
         TripEntity.all().map {
             TripResponse(
@@ -81,7 +156,10 @@ class UserRepository {
         TripEntity.find { Trips.createdBy eq userId }.map { it.toModel() }
     }
 
-    // --- ACTIVIDADES ---
+    // ==========================================
+    // 4. ACTIVIDADES, GASTOS Y MEMORIAS
+    // ==========================================
+
     suspend fun getActivitiesByTrip(tripId: Long): List<ActivityResponse> = dbQuery {
         ActivityEntity.find { Activities.tripId eq tripId }.map { entity ->
             ActivityResponse(
@@ -114,7 +192,6 @@ class UserRepository {
         )
     }
 
-    // --- GASTOS ---
     suspend fun getExpensesByTrip(tripId: Long): List<ExpenseModel> = dbQuery {
         ExpenseEntity.find { Expenses.tripId eq tripId }.map {
             ExpenseModel(
@@ -128,7 +205,6 @@ class UserRepository {
         }
     }
 
-    // --- RECUERDOS ---
     suspend fun getMemoriesByTrip(tripId: Long): List<MemoryModel> = dbQuery {
         MemoryEntity.find { Memories.tripId eq tripId }.map {
             MemoryModel(
@@ -143,7 +219,10 @@ class UserRepository {
         }
     }
 
-    // --- MAPEO ---
+    // ==========================================
+    // 5. FUNCIONES AUXILIARES (MAPPERS)
+    // ==========================================
+
     private fun UserEntity.toModel() = UserModel(
         id = id.value,
         email = email,
