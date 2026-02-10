@@ -1,187 +1,87 @@
-<div class="page">
-  <div class="header">
-    <div>
-      <h1>Mis viajes</h1>
-      <p class="subtitle">Gestiona tus aventuras y acepta nuevas invitaciones.</p>
-    </div>
+<section style="max-width: 900px; margin: 24px auto; padding: 0 16px;">
+  <header style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <h2 style="margin:0;">Mis viajes</h2>
+    <button (click)="openCreate()" style="padding:8px 12px; cursor:pointer;">
+      + Crear viaje
+    </button>
+  </header>
 
-    <div class="header-actions">
-      <a routerLink="/friends" class="btn-icon-add" title="Buscar amigos">
-        👤+
-      </a>
-      <button class="btn primary" (click)="openCreate()">+ Crear viaje</button>
-    </div>
+  <div *ngIf="loading" style="margin-top: 12px;">Cargando...</div>
+
+  <div *ngIf="error" style="margin-top: 12px; padding: 10px; background:#ffe5e5;">
+    {{ error }}
   </div>
 
-  <div *ngIf="loading" class="info">Cargando viajes...</div>
-  <div *ngIf="errorMsg" class="error">{{ errorMsg }}</div>
-
-  <div class="invitations-section" *ngIf="!loading && pendingTrips.length > 0">
-    <h2>📩 Invitaciones Pendientes</h2>
-    <div class="invites-grid">
-      <div class="invite-card" *ngFor="let trip of pendingTrips">
-        <div class="invite-img-wrapper">
-          <img [src]="getTripImage(trip)" alt="Destino">
-          <span class="invite-badge">Invitación</span>
-        </div>
-        <div class="invite-content">
-          <h3>{{ trip.destination }}</h3>
-          <p class="invite-dates">{{ formatDateRange(trip.startDate, trip.endDate) }}</p>
-          <div class="invite-actions">
-            <button class="btn-accept" (click)="acceptInvite(trip)">Aceptar ✅</button>
-            <button class="btn-reject" (click)="rejectInvite(trip)">Rechazar ❌</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <hr class="section-divider">
+  <div *ngIf="!loading && trips.length === 0" style="margin-top: 12px; opacity: .8;">
+    No tienes viajes todavía.
   </div>
 
-  <div *ngIf="!loading && myTrips.length === 0 && pendingTrips.length === 0" class="empty">
-    <h3>No tienes viajes todavía</h3>
-    <p>Crea tu primer viaje para empezar a organizarlo.</p>
-    <button class="btn primary" (click)="openCreate()">Crear viaje</button>
-  </div>
-
-  <div class="grid" *ngIf="!loading && myTrips.length > 0">
-    <div class="trip-card" *ngFor="let trip of myTrips">
-      <img class="trip-img" [src]="getTripImage(trip)" alt="Imagen del destino" />
-
-      <div class="trip-body">
-        <div class="trip-title">
-          <h3>{{ trip.destination }}</h3>
-          <span class="trip-dates">{{ formatDateRange(trip.startDate, trip.endDate) }}</span>
-        </div>
-
-        <div class="trip-sub">
-          <span class="pill">Origen: {{ trip.origin }}</span>
-          <span class="pill">Nombre: {{ trip.name }}</span>
-        </div>
-
-        <div class="members">
-          <div class="avatars">
-            <img
-              class="avatar"
-              *ngFor="let m of visibleMembers(trip)"
-              [src]="m.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'"
-              [alt]="m.name"
-              [title]="m.name"
-            />
-            <span class="more" *ngIf="extraMembersCount(trip) > 0">
-              +{{ extraMembersCount(trip) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="actions">
-         <button class="btn ghost" [routerLink]="['/trips', trip.id]">Ver detalle</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" *ngIf="isCreateOpen" (click)="onOverlayClick($event)">
-  <div class="modal large-modal">
-    
-    <div class="modal-header">
-      <h2>{{ showTemplateSelection ? 'Elige tu aventura' : 'Detalles del viaje' }}</h2>
-      <button class="icon-btn" (click)="closeCreate()" [disabled]="submitting">✕</button>
-    </div>
-
-    <div *ngIf="showTemplateSelection" class="template-selection">
-      <p class="helper-text">Elige un destino sugerido o crea uno desde cero.</p>
-      
-      <div class="templates-grid">
-        <div class="template-card blank" (click)="selectTemplate(null)">
-          <div class="icon-placeholder">✨</div>
-          <h3>Desde cero</h3>
-          <p>Personaliza todo</p>
-        </div>
-
-        <div class="template-card" *ngFor="let t of templates" (click)="selectTemplate(t)">
-          <img [src]="t.imageUrl || 'https://via.placeholder.com/150'" alt="Destino">
-          <div class="t-content">
-            <h3>{{ t.destination }}</h3>
-            <p>{{ t.description }}</p>
-            <small>⏱ {{ t.durationDays }} días sugeridos</small>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <form *ngIf="!showTemplateSelection" [formGroup]="tripForm" (ngSubmit)="createTrip()" class="form">
-      
-      <button type="button" class="btn-back" (click)="showTemplateSelection = true">← Volver a elegir</button>
-
-      <div class="row">
-        <label>Nombre del viaje</label>
-        <input type="text" formControlName="name" placeholder="Ej: Verano 2026" />
-        <div class="field-error" *ngIf="tripForm.get('name')?.touched && tripForm.get('name')?.invalid">
-          <span *ngIf="tripForm.get('name')?.errors?.['required']">El nombre es obligatorio.</span>
-          <span *ngIf="tripForm.get('name')?.errors?.['minlength']">Mínimo 3 caracteres.</span>
-        </div>
-      </div>
-
-      <div class="row two">
+  <ul style="list-style:none; padding:0; margin-top: 12px;">
+    <li *ngFor="let t of trips; trackBy: trackById"
+        style="border:1px solid #ddd; border-radius:10px; padding:12px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
         <div>
-          <label>Origen</label>
-          <input type="text" formControlName="origin" placeholder="Ej: Madrid" />
-          <div class="field-error" *ngIf="tripForm.get('origin')?.touched && tripForm.get('origin')?.invalid">
-            <span *ngIf="tripForm.get('origin')?.errors?.['required']">El origen es obligatorio.</span>
+          <div style="font-weight:600;">{{ t.name }}</div>
+          <div style="opacity:.85;">
+            {{ t.destination }} · {{ t.startDate }} → {{ t.endDate }}
           </div>
+          <div style="margin-top:6px;">
+            <a [routerLink]="['/trips', t.id]" style="text-decoration:underline;">Ver detalle</a>
+          </div>
+        </div>
+
+        <button (click)="deleteTrip(t.id)"
+                style="padding:6px 10px; cursor:pointer;">
+          Borrar
+        </button>
+      </div>
+    </li>
+  </ul>
+
+  <!-- MODAL CREAR -->
+  <div *ngIf="isCreateOpen"
+       (click)="closeCreate()"
+       style="position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:16px;">
+    <div (click)="$event.stopPropagation()"
+         style="width: min(520px, 100%); background:white; border-radius:12px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Crear viaje</h3>
+        <button (click)="closeCreate()" [disabled]="submitting" style="cursor:pointer;">✕</button>
+      </div>
+
+      <form [formGroup]="tripForm" (ngSubmit)="createTrip()" style="margin-top:12px; display:grid; gap:10px;">
+        <div>
+          <label>Nombre</label>
+          <input formControlName="name" placeholder="Ej: Roma 2026" style="width:100%; padding:8px;">
+          <small *ngIf="tripForm.get('name')?.touched && tripForm.get('name')?.invalid" style="color:#b00020;">
+            El nombre es obligatorio (mín 2).
+          </small>
         </div>
 
         <div>
           <label>Destino</label>
-          <input type="text" formControlName="destination" placeholder="Ej: Roma" />
-          <div class="field-error" *ngIf="tripForm.get('destination')?.touched && tripForm.get('destination')?.invalid">
-            <span *ngIf="tripForm.get('destination')?.errors?.['required']">El destino es obligatorio.</span>
+          <input formControlName="destination" placeholder="Ej: Roma" style="width:100%; padding:8px;">
+          <small *ngIf="tripForm.get('destination')?.touched && tripForm.get('destination')?.invalid" style="color:#b00020;">
+            El destino es obligatorio (mín 2).
+          </small>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <label>Inicio</label>
+            <input type="date" formControlName="startDate" style="width:100%; padding:8px;">
+          </div>
+
+          <div>
+            <label>Fin</label>
+            <input type="date" formControlName="endDate" style="width:100%; padding:8px;">
           </div>
         </div>
-      </div>
 
-      <div class="field-error" *ngIf="tripForm.touched && tripForm.errors?.['samePlace']">
-        Origen y destino no pueden ser iguales.
-      </div>
-
-      <div class="row two">
-        <div>
-          <label>Fecha inicio</label>
-          <input type="date" formControlName="startDate" />
-        </div>
-
-        <div>
-          <label>Fecha fin</label>
-          <input type="date" formControlName="endDate" />
-        </div>
-      </div>
-
-      <div class="field-error" *ngIf="tripForm.touched && tripForm.errors?.['dateRange']">
-        La fecha fin no puede ser anterior a la fecha inicio.
-      </div>
-
-      <div class="row">
-        <label>Imagen (URL opcional)</label>
-        <input type="url" formControlName="imageUrl" placeholder="https://..." />
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn" type="button" (click)="closeCreate()" [disabled]="submitting">Cancelar</button>
-        <button class="btn primary" type="submit" [disabled]="submitting">
-          {{ submitting ? 'Creando...' : 'Crear viaje' }}
+        <button type="submit" [disabled]="submitting" style="padding:10px 12px; cursor:pointer;">
+          {{ submitting ? 'Creando...' : 'Crear' }}
         </button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
-
-<button class="fab-chat" (click)="goToChats()">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-  </svg>
-  
-  <span class="notification-badge" *ngIf="hasNotifications">
-    {{ notificationCount }}
-  </span>
-</button>
+</section>

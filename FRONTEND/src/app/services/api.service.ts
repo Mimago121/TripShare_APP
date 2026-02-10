@@ -1,47 +1,51 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
-@Injectable({ providedIn: 'root' })
-export class ApiService {
-  private readonly baseUrl = '/api';
 
-  constructor(private http: HttpClient) {}
+//POSIBILIDAD DE BORRAR ESTO????? 
+//Cada componente usa su propio service donde hara las llamadas a la API, asi que este ApiService no se si es necesario.
 
-  get<T>(path: string) {
-    return this.http.get<T>(this.baseUrl + path, {
-      headers: this.buildHeaders(),
-    });
-  }
+// @Injectable({ providedIn: 'root' })
+// export class ApiService {
+//   private readonly baseUrl = '';
 
-  post<T>(path: string, body: unknown) {
-    return this.http.post<T>(this.baseUrl + path, body, {
-      headers: this.buildHeaders(),
-    });
-  }
+//   constructor(private http: HttpClient) {}
 
-  put<T>(path: string, body: unknown) {
-    return this.http.put<T>(this.baseUrl + path, body, {
-      headers: this.buildHeaders(),
-    });
-  }
+//   get<T>(path: string) {
+//     return this.http.get<T>(this.baseUrl + path, {
+//       headers: this.buildHeaders(),
+//     });
+//   }
 
-  delete<T>(path: string) {
-    return this.http.delete<T>(this.baseUrl + path, {
-      headers: this.buildHeaders(),
-    });
-  }
+//   post<T>(path: string, body: unknown) {
+//     return this.http.post<T>(this.baseUrl + path, body, {
+//       headers: this.buildHeaders(),
+//     });
+//   }
 
-  private buildHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
+//   put<T>(path: string, body: unknown) {
+//     return this.http.put<T>(this.baseUrl + path, body, {
+//       headers: this.buildHeaders(),
+//     });
+//   }
 
-    let headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-    });
+//   delete<T>(path: string) {
+//     return this.http.delete<T>(this.baseUrl + path, {
+//       headers: this.buildHeaders(),
+//     });
+//   }
 
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
+//   private buildHeaders(): HttpHeaders {
+//     const token = localStorage.getItem('token');
 
-    return headers;
-  }
-}
+//     let headers = new HttpHeaders({
+//       'Content-Type': 'application/json',
+//     });
+
+//     if (token) {
+//       headers = headers.set('Authorization', `Bearer ${token}`);
+//     }
+
+//     return headers;
+//   }
+// }

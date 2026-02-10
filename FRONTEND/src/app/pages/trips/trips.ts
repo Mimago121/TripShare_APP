@@ -1,180 +1,71 @@
-/*
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { Router, RouterModule } from '@angular/router'; 
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
-import { Trip } from '../../interfaces/models';
-import { MemberMini, User } from '../../interfaces/models/user.model';
-import { AuthService } from '../../services/auth.service';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+
 import { TripService } from '../../services/trip.service';
+import { Trip } from '../../interfaces/models/trip.model';
 
 @Component({
-  selector: 'app-trips-page',
+  selector: 'trips',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule],
   templateUrl: './trips.html',
-  styleUrls: ['./trips.css'],
 })
 export class TripsComponent implements OnInit {
+  private tripService = inject(TripService);
   private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private tripsService = inject(TripService);
-  private router = inject(Router);
 
-  myTrips: Trip[] = [];
-  pendingTrips: Trip[] = [];
-  
-  templates: any[] = []; 
-  loading = true;
-  errorMsg = '';
+  trips: Trip[] = [];
+  loading = false;
+  error: string | null = null;
 
   isCreateOpen = false;
-  showTemplateSelection = true;
   submitting = false;
 
-  tripForm!: FormGroup;
-
-  currentUser: MemberMini | null = null;
-
-  // Notificaciones (si las lleváis a backend luego; de momento lo dejamos apagado)
-  hasNotifications = false;
-  notificationCount = 0;
-
-  readonly defaultUserAvatar =
-    'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-  readonly fallbackTripImg =
-    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1000&q=80';
+  // Form sencillo (los mínimos que normalmente pide backend)
+  tripForm = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    destination: ['', [Validators.required, Validators.minLength(2)]],
+    startDate: ['', [Validators.required]], // tipo "YYYY-MM-DD"
+    endDate: ['', [Validators.required]],   // tipo "YYYY-MM-DD"
+  });
 
   ngOnInit(): void {
-    // 1) Formulario: solo UI + validadores
-    this.tripForm = this.fb.group(
-      {
-        name: ['', [Validators.required, Validators.minLength(3)]],
-        origin: ['', [Validators.required, Validators.minLength(2)]],
-        destination: ['', [Validators.required, Validators.minLength(2)]],
-        startDate: ['', [Validators.required]],
-        endDate: ['', [Validators.required]],
-        imageUrl: [''],
-      },
-      { validators: [this.dateRangeValidator, this.originDestinationValidator] }
-    );
-
-    // 2) Escuchar al usuario logueado
-    //    (Esto sirve para saber a quién pedirle sus viajes)
-    this.authService.user$.subscribe((user: User | null) => {
-      if (!user) {
-        this.currentUser = null;
-        this.myTrips = [];
-        this.pendingTrips = [];
-        return;
-      }
-
-      this.currentUser = {
-        id: Number.NaN as any, // OJO: si tu MemberMini usa number, aquí no encaja con uid (string).
-        // Te explico abajo cómo arreglarlo bien.
-        name: user.displayName || user.email?.split('@')[0] || 'Viajero',
-        avatarUrl: user.photoURL || this.defaultUserAvatar,
-      };
-
-      // 3) Cargar datos desde backend
-      this.loadTrips();
-      this.loadTemplates(); // opcional si tienes endpoint
-    });
+    this.loadTrips();
   }
 
-  /**
-   * Pide al backend los viajes del usuario y los separa en:
-   * - myTrips (aceptados)
-   * - pendingTrips (pendientes)
-   *
-   * Aquí es donde el componente "recibe" los datos:
-   * realmente los recibe dentro del subscribe.
-   
   loadTrips(): void {
     this.loading = true;
-    this.errorMsg = '';
+    this.error = null;
 
-    this.tripsService.getMyTripsAndPending().subscribe({
-      next: (res) => {
-        this.myTrips = res.myTrips;
-        this.pendingTrips = res.pendingTrips;
+    this.tripService.getTrips().subscribe({
+      next: (data) => {
+        this.trips = data ?? [];
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error cargando viajes:', err);
-        this.errorMsg = 'No se pudieron cargar tus viajes.';
+        console.error(err);
+        this.error = 'No se pudieron cargar los viajes (¿backend/proxy caído?).';
         this.loading = false;
-      },
+      }
     });
-  }
-
-  /**
-   * Plantillas: idealmente vienen de backend (GET /trip-templates).
-   * Si aún no lo tienes, puedes dejarlo vacío o hardcodear en local.
-   
-  loadTemplates(): void {
-    this.tripsService.getTripTemplates().subscribe({
-      next: (templates) => (this.templates = templates),
-      error: (err) => console.warn('No pude cargar plantillas:', err),
-    });
-  }
-
-  goToChats(): void {
-    this.router.navigate(['/chats']);
   }
 
   openCreate(): void {
-    this.errorMsg = '';
     this.isCreateOpen = true;
-    this.showTemplateSelection = true;
-    this.tripForm.reset();
-  }
-
-  selectTemplate(template: any | null): void {
-    this.showTemplateSelection = false;
-
-    if (template) {
-      this.tripForm.patchValue({
-        destination: template.destination,
-        name: template.description || `Viaje a ${template.destination}`,
-        imageUrl: template.imageUrl,
-      });
-    } else {
-      this.tripForm.reset();
-    }
+    this.error = null;
   }
 
   closeCreate(): void {
     if (this.submitting) return;
     this.isCreateOpen = false;
+    this.tripForm.reset();
   }
 
-  onOverlayClick(evt: MouseEvent): void {
-    const target = evt.target as HTMLElement;
-    if (target.classList.contains('modal-overlay')) {
-      this.closeCreate();
-    }
-  }
-
-  // ---------- ACCIONES (aceptar/rechazar) ----------
-  acceptInvite(trip: TripCard): void {
-    this.tripsService.acceptInvite(trip.id).subscribe({
-      next: () => this.loadTrips(),
-      error: (e) => console.error('Error al aceptar invitación', e),
-    });
-  }
-
-  rejectInvite(trip: TripCard): void {
-    if (!confirm(`¿Rechazar invitación a ${trip.destination}?`)) return;
-
-    this.tripsService.rejectInvite(trip.id).subscribe({
-      next: () => this.loadTrips(),
-      error: (e) => console.error('Error al rechazar invitación', e),
-    });
-  }
-
-  // ---------- CREACIÓN ----------
   createTrip(): void {
+    this.error = null;
+
     if (this.tripForm.invalid) {
       this.tripForm.markAllAsTouched();
       return;
@@ -182,70 +73,46 @@ export class TripsComponent implements OnInit {
 
     this.submitting = true;
 
-    const v = this.tripForm.value;
-
-    // Esto es lo que mandas al backend (DTO de request)
-    const dto: CreateTripRequest = {
-      name: v.name.trim(),
-      origin: v.origin.trim(),
-      destination: v.destination.trim(),
-      startDate: v.startDate,
-      endDate: v.endDate,
-      imageUrl: v.imageUrl?.trim() || null,
+    const dto = {
+      name: this.tripForm.value.name!,
+      destination: this.tripForm.value.destination!,
+      startDate: this.tripForm.value.startDate!,
+      endDate: this.tripForm.value.endDate!,
     };
 
-    this.tripsService.createTrip(dto).subscribe({
-      next: () => {
+    this.tripService.createTrip(dto as any).subscribe({
+      next: (created) => {
+        // lo metemos arriba para que se vea instantáneo
+        this.trips = [created, ...this.trips];
         this.submitting = false;
-        this.isCreateOpen = false;
-        this.tripForm.reset();
-        this.loadTrips(); // recargar lista tras crear
+        this.closeCreate();
       },
       error: (err) => {
-        console.error('Error creando viaje:', err);
+        console.error(err);
+        this.error = 'No se pudo crear el viaje. Revisa los campos y el backend.';
         this.submitting = false;
-        this.errorMsg = 'No se pudo crear el viaje.';
-      },
+      }
     });
   }
 
-  // Helpers UI (igual que tenías)
-  getTripImage(trip: TripCard): string {
-    return trip.imageUrl || this.fallbackTripImg;
+  deleteTrip(id: number): void {
+    this.error = null;
+
+    const ok = confirm('¿Seguro que quieres borrar este viaje?');
+    if (!ok) return;
+
+    this.tripService.deleteTrip(id).subscribe({
+      next: () => {
+        this.trips = this.trips.filter(t => t.id !== id);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error = 'No se pudo borrar el viaje.';
+      }
+    });
   }
 
-  formatDateRange(startIso: string, endIso: string): string {
-    const s = this.formatIsoDate(startIso);
-    const e = this.formatIsoDate(endIso);
-    return `${s} - ${e}`;
+  trackById(_: number, t: Trip) {
+    return t.id;
   }
-
-  private formatIsoDate(iso: string): string {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  }
-
-  visibleMembers(trip: TripCard): MemberMini[] {
-    return trip.members ? trip.members.slice(0, 3) : [];
-  }
-
-  extraMembersCount(trip: TripCard): number {
-    return trip.members ? Math.max(0, trip.members.length - 3) : 0;
-  }
-
-  // Validadores
-  private dateRangeValidator(group: AbstractControl): ValidationErrors | null {
-    const start = group.get('startDate')?.value;
-    const end = group.get('endDate')?.value;
-    if (!start || !end) return null;
-    return end >= start ? null : { dateRange: true };
-  }
-
-  private originDestinationValidator(group: AbstractControl): ValidationErrors | null {
-    const o = (group.get('origin')?.value || '').trim().toLowerCase();
-    const d = (group.get('destination')?.value || '').trim().toLowerCase();
-    if (!o || !d) return null;
-    return o !== d ? null : { samePlace: true };
-  }
-}*/
+}

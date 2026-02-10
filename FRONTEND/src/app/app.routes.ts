@@ -11,6 +11,7 @@ import { adminGuard } from './guards/admin.guard';
 import { TripDetailComponent } from './pages/trip-detail/trip-detail';
 import { HomeComponent } from './pages/home/home'; 
 import { RegisterComponent } from './pages/register/register';
+import { TripsComponent } from './pages/trips/trips';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -24,7 +25,7 @@ export const routes: Routes = [
   { path: 'chat', component: ChatComponent },
   { path: 'trips/:id', component: TripDetailComponent },
   { path: 'friends', component: FriendsComponent },
-  { path: 'trips', component: FriendsComponent },
+  { path: 'trips', component: TripsComponent },
   {
     path: 'admin',
     component: AdminDashboardComponent,

@@ -5,9 +5,26 @@ import { Observable, map } from 'rxjs';
 import { Trip } from '../interfaces/models/trip.model';
 import { TripResponse } from '../interfaces/api/trips.api';
 
+export interface CreateTripRequest {
+  name: string;
+  destination: string;
+  startDate: string; // "YYYY-MM-DD"
+  endDate: string;   // "YYYY-MM-DD"
+  origin?: string | null;
+  // createdByUserId?: number; // mejor que el backend lo saque del token en el futuro
+}
+
+export interface UpdateTripRequest {
+  name?: string;
+  destination?: string;
+  startDate?: string;
+  endDate?: string;
+  origin?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TripService {
-  private apiUrl = '/api/trips';
+  private apiUrl = '/trips';
 
   constructor(private http: HttpClient) {}
 
@@ -16,62 +33,53 @@ export class TripService {
     return {
       id: api.id,
       name: api.name,
-      origin: api.origin,
+      origin: (api as any).origin ?? null, // por si todavía no viene siempre
       destination: api.destination,
       startDate: api.startDate,
       endDate: api.endDate,
-      members: [] // el backend no manda miembros (de momento)
+      members: [] // backend aún no manda miembros
     };
   }
 
   getTrips(): Observable<Trip[]> {
     return this.http.get<TripResponse[]>(this.apiUrl).pipe(
-      map(apiTrips => apiTrips.map(t => this.toTrip(t)))
+      map(list => (list ?? []).map(t => this.toTrip(t)))
     );
   }
 
   getTripById(id: number): Observable<Trip> {
     return this.http.get<TripResponse>(`${this.apiUrl}/${id}`).pipe(
-      map(apiTrip => this.toTrip(apiTrip))
+      map(t => this.toTrip(t))
     );
   }
 
-  // OJO: el backend espera createdByUserId y NO espera imageUrl (según tu DTO Kotlin)
-  // hay que añadir imageUrl al DTO de kotlin tripResponse y CreateTripRequest
-  createTrip(
-    name: string,
-    origin: string | null,
-    destination: string,
-    startDate: string,
-    endDate: string,
-    createdByUserId: number
-  ): Observable<Trip> {
-    const body = { name, origin, destination, startDate, endDate, createdByUserId };
-    return this.http.post<TripResponse>(this.apiUrl, body).pipe(
-      map(apiTrip => this.toTrip(apiTrip))
+  /**
+   * ✅ Importante: recibe un objeto (dto)
+   * Así encaja con el componente: this.tripService.createTrip(dto)
+   */
+  createTrip(dto: CreateTripRequest): Observable<Trip> {
+    return this.http.post<TripResponse>(this.apiUrl, dto).pipe(
+      map(t => this.toTrip(t))
     );
   }
 
-  updateTrip(
-    id: number,
-    data: {
-      name?: string;
-      origin?: string | null;
-      destination?: string;
-      startDate?: string;
-      endDate?: string;
-      // si el backend permite, podrías añadir createdByUserId, pero normalmente NO se actualiza
-    }
-  ): Observable<Trip> {
-    return this.http.put<TripResponse>(`${this.apiUrl}/${id}`, data).pipe(
-      map(apiTrip => this.toTrip(apiTrip))
+  updateTrip(id: number, dto: UpdateTripRequest): Observable<Trip> {
+    return this.http.put<TripResponse>(`${this.apiUrl}/${id}`, dto).pipe(
+      map(t => this.toTrip(t))
     );
   }
 
-  // ⚠️ Solo funcionará si el backend tiene este endpoint y devuelve TripResponse
+  deleteTrip(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // -----------------------------
+  // Endpoints "extra" (solo si existen en backend)
+  // -----------------------------
+
   updateTripImage(id: number, imageUrl: string | null): Observable<Trip> {
     return this.http.patch<TripResponse>(`${this.apiUrl}/${id}/image`, { imageUrl }).pipe(
-      map(apiTrip => this.toTrip(apiTrip))
+      map(t => this.toTrip(t))
     );
   }
 
@@ -89,9 +97,5 @@ export class TripService {
 
   leaveTrip(tripId: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${tripId}/leave`, {});
-  }
-
-  deleteTrip(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }
