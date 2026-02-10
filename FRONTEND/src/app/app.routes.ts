@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
 import { ProfileComponent } from './pages/profile/profile';
-import { ItineraryComponent } from './pages/itinerary/itinerary';
 import { ExpensesComponent } from './pages/expenses/expenses';
 import { MemoriesComponent } from './pages/memories/memories';
 import { FriendsComponent } from './pages/friends/friends';
@@ -12,18 +11,18 @@ import { TripDetailComponent } from './pages/trip-detail/trip-detail';
 import { HomeComponent } from './pages/home/home'; 
 import { RegisterComponent } from './pages/register/register';
 import { TripsComponent } from './pages/trips/trips';
-
+import { ActivitiesComponent } from './pages/activities/activities';
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'home', component: HomeComponent },
   { path: 'profile', component: ProfileComponent },
-  { path: 'itinerary', component: ItineraryComponent },
+  { path: 'activities', component: ActivitiesComponent },
   { path: 'expenses', component: ExpensesComponent },
   { path: 'memories', component: MemoriesComponent },
   { path: 'chat', component: ChatComponent },
-  { path: 'trips/:id', component: TripDetailComponent },
+  { path: 'trip-detail/:id', component: TripDetailComponent },
   { path: 'friends', component: FriendsComponent },
   { path: 'trips', component: TripsComponent },
   {

@@ -132,6 +132,31 @@ fun Application.configureRouting() {
                 val trips = repository.getTripsByUserId(userId)
                 call.respond(trips)
             }
+
+            get("/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                val trip = repository.getTripById(id)
+                if (trip != null) call.respond(HttpStatusCode.OK, trip)
+                else call.respond(HttpStatusCode.NotFound, "Viaje no encontrado")
+            }
+
+            // 2. Obtener Actividades (Itinerario)
+            get("/{id}/activities") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getActivitiesByTrip(id))
+            }
+
+            // 3. Obtener Gastos
+            get("/{id}/expenses") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getExpensesByTrip(id))
+            }
+
+            // 4. Obtener Memorias
+            get("/{id}/memories") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getMemoriesByTrip(id))
+            }
         }
 
         // ===========================

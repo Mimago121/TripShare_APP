@@ -176,6 +176,53 @@ class UserRepository {
         TripEntity.find { Trips.createdBy eq userId }.map { it.toModel() }
     }
 
+    suspend fun getTripById(tripId: Long): TripModel? = dbQuery {
+        TripEntity.findById(tripId)?.toModel()
+    }
+
+    // ==========================================
+    // ACTIVIDADES, GASTOS Y MEMORIAS (ITINERARIO)
+    // ==========================================
+
+    suspend fun getActivitiesByTrip(tripId: Long): List<ActivityResponse> = dbQuery {
+        ActivityEntity.find { Activities.tripId eq tripId }.map { entity ->
+            ActivityResponse(
+                id = entity.id.value,
+                tripId = entity.tripId.value,
+                title = entity.title,
+                startDatetime = entity.startDatetime.toString(),
+                endDatetime = entity.endDatetime.toString(),
+                createdByUserId = entity.createdBy.id.value
+            )
+        }
+    }
+
+    suspend fun getExpensesByTrip(tripId: Long): List<ExpenseModel> = dbQuery {
+        ExpenseEntity.find { Expenses.tripId eq tripId }.map { entity ->
+            ExpenseModel(
+                id = entity.id.value,
+                tripId = entity.tripId.value,
+                paidByUserId = entity.paidBy.value,
+                description = entity.description,
+                amount = entity.amount.toDouble(), // Convertimos a Double para Angular
+                createdAt = entity.createdAt.toString()
+            )
+        }
+    }
+
+    suspend fun getMemoriesByTrip(tripId: Long): List<MemoryModel> = dbQuery {
+        MemoryEntity.find { Memories.tripId eq tripId }.map { entity ->
+            MemoryModel(
+                id = entity.id.value,
+                tripId = entity.tripId.value,
+                userId = entity.userId.value,
+                type = entity.type,
+                description = entity.description,
+                mediaUrl = entity.mediaUrl,
+                createdAt = entity.createdAt.toString()
+            )
+        }
+    }
     // MAPPERS AUXILIARES
     private fun ResultRow.toUserModel() = UserModel(
         id = this[Users.id].value,

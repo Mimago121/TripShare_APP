@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+/*import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -114,5 +114,67 @@ export class TripsComponent implements OnInit {
 
   trackById(_: number, t: Trip) {
     return t.id;
+  }
+}
+*/
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { NavbarComponent } from '../navbar/navbar';
+import { FooterComponent } from '../footer/footer';
+import { TripService, Trip } from '../../services/trip.service';
+import { Router, RouterModule } from '@angular/router';
+@Component({
+  selector: 'app-trips',
+  standalone: true,
+  imports: [CommonModule, NavbarComponent, FooterComponent, RouterModule], // Quitamos FormsModule
+  templateUrl: './trips.html',
+  styleUrls: ['./trips.css']
+})
+export class TripsComponent implements OnInit {
+  trips: Trip[] = [];
+  currentUser: any = null;
+  isLoading: boolean = true;
+
+  constructor(
+    private tripService: TripService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    if (typeof localStorage !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        this.currentUser = JSON.parse(userStr);
+        this.loadTrips(); // Solo llamamos a cargar cuando ya tenemos el usuario
+      } else {
+        this.isLoading = false;
+      }
+    }
+  }
+
+  loadTrips() {
+    if (!this.currentUser) return;
+
+    this.isLoading = true;
+    this.tripService.getMyTrips(this.currentUser.id).subscribe({
+      next: (data) => {
+        this.trips = data;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando viajes', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  goToDetail(tripId: number | undefined) {
+    console.log("Intentando abrir viaje con ID:", tripId); // Para debugear
+    
+    if (tripId) {
+      this.router.navigate(['/trip-detail', tripId]);
+    } else {
+      console.error("❌ ERROR: El ID del viaje es undefined. Revisa el backend.");
+    }
   }
 }

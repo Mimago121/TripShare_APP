@@ -1,4 +1,4 @@
-<section style="max-width: 900px; margin: 24px auto; padding: 0 16px;">
+<!--<section style="max-width: 900px; margin: 24px auto; padding: 0 16px;">
   <header style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
     <h2 style="margin:0;">Mis viajes</h2>
     <button (click)="openCreate()" style="padding:8px 12px; cursor:pointer;">
@@ -37,8 +37,8 @@
       </div>
     </li>
   </ul>
-
-  <!-- MODAL CREAR -->
+-->
+  <!-- MODAL CREAR 
   <div *ngIf="isCreateOpen"
        (click)="closeCreate()"
        style="position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:16px;">
@@ -85,3 +85,47 @@
     </div>
   </div>
 </section>
+-->
+<app-navbar></app-navbar>
+
+<div class="trips-container">
+  <div class="trips-header">
+    <div class="header-titles">
+      <h1>Mis Viajes ✈️</h1>
+      <p>Explora tus próximas aventuras y recuerdos.</p>
+    </div>
+    <button class="btn-primary" style="opacity: 0.5; cursor: not-allowed;">+ Crear Nuevo Viaje (Próximamente)</button>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Cargando viajes...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!isLoading && trips.length === 0">
+    <h2>Aún no tienes viajes programados</h2>
+    <p>Pronto podrás planear una nueva escapada desde aquí.</p>
+  </div>
+
+  <div class="trips-grid" *ngIf="!isLoading && trips.length > 0">
+    
+    <div class="trip-card" *ngFor="let trip of trips">
+      <div class="trip-card-img">
+        <img [src]="'https://picsum.photos/seed/' + trip.id + '/400/200'" alt="Trip cover">
+      </div>
+      <div class="trip-card-body">
+        <h3>{{ trip.name }}</h3>
+        <div class="trip-info">
+          <span>📍 {{ trip.origin ? trip.origin + ' ➔ ' : '' }}{{ trip.destination }}</span>
+          <span>📅 {{ trip.startDate | date:'dd MMM yyyy' }} - {{ trip.endDate | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+    <div class="trip-card-footer">
+        <button class="btn-outline-small" (click)="goToDetail(trip.id)">Ver detalles</button>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<app-footer></app-footer>

@@ -1,661 +1,162 @@
-/* =========================================
-   CONTENEDOR PRINCIPAL
-   ========================================= */
-   .page {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    color: #333;
-    padding-bottom: 80px; /* Espacio para el botón flotante del chat */
-  }
-  
-  /* --- Header --- */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-  
-  .header h1 {
-    font-size: 2rem;
-    margin: 0;
-    color: #111827;
-  }
-  
-  .subtitle {
-    color: #6b7280;
-    margin: 0.5rem 0 0 0;
-  }
-
-  /* NUEVO: Contenedor de botones de cabecera */
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  /* NUEVO: Botón de añadir amigo */
-  .btn-icon-add {
-    background-color: #eff6ff;
-    color: #4f46e5;
-    border: 1px solid #dbeafe;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1.1rem;
-    transition: all 0.2s;
-  }
-
-  .btn-icon-add:hover {
-    background-color: #dbeafe;
-    transform: translateY(-2px);
-  }
-  
-  /* --- Estados (Loading, Error, Empty) --- */
-  .info, .error {
-    text-align: center;
-    padding: 2rem;
-    font-size: 1.1rem;
-    color: #666;
-  }
-  
-  .error {
-    color: #ef4444;
-    background: #fef2f2;
-    border-radius: 8px;
-    border: 1px solid #fee2e2;
-  }
-  
-  .empty {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: #f9fafb;
-    border-radius: 16px;
-    border: 2px dashed #e5e7eb;
-    color: #6b7280;
-  }
-  
-  .empty h3 {
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* =========================================
-     GRID DE VIAJES (TARJETAS)
-     ========================================= */
-  .grid {
-    display: grid;
-    /* Crea columnas automáticas de mínimo 300px */
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 2rem;
-  }
-  
-  .trip-card {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e5e7eb;
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .trip-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Imagen de la tarjeta */
-  .trip-img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-bottom: 1px solid #f3f4f6;
-  }
-  
-  /* Cuerpo de la tarjeta */
-  .trip-body {
-    padding: 1.2rem;
-    flex: 1; /* Para que crezca y empuje el footer si hiciera falta */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  /* Título y Fechas */
-  .trip-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 5px;
-  }
-  
-  .trip-title h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #111827;
-    font-weight: 700;
-  }
-  
-  .trip-dates {
-    font-size: 0.8rem;
-    color: #6b7280;
-    background: #f3f4f6;
-    padding: 4px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-  
-  /* Subtítulo (Origen/Nombre) */
-  .trip-sub {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .pill {
-    font-size: 0.75rem;
-    color: #4b5563;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    padding: 2px 8px;
-    border-radius: 12px;
-  }
-  
-  /* Miembros (Avatares) */
-  .members {
-    margin-top: auto; /* Empuja hacia abajo si hay espacio */
-    padding-top: 1rem;
-  }
-  
-  .avatars {
-    display: flex;
-    align-items: center;
-  }
-  
-  .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid white;
-    object-fit: cover;
-    margin-left: -10px; /* Efecto solapado */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .avatar:first-child {
-    margin-left: 0;
-  }
-  
-  .more {
-    margin-left: 5px;
-    font-size: 0.8rem;
-    color: #6b7280;
-    font-weight: 600;
-  }
-  
-  /* Botones de acción en la tarjeta */
-  .actions {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #f3f4f6;
-  }
-  
-  /* =========================================
-     BOTONES GENERALES
-     ========================================= */
-  .btn {
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-  }
-  
-  /* Botón Primario (Azul) */
-  .primary {
-    background-color: #007adf;
-    color: white;
-    box-shadow: 0 4px 6px rgba(0, 122, 223, 0.2);
-  }
-  
-  .primary:hover:not(:disabled) {
-    background-color: #005bb5;
-  }
-  
-  .primary:disabled {
-    background-color: #93c5fd;
-    cursor: not-allowed;
-  }
-  
-  /* Botón Ghost (Gris/Transparente) */
-  .ghost {
-    background: transparent;
-    color: #007adf;
-    width: 100%;
-    border: 1px solid #eff6ff;
-  }
-  
-  .ghost:hover {
-    background: #eff6ff;
-  }
-  
-  .icon-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #6b7280;
-  }
-  
-  /* =========================================
-     MODAL (POPUP CREAR VIAJE)
-     ========================================= */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    padding: 1rem;
-  }
-  
-  .modal {
-    background: white;
-    width: 100%;
-    max-width: 500px;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.3s ease-out;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  .modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #111827;
-  }
-  
-  /* Formulario del Modal */
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-  }
-  
-  .row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  /* Filas de dos columnas */
-  .row.two {
-    flex-direction: row;
-    gap: 1rem;
-  }
-  
-  .row.two > div {
-    flex: 1;
-  }
-  
-  label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #374151;
-  }
-  
-  input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    outline: none;
-    box-sizing: border-box; /* Importante */
-    transition: border-color 0.2s;
-  }
-  
-  input:focus {
-    border-color: #007adf;
-  }
-  
-  /* Validaciones */
-  .field-error {
-    color: #ef4444;
-    font-size: 0.8rem;
-    margin-top: 2px;
-  }
-  
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-  
-  /* Botón flotante del chat (FAB) */
-  .fab-chat {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background-color: #4f46e5;
-    color: white;
-    border-radius: 50%;
-    border: none;
-    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.2s, background-color 0.2s;
-    z-index: 900;
-  }
-
-  .fab-chat:hover {
-    transform: scale(1.1);
-    background-color: #4338ca;
-  }
-
-  /* Badge de notificación */
-  .notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #ef4444;
-    color: white;
-    font-size: 0.75rem;
-    font-weight: bold;
-    min-width: 20px;
-    height: 20px;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 2px solid white;
-    padding: 2px;
-  }
-
-/* =========================================
-   ESTILOS NUEVOS PARA EL MODAL DE PLANTILLAS
-   ========================================= */
-
-/* Hacemos el modal un poco más ancho para que quepan las tarjetas */
-.modal.large-modal {
-    max-width: 700px;
-  }
-  
-  .helper-text {
-    color: #6b7280;
-    margin-top: -10px;
-    margin-bottom: 1.5rem;
-  }
-  
-  /* Grid de selección */
-  .templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 5px;
-  }
-  
-  /* Tarjeta de Plantilla en el Modal */
-  .template-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all 0.2s;
-    background: white;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .template-card:hover {
-    transform: translateY(-3px);
-    border-color: #4f46e5;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
-  }
-  
-  /* Estilo especial para "Desde Cero" */
-  .template-card.blank {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 2rem 1rem;
-    background: #f9fafb;
-    border: 2px dashed #d1d5db;
-    min-height: 180px;
-  }
-  
-  .template-card.blank .icon-placeholder {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .template-card.blank h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: #374151;
-  }
-  
-  /* Estilo para las plantillas con imagen */
-  .template-card img {
-    width: 100%;
-    height: 100px;
-    object-fit: cover;
-  }
-  
-  .t-content {
-    padding: 10px;
-  }
-  
-  .t-content h3 {
-    margin: 0 0 5px 0;
-    font-size: 0.95rem;
-    color: #111827;
-  }
-  
-  .t-content p {
-    margin: 0 0 5px 0;
-    font-size: 0.8rem;
-    color: #6b7280;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Cortar texto largo */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  
-  .t-content small {
-    font-size: 0.75rem;
-    color: #4f46e5;
-    font-weight: 600;
-  }
-  
-  /* Botón de volver */
-  .btn-back {
-    background: none;
-    border: none;
-    color: #6b7280;
-    cursor: pointer;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    padding: 0;
-    text-decoration: underline;
-  }
-  
-  .btn-back:hover {
-    color: #111827;
-  }
-
-  /* Asegura que el modal tenga fondo y tamaño */
-.modal {
-  background-color: white !important; /* Forzar blanco */
-  min-height: 200px;
-  width: 90%;
-  max-width: 500px;
-  border-radius: 20px;
-  padding: 2rem;
-  opacity: 1 !important; /* Forzar visibilidad */
-  display: block;
-  z-index: 1001; /* Encima del overlay */
+/* ============================== */
+/* LAYOUT PRINCIPAL               */
+/* ============================== */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-color);
 }
 
-/* El estilo de la cuadrícula de plantillas */
-.templates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 15px;
-  margin-top: 1rem;
+.trips-container {
+  flex: 1; /* Empuja el footer hacia abajo */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.template-card {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 10px;
-  cursor: pointer;
-  background: white;
-}
-
-/* --- ESTILOS DE INVITACIONES --- */
-.invitations-section {
+/* ============================== */
+/* HEADER                         */
+/* ============================== */
+.trips-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 40px;
-  background: #f0fdf4; /* Fondo verde muy suave */
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid #bbf7d0;
-}
-
-.invitations-section h2 {
-  font-size: 1.2rem;
-  color: #166534;
-  margin-bottom: 15px;
-}
-
-.invites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  flex-wrap: wrap;
   gap: 20px;
 }
 
-.invite-card {
-  background: white;
+.header-titles h1 {
+  margin: 0;
+  font-size: 2.2rem;
+  color: var(--text-main);
+}
+
+.header-titles p {
+  margin: 5px 0 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+/* ============================== */
+/* CUADRÍCULA DE TARJETAS (GRID)  */
+/* ============================== */
+.trips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.trip-card {
+  background-color: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  border: 1px solid #e2e8f0;
 }
 
-.invite-img-wrapper {
-  position: relative;
-  height: 140px;
+.trip-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.1);
 }
 
-.invite-img-wrapper img {
+.trip-card-img {
+  width: 100%;
+  height: 180px;
+  background-color: #eaeaea; /* Color de fondo por si tarda en cargar la imagen */
+}
+
+.trip-card-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.invite-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #f59e0b;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.invite-content {
-  padding: 15px;
-}
-
-.invite-content h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #1e293b;
-}
-
-.invite-dates {
-  color: #64748b;
-  font-size: 0.85rem;
-  margin-bottom: 15px;
-}
-
-.invite-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-accept, .btn-reject {
+.trip-card-body {
+  padding: 20px;
   flex: 1;
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
+}
+
+.trip-card-body h3 {
+  margin: 0 0 15px 0;
+  color: var(--text-main);
+  font-size: 1.4rem;
+}
+
+.trip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.trip-card-footer {
+  padding: 15px 20px;
+  border-top: 1px solid var(--border-color);
+  background-color: rgba(128, 128, 128, 0.02);
+}
+
+/* ============================== */
+/* BOTONES                        */
+/* ============================== */
+.btn-primary {
+  background-color: var(--primary); 
+  color: white; 
+  border: none; 
+  padding: 12px 24px; 
+  border-radius: 8px; 
+  font-weight: 600; 
+  font-size: 1rem;
+}
+
+.btn-outline-small {
+  width: 100%; 
+  background-color: transparent; 
+  border: 1.5px solid var(--primary); 
+  color: var(--primary); 
+  padding: 10px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  transition: all 0.2s ease; 
   font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.1s;
+  font-size: 0.95rem;
 }
 
-.btn-accept {
-  background: #22c55e;
-  color: white;
+.btn-outline-small:hover { 
+  background-color: var(--primary); 
+  color: white; 
 }
 
-.btn-reject {
-  background: #ef4444;
-  color: white;
+/* ============================== */
+/* ESTADOS (CARGANDO / VACÍO)     */
+/* ============================== */
+.empty-state, .loading-state { 
+  text-align: center; 
+  padding: 80px 20px; 
+  color: var(--text-secondary); 
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
 }
 
-.btn-accept:hover { background: #16a34a; }
-.btn-reject:hover { background: #dc2626; }
+.spinner { 
+  width: 45px; 
+  height: 45px; 
+  border: 4px solid var(--border-color); 
+  border-top: 4px solid var(--primary); 
+  border-radius: 50%; 
+  animation: spin 1s linear infinite; 
+  margin: 0 auto 20px; 
+}
 
-.section-divider {
-  border: 0;
-  border-top: 2px dashed #cbd5e1;
-  margin: 40px 0 20px 0;
+@keyframes spin { 
+  0% { transform: rotate(0deg); } 
+  100% { transform: rotate(360deg); } 
 }
