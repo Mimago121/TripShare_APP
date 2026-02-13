@@ -134,4 +134,9 @@ export class TripService {
   };
   return this.http.put(`${this.baseUrl}/invitations/respond`, body);
 }
+
+// Obtener todos los viajes de un usuario específico
+  getTripsByUserId(userId: number): Observable<Trip[]> {
+    return this.http.get<Trip[]>(`${this.baseUrl}/user/${userId}`);
+  }
 }

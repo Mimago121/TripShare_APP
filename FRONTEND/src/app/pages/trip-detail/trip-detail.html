@@ -11,6 +11,16 @@
         <span class="badge-date">📅 {{ trip.startDate | date:'mediumDate' }} al {{ trip.endDate | date:'mediumDate' }}</span>
       </div>
     </div>
+
+    <div class="hero-map-wrapper" *ngIf="showMap">
+        <google-map 
+            height="100%" 
+            width="100%" 
+            [options]="mapOptions"
+            [center]="mapCenter">
+            <map-marker *ngIf="markerPosition" [position]="markerPosition"></map-marker>
+        </google-map>
+    </div>
   </div>
 
   <div class="tabs-nav">
@@ -22,7 +32,7 @@
 
   <div class="tab-content">
 
-    <div *ngIf="activeTab === 'itinerary'" class="content-section">
+    <div *ngIf="activeTab === 'itinerary'" class="content-section fade-in">
       <div class="section-header">
         <h2>Itinerario y Actividades</h2>
         <button class="btn-outline-small" (click)="openModal('activity')">+ Añadir</button>
@@ -44,7 +54,7 @@
       </div>
     </div>
 
-    <div *ngIf="activeTab === 'expenses'" class="content-section">
+    <div *ngIf="activeTab === 'expenses'" class="content-section fade-in">
       <div class="section-header">
         <h2>Control de Gastos</h2>
         <button class="btn-outline-small" (click)="openModal('expense')">+ Añadir Gasto</button>
@@ -62,9 +72,13 @@
           <div class="exp-amount">{{ exp.amount }} €</div>
         </div>
       </div>
+      
+      <div class="expense-total" *ngIf="expenses.length > 0">
+         <h3>Total: {{ totalExpenses }} €</h3>
+      </div>
     </div>
 
-    <div *ngIf="activeTab === 'memories'" class="content-section">
+    <div *ngIf="activeTab === 'memories'" class="content-section fade-in">
       <div class="section-header">
         <h2>Álbum de Recuerdos</h2>
         <button class="btn-outline-small" (click)="openModal('memory')">+ Subir Foto</button>
@@ -82,7 +96,7 @@
       </div>
     </div>
 
-    <div *ngIf="activeTab === 'members'" class="content-section">
+    <div *ngIf="activeTab === 'members'" class="content-section fade-in">
       <div class="section-header">
         <h2>Viajeros ({{ members.length }})</h2>
       </div>

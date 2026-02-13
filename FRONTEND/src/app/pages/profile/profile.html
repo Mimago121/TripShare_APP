@@ -76,9 +76,27 @@
       </div>
     </section>
 
-    <div class="empty-tab" *ngIf="activeTab !== 'trips'">
-      <p>🚧 Esta sección está en construcción.</p>
-    </div>
+    <section class="profile-body fade-in" *ngIf="activeTab === 'map'">
+      <div class="world-map-container">
+        <h3>🌍 Mi Mapa de Viajes</h3>
+        <p>Has visitado {{ tripMarkers.length }} destinos.</p>
+        
+        <div class="map-frame">
+            <google-map 
+                height="500px" 
+                width="100%" 
+                [options]="worldMapOptions">
+                
+                <map-marker 
+                    *ngFor="let marker of tripMarkers" 
+                    [position]="marker.position"
+                    [title]="marker.title">
+                </map-marker>
+
+            </google-map>
+        </div>
+      </div>
+    </section>
 
   </main>
 

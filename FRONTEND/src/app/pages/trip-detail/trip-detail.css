@@ -24,12 +24,27 @@
    HERO / CABECERA
    ========================================= */
 .trip-hero {
-  background: linear-gradient(135deg, var(--primary), #a855f7);
-  border-radius: 20px;
-  padding: 40px;
-  color: white;
-  margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* Ejemplo */
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    gap: 20px;
+}
+
+.hero-content {
+    flex: 1;
+}
+
+.hero-map-wrapper {
+    width: 300px; /* Tamaño de la "mini ventana" */
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid white;
 }
 
 .back-link {

@@ -6,10 +6,14 @@ import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { TripService, Trip, Member } from '../../services/trip.service';
 
+// --- IMPORTANTE: ESTOS SON LOS IMPORTS QUE FALTAN ---
+import { GoogleMapsModule, MapGeocoder } from '@angular/google-maps';
+
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FormsModule],
+  // --- IMPORTANTE: AÑADE GoogleMapsModule AQUÍ ---
+  imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FormsModule, GoogleMapsModule],
   templateUrl: './trip-detail.html',
   styleUrls: ['./trip-detail.css']
 })
@@ -27,7 +31,7 @@ export class TripDetailComponent implements OnInit {
   isLoading: boolean = true;
   totalExpenses: number = 0;
 
-  // --- VARIABLES PARA LOS FORMULARIOS Y MODALES ---
+  // Variables para formularios
   showModal: boolean = false;
   modalType: string = '';
   selectedFriendEmail: string = '';
@@ -36,9 +40,21 @@ export class TripDetailComponent implements OnInit {
   newExpense = { description: '', amount: 0 };
   newMemory = { type: 'photo', description: '', url: '' };
 
+  // --- IMPORTANTE: ESTAS SON LAS VARIABLES QUE EL HTML NO ENCUENTRA ---
+  mapOptions: google.maps.MapOptions = {
+    zoom: 12,
+    disableDefaultUI: true,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  markerPosition: google.maps.LatLngLiteral | undefined;
+  mapCenter: google.maps.LatLngLiteral = { lat: 40.416, lng: -3.703 };
+  showMap: boolean = false;
+  // ------------------------------------------------------------------
+
   constructor(
     private route: ActivatedRoute,
-    private tripService: TripService
+    private tripService: TripService,
+    private geocoder: MapGeocoder // Inyectamos el geocoder
   ) {}
 
   ngOnInit(): void {
@@ -63,6 +79,12 @@ export class TripDetailComponent implements OnInit {
     this.tripService.getTripById(this.tripId).subscribe({
       next: (data) => {
         this.trip = data;
+
+        // Si hay destino, cargamos el mapa
+        if (this.trip && this.trip.destination) {
+            this.cargarUbicacion(this.trip.destination);
+        }
+
         this.tripService.getActivities(this.tripId).subscribe(a => this.activities = a);
         this.tripService.getExpenses(this.tripId).subscribe(e => {
           this.expenses = e;
@@ -73,6 +95,18 @@ export class TripDetailComponent implements OnInit {
         this.isLoading = false;
       },
       error: () => this.isLoading = false
+    });
+  }
+
+  // Función para el mapa
+  cargarUbicacion(destino: string) {
+    this.geocoder.geocode({ address: destino }).subscribe(({ results }) => {
+      if (results && results.length) {
+        const location = results[0].geometry.location;
+        this.mapCenter = { lat: location.lat(), lng: location.lng() };
+        this.markerPosition = this.mapCenter;
+        this.showMap = true;
+      }
     });
   }
 
@@ -90,11 +124,9 @@ export class TripDetailComponent implements OnInit {
     this.totalExpenses = this.expenses.reduce((sum, item) => sum + item.amount, 0);
   }
 
-  // --- MÉTODOS DEL MODAL ---
   openModal(type: string) {
     this.modalType = type;
     this.showModal = true;
-    // Reset de formularios al abrir
     this.newActivity = { title: '', start: '', end: '' };
     this.newExpense = { description: '', amount: 0 };
     this.newMemory = { type: 'photo', description: '', url: '' };
@@ -104,7 +136,6 @@ export class TripDetailComponent implements OnInit {
     this.showModal = false;
   }
 
-  // --- MÉTODOS DE GUARDADO (SAVE) ---
   saveActivity() {
     const data = { 
       ...this.newActivity, 

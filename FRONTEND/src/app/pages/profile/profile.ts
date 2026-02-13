@@ -1,13 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Para los inputs del modal
+import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
+import { RouterModule } from '@angular/router'; // Importar router si usas routerLink en el HTML
+
+// 1. Imports para Google Maps y Servicios
+import { GoogleMapsModule, MapGeocoder } from '@angular/google-maps';
+import { TripService } from '../../services/trip.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, FooterComponent, FormsModule],
+  // 2. Añadir GoogleMapsModule y RouterModule a imports
+  imports: [CommonModule, NavbarComponent, FooterComponent, FormsModule, GoogleMapsModule, RouterModule],
   templateUrl: './profile.html',
   styleUrls: ['./profile.css']
 })
@@ -16,27 +22,45 @@ export class ProfileComponent implements OnInit {
   isEditModalOpen: boolean = false;
   activeTab: string = 'trips'; // 'trips' | 'photos' | 'map'
 
-  // Datos simulados para rellenar el perfil profesional
+  // Datos de estadísticas (se actualizarán dinámicamente)
   stats = {
-    countries: 12,
-    trips: 8,
-    followers: 145
+    countries: 0,
+    trips: 0,
+    followers: 145 // Dato simulado
   };
 
-  myTrips = [
-    { title: 'Verano en Italia', date: 'Ago 2023', image: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000' },
-    { title: 'Escapada a Londres', date: 'Nov 2023', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2000' },
-    { title: 'Ruta por Tailandia', date: 'Ene 2024', image: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?q=80&w=2000' }
-  ];
+  // Lista de viajes real
+  myTrips: any[] = [];
 
-  constructor() {}
+  // --- CONFIGURACIÓN DEL MAPA MUNDIAL ---
+  worldMapOptions: google.maps.MapOptions = {
+    center: { lat: 20, lng: 0 },
+    zoom: 2,
+    disableDefaultUI: false,
+    styles: [
+      {
+        featureType: "poi",
+        stylers: [{ visibility: "off" }]
+      }
+    ]
+  };
+  
+  // Array para guardar los pines del mapa
+  tripMarkers: any[] = [];
+
+  constructor(
+    private tripService: TripService,
+    private geocoder: MapGeocoder
+  ) {}
 
   ngOnInit(): void {
+    // 1. Cargar Usuario
     const userData = localStorage.getItem('user');
     if (userData) {
       this.user = JSON.parse(userData);
+      // 2. Cargar Viajes Reales si hay usuario
+      this.loadUserTrips(this.user.id);
     } else {
-      // Usuario default por si no hay login
       this.user = {
         userName: 'Invitado',
         email: 'invitado@tripshare.com',
@@ -44,6 +68,49 @@ export class ProfileComponent implements OnInit {
         avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
       };
     }
+  }
+
+  // --- CARGA DE DATOS REALES ---
+  loadUserTrips(userId: number) {
+    this.tripService.getTripsByUserId(userId).subscribe({
+      next: (trips) => {
+        // Mapeamos los datos de la BD al formato visual de la tarjeta
+        this.myTrips = trips.map((t: any) => ({
+          id: t.id,
+          title: t.name,
+          destination: t.destination,
+          date: new Date(t.startDate).toLocaleDateString(), 
+          // Usamos una imagen genérica de Unsplash basada en el destino
+          image: `https://source.unsplash.com/random/800x600/?travel,${t.destination}`
+        }));
+
+        // Actualizamos estadísticas
+        this.stats.trips = trips.length;
+        // Set simple para contar países únicos (asumiendo destino = país o ciudad)
+        const uniqueDestinations = new Set(trips.map((t: any) => t.destination));
+        this.stats.countries = uniqueDestinations.size;
+
+        // Generamos los pines para el mapa
+        this.generateMapMarkers(trips);
+      },
+      error: (err) => console.error('Error cargando viajes', err)
+    });
+  }
+
+  generateMapMarkers(trips: any[]) {
+    this.tripMarkers = []; // Limpiar anteriores
+    trips.forEach((trip) => {
+      this.geocoder.geocode({ address: trip.destination }).subscribe(({ results }) => {
+        if (results && results.length) {
+          const loc = results[0].geometry.location;
+          this.tripMarkers.push({
+            position: { lat: loc.lat(), lng: loc.lng() },
+            title: trip.name, // El nombre del viaje aparecerá al pasar el mouse
+            options: { animation: google.maps.Animation.DROP } // Efecto visual de caída
+          });
+        }
+      });
+    });
   }
 
   // --- Lógica del Modal de Edición ---
@@ -58,7 +125,6 @@ export class ProfileComponent implements OnInit {
   saveProfile() {
     localStorage.setItem('user', JSON.stringify(this.user));
     this.closeEditModal();
-    // Opcional: Recargar o mostrar notificación
   }
 
   // --- Lógica de Pestañas ---
