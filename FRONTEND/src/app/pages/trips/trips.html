@@ -20,7 +20,7 @@
   <div class="trips-grid" *ngIf="!isLoading">
     
     <div *ngFor="let trip of trips" class="trip-card">
-      <div class="trip-card-img" (click)="goToDetail(trip.id)" style="cursor: pointer;">
+      <div class="trip-card-img" (click)="goToDetail(trip.id)">
         <img [src]="'https://source.unsplash.com/featured/?'+trip.destination" alt="Destino">
       </div>
       
@@ -33,7 +33,7 @@
       </div>
 
       <div class="trip-card-footer">
-        <button class="btn-outline-small" (click)="goToDetail(trip.id)">Ver detalles</button>
+        <button class="btn-outline-small full-width" (click)="goToDetail(trip.id)">Ver detalles</button>
       </div>
     </div>
 
@@ -48,36 +48,36 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <button class="close-btn" (click)="closeCreateModal()">✕</button>
     
-    <div class="header-titles" style="margin-bottom: 20px;">
-      <h2 style="color: var(--text-main);">Planear Nuevo Viaje 🌍</h2>
+    <div class="modal-header">
+      <h2>Planear Nuevo Viaje 🌍</h2>
     </div>
     
-    <div class="form-group">
-      <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Nombre del Viaje *</label>
-      <input type="text" [(ngModel)]="newTrip.name" class="custom-input" placeholder="Ej: Verano en Grecia">
-    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre del Viaje *</label>
+        <input type="text" [(ngModel)]="newTrip.name" class="custom-input" placeholder="Ej: Verano en Grecia">
+      </div>
 
-    <div style="display: flex; gap: 15px;">
-      <div class="form-group" style="flex: 1;">
-        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Destino *</label>
+      <div class="form-group">
+        <label>Destino *</label>
         <input type="text" [(ngModel)]="newTrip.destination" class="custom-input" placeholder="Ej: Atenas">
       </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Fecha Inicio</label>
+          <input type="date" [(ngModel)]="newTrip.startDate" class="custom-input">
+        </div>
+        <div class="form-group half">
+          <label>Fecha Fin</label>
+          <input type="date" [(ngModel)]="newTrip.endDate" class="custom-input">
+        </div>
+      </div>
     </div>
 
-    <div style="display: flex; gap: 15px;">
-      <div class="form-group" style="flex: 1;">
-        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Fecha Inicio</label>
-        <input type="date" [(ngModel)]="newTrip.startDate" class="custom-input">
-      </div>
-      <div class="form-group" style="flex: 1;">
-        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Fecha Fin</label>
-        <input type="date" [(ngModel)]="newTrip.endDate" class="custom-input">
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 15px; margin-top: 20px;">
-      <button class="btn-outline-small" style="border-color: #ccc; color: #666;" (click)="closeCreateModal()">Cancelar</button>
-      <button class="btn-primary" style="flex: 1;" (click)="saveNewTrip()">Crear Viaje</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeCreateModal()">Cancelar</button>
+      <button class="btn-confirm" (click)="saveNewTrip()">Crear Viaje</button>
     </div>
   </div>
 </div>
