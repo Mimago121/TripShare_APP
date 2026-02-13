@@ -24,7 +24,7 @@
     <div *ngIf="activeTab === 'itinerary'" class="content-section">
       <div class="section-header">
         <h2>Itinerario y Actividades</h2>
-        <button class="btn-outline-small">+ Añadir</button>
+        <button class="btn-outline-small" (click)="openModal('activity')">+ Añadir</button>
       </div>
       
       <div class="empty-state" *ngIf="activities.length === 0">No hay actividades programadas.</div>
@@ -45,7 +45,7 @@
     <div *ngIf="activeTab === 'expenses'" class="content-section">
       <div class="section-header">
         <h2>Control de Gastos</h2>
-        <button class="btn-outline-small">+ Añadir Gasto</button>
+        <button class="btn-outline-small" (click)="openModal('expense')">+ Añadir Gasto</button>
       </div>
 
       <div class="empty-state" *ngIf="expenses.length === 0">No hay gastos registrados.</div>
@@ -65,7 +65,7 @@
     <div *ngIf="activeTab === 'memories'" class="content-section">
       <div class="section-header">
         <h2>Álbum de Recuerdos</h2>
-        <button class="btn-outline-small">+ Subir Foto</button>
+        <button class="btn-outline-small" (click)="openModal('memory')">+ Subir Foto</button>
       </div>
 
       <div class="empty-state" *ngIf="memories.length === 0">Aún no hay fotos o notas.</div>
@@ -85,6 +85,70 @@
 
 <div class="loading-state" *ngIf="isLoading">
   <div class="spinner"></div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <button class="close-btn" (click)="closeModal()">✕</button>
+
+    <div *ngIf="modalType === 'activity'">
+      <h2>Nueva Actividad 🗓️</h2>
+      <div class="form-group">
+        <label>Título *</label>
+        <input type="text" [(ngModel)]="newActivity.title" placeholder="Ej: Visita al Coliseo">
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Inicio *</label>
+          <input type="datetime-local" [(ngModel)]="newActivity.start">
+        </div>
+        <div class="form-group half">
+          <label>Fin (Opcional)</label>
+          <input type="datetime-local" [(ngModel)]="newActivity.end">
+        </div>
+      </div>
+      <button class="btn-primary full-width" (click)="saveActivity()">Guardar Actividad</button>
+    </div>
+
+    <div *ngIf="modalType === 'expense'">
+      <h2>Nuevo Gasto 💸</h2>
+      <div class="form-group">
+        <label>Concepto *</label>
+        <input type="text" [(ngModel)]="newExpense.description" placeholder="Ej: Cena del viernes">
+      </div>
+      <div class="form-group">
+        <label>Cantidad (€) *</label>
+        <input type="number" [(ngModel)]="newExpense.amount" placeholder="0.00">
+      </div>
+      <button class="btn-primary full-width" (click)="saveExpense()">Guardar Gasto</button>
+    </div>
+
+    <div *ngIf="modalType === 'memory'">
+      <h2>Nuevo Recuerdo 📸</h2>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select [(ngModel)]="newMemory.type">
+          <option value="photo">Foto</option>
+          <option value="note">Nota de texto</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="newMemory.type === 'photo'">
+        <label>URL de la imagen (Opcional)</label>
+        <input type="text" [(ngModel)]="newMemory.url" placeholder="https://...">
+        <small>Si lo dejas vacío, se pondrá una aleatoria.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción / Nota *</label>
+        <textarea rows="3" [(ngModel)]="newMemory.description" placeholder="Escribe aquí..."></textarea>
+      </div>
+      
+      <button class="btn-primary full-width" (click)="saveMemory()">Guardar Recuerdo</button>
+    </div>
+
+  </div>
 </div>
 
 <app-footer></app-footer>

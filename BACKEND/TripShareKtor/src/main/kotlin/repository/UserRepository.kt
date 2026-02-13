@@ -223,6 +223,54 @@ class UserRepository {
             )
         }
     }
+
+    // ==========================================
+    // CREAR DATOS (INSERT)
+    // ==========================================
+
+    // 1. Crear Actividad
+    suspend fun addActivity(tripId: Long, userId: Long, title: String, start: String, end: String): ActivityResponse? = dbQuery {
+        val insert = Activities.insert {
+            it[this.tripId] = tripId
+            it[this.createdBy] = userId
+            it[this.title] = title
+            it[this.startDatetime] = LocalDateTime.parse(start) // Asegúrate de enviar formato ISO
+            it[this.endDatetime] = LocalDateTime.parse(end)
+        }
+        val id = insert[Activities.id]
+
+        // Devolvemos el objeto creado
+        ActivityResponse(id.value, tripId, title, start, end, userId)
+    }
+
+    // 2. Crear Gasto
+    suspend fun addExpense(tripId: Long, userId: Long, description: String, amount: Double): ExpenseModel? = dbQuery {
+        val insert = Expenses.insert {
+            it[this.tripId] = tripId
+            it[this.paidBy] = userId
+            it[this.description] = description
+            it[this.amount] = amount.toBigDecimal()
+        }
+        val id = insert[Expenses.id]
+
+        ExpenseModel(id.value, tripId, userId, description, amount, LocalDateTime.now().toString())
+    }
+
+    // 3. Crear Memoria (Foto/Nota)
+    suspend fun addMemory(tripId: Long, userId: Long, type: String, description: String?, url: String?): MemoryModel? = dbQuery {
+        val insert = Memories.insert {
+            it[this.tripId] = tripId
+            it[this.userId] = userId
+            it[this.type] = type
+            it[this.description] = description
+            it[this.mediaUrl] = url
+        }
+        val id = insert[Memories.id]
+
+        MemoryModel(id.value, tripId, userId, type, description, url, LocalDateTime.now().toString())
+    }
+
+
     // MAPPERS AUXILIARES
     private fun ResultRow.toUserModel() = UserModel(
         id = this[Users.id].value,

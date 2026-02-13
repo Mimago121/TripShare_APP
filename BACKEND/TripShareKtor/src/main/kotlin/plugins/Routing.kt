@@ -157,6 +157,48 @@ fun Application.configureRouting() {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getMemoriesByTrip(id))
             }
+
+            // POST: Crear Actividad
+            post("/{id}/activities") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<CreateActivityRequest>() // Asegúrate de tener este DTO
+                val result = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
+                if (result != null) call.respond(HttpStatusCode.Created, result)
+                else call.respond(HttpStatusCode.BadRequest)
+            }
+
+            // POST: Crear Gasto
+            post("/{id}/expenses") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                try {
+                    // 👇 CAMBIO IMPORTANTE AQUÍ 👇
+                    val params = call.receive<CreateExpenseRequest>()
+
+                    val result = repository.addExpense(id, params.paidByUserId, params.description, params.amount)
+
+                    if (result != null) call.respond(HttpStatusCode.Created, result)
+                    else call.respond(HttpStatusCode.BadRequest)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
+                }
+            }
+
+            // POST: Crear Memoria
+            post("/{id}/memories") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                try {
+                    // 👇 CAMBIO IMPORTANTE AQUÍ 👇
+                    val params = call.receive<CreateMemoryRequest>()
+
+                    val result = repository.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
+
+                    if (result != null) call.respond(HttpStatusCode.Created, result)
+                    else call.respond(HttpStatusCode.BadRequest)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
+                }
+            }
+
         }
 
         // ===========================

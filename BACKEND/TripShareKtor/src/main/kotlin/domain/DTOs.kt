@@ -107,3 +107,18 @@ data class MemoryModel(
     val id: Long, val tripId: Long, val userId: Long, val type: String,
     val description: String?, val mediaUrl: String?, val createdAt: String
 )
+
+@Serializable
+data class CreateExpenseRequest(
+    val description: String,
+    val amount: Double,
+    val paidByUserId: Long
+)
+
+@Serializable
+data class CreateMemoryRequest(
+    val userId: Long,
+    val type: String,
+    val description: String?,
+    val mediaUrl: String?
+)
