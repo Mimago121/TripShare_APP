@@ -8,6 +8,43 @@
   flex: 1; max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; width: 100%; box-sizing: border-box;
 }
 
+/* --- Estilo mapa --- */
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.add-pin-box {
+    display: flex;
+    gap: 8px;
+}
+
+.add-pin-box input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+    width: 200px;
+}
+
+.btn-primary-small {
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-primary-small:hover {
+    background-color: #ff5252;
+}
+
 /* --- TARJETA PRINCIPAL DEL PERFIL --- */
 .profile-card {
   background: var(--card-bg);

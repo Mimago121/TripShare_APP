@@ -76,10 +76,23 @@
       </div>
     </section>
 
-    <section class="profile-body fade-in" *ngIf="activeTab === 'map'">
+ <section class="profile-body fade-in" *ngIf="activeTab === 'map'">
       <div class="world-map-container">
-        <h3>🌍 Mi Mapa de Viajes</h3>
-        <p>Has visitado {{ tripMarkers.length }} destinos.</p>
+        <div class="map-header">
+            <div>
+                <h3>🌍 Mi Mapa de Viajes</h3>
+                <p>Has marcado {{ tripMarkers.length }} destinos en el mundo.</p>
+            </div>
+            
+            <div class="add-pin-box">
+                <input 
+                    type="text" 
+                    [(ngModel)]="newPlaceName" 
+                    (keyup.enter)="addPlace()"
+                    placeholder="Ej: Kioto, Japón...">
+                <button class="btn-primary-small" (click)="addPlace()">+ Pin</button>
+            </div>
+        </div>
         
         <div class="map-frame">
             <google-map 
@@ -90,7 +103,8 @@
                 <map-marker 
                     *ngFor="let marker of tripMarkers" 
                     [position]="marker.position"
-                    [title]="marker.title">
+                    [title]="marker.title"
+                    [icon]="marker.icon">
                 </map-marker>
 
             </google-map>
