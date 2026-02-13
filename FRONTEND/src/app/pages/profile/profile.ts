@@ -1,10 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core'; // Añadido ViewChild
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { RouterModule } from '@angular/router';
-import { GoogleMapsModule, MapGeocoder, GoogleMap } from '@angular/google-maps'; // Añadido GoogleMap
+import { GoogleMapsModule, MapGeocoder, GoogleMap } from '@angular/google-maps';
 import { TripService } from '../../services/trip.service';
 
 @Component({
@@ -15,7 +15,7 @@ import { TripService } from '../../services/trip.service';
   styleUrls: ['./profile.css']
 })
 export class ProfileComponent implements OnInit {
-  @ViewChild(GoogleMap) map!: GoogleMap; // Para controlar el mapa visualmente
+  @ViewChild(GoogleMap) map!: GoogleMap;
 
   user: any = {};
   isEditModalOpen: boolean = false;
@@ -24,7 +24,7 @@ export class ProfileComponent implements OnInit {
   stats = { countries: 0, trips: 0, followers: 145 };
   myTrips: any[] = [];
 
-  // --- CONFIGURACIÓN DEL MAPA ---
+  // Configuración del Mapa
   worldMapOptions: google.maps.MapOptions = {
     center: { lat: 20, lng: 0 },
     zoom: 2,
@@ -33,8 +33,6 @@ export class ProfileComponent implements OnInit {
   };
   
   tripMarkers: any[] = [];
-  
-  // NUEVA VARIABLE: Para el input de "Añadir sitio"
   newPlaceName: string = '';
 
   constructor(
@@ -46,10 +44,33 @@ export class ProfileComponent implements OnInit {
     const userData = localStorage.getItem('user');
     if (userData) {
       this.user = JSON.parse(userData);
+      
+      // 1. Cargar Viajes
       this.loadUserTrips(this.user.id);
+
+      // 2. Cargar Pines Manuales (ESTA ES LA LÍNEA QUE TE FALTA SEGURO)
+      this.loadVisitedPlaces(this.user.id); // <--- ¡IMPORTANTE!
     }
   }
 
+  // --- Función para cargar los pines guardados ---
+  loadVisitedPlaces(userId: number) {
+    this.tripService.getVisitedPlaces(userId).subscribe({
+      next: (places) => {
+        // Añadimos los pines guardados al mapa
+        places.forEach(p => {
+          this.tripMarkers.push({
+            position: { lat: p.latitude, lng: p.longitude },
+            title: p.name,
+            icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Icono azul para diferenciar
+          });
+        });
+      },
+      error: (err) => console.error("Error cargando pines:", err)
+    });
+  }
+
+  // Carga tus viajes normales (rojos)
   loadUserTrips(userId: number) {
     this.tripService.getTripsByUserId(userId).subscribe({
       next: (trips) => {
@@ -60,19 +81,13 @@ export class ProfileComponent implements OnInit {
           date: new Date(t.startDate).toLocaleDateString(), 
           image: `https://source.unsplash.com/random/800x600/?travel,${t.destination}`
         }));
-
         this.stats.trips = trips.length;
-        const uniqueDestinations = new Set(trips.map((t: any) => t.destination));
-        this.stats.countries = uniqueDestinations.size;
-
         this.generateMapMarkers(trips);
-      },
-      error: (err) => console.error('Error cargando viajes', err)
+      }
     });
   }
 
   generateMapMarkers(trips: any[]) {
-    this.tripMarkers = [];
     trips.forEach((trip) => {
       this.geocoder.geocode({ address: trip.destination }).subscribe(({ results }) => {
         if (results && results.length) {
@@ -80,45 +95,50 @@ export class ProfileComponent implements OnInit {
           this.tripMarkers.push({
             position: { lat: loc.lat(), lng: loc.lng() },
             title: trip.name,
-            icon: null // Icono por defecto (rojo)
+            icon: null // Rojo por defecto
           });
         }
       });
     });
   }
 
-  // --- NUEVA FUNCIÓN: AÑADIR PIN MANUALMENTE ---
+  // Función para añadir nuevos (y guardarlos)
   addPlace() {
     if (!this.newPlaceName.trim()) return;
 
     this.geocoder.geocode({ address: this.newPlaceName }).subscribe(({ results }) => {
       if (results && results.length) {
         const loc = results[0].geometry.location;
-        
-        // 1. Añadimos el pin al array
-        this.tripMarkers.push({
-          position: { lat: loc.lat(), lng: loc.lng() },
-          title: this.newPlaceName,
-          // Opcional: Icono azul para diferenciar manuales de viajes reales
-          icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' 
+        const lat = loc.lat();
+        const lng = loc.lng();
+
+        // Objeto a guardar
+        const newPin = {
+            userId: this.user.id, // Asegúrate de que user.id no sea null
+            name: this.newPlaceName,
+            latitude: lat,
+            longitude: lng
+        };
+
+        // Guardar en Backend
+        this.tripService.addVisitedPlace(newPin).subscribe({
+            next: () => {
+                // Pintar en el mapa tras guardar
+                this.tripMarkers.push({
+                  position: { lat, lng },
+                  title: this.newPlaceName,
+                  icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                });
+                this.map.panTo({ lat, lng });
+                this.newPlaceName = '';
+            },
+            error: (err) => alert("Error guardando: " + err.message)
         });
-
-        // 2. Movemos el mapa allí
-        this.map.panTo({ lat: loc.lat(), lng: loc.lng() });
-        this.map.googleMap?.setZoom(5);
-
-        // 3. Limpiamos el input
-        this.newPlaceName = '';
-
-        // NOTA: Aquí deberías llamar a tu backend para guardar este "lugar visitado"
-        // si quieres que persista al recargar la página.
-        // Ejemplo: this.tripService.addVisitedPlace(this.user.id, this.newPlaceName)...
-      } else {
-        alert('No pudimos encontrar ese lugar. Prueba con "Ciudad, País".');
       }
     });
   }
 
+  // ... Resto de métodos (openEditModal, etc.)
   openEditModal() { this.isEditModalOpen = true; }
   closeEditModal() { this.isEditModalOpen = false; }
   saveProfile() {

@@ -149,3 +149,20 @@ data class TripMemberResponse(
     val role: String,   // "owner" o "member"
     val status: String  // "accepted" o "pending"
 )
+
+@Serializable
+data class VisitedPlaceResponse(
+    val id: Long,
+    val userId: Long,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
+@Serializable
+data class CreatePlaceRequest(
+    val userId: Long,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double
+)

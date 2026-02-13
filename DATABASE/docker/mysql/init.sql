@@ -209,3 +209,17 @@ INSERT INTO trip_members (trip_id, user_id, role, status) VALUES
 -- Cuando entres como Ana, deberías ver la notificación.
 INSERT INTO trip_members (trip_id, user_id, role, status) VALUES 
   (2, 1, 'member', 'pending');
+
+  CREATE TABLE visited_places (
+                                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                user_id BIGINT UNSIGNED NOT NULL, -- <--- CLAVE: Debe ser UNSIGNED igual que en 'users'
+                                name VARCHAR(255) NOT NULL,
+                                latitude DOUBLE NOT NULL,
+                                longitude DOUBLE NOT NULL,
+
+                                PRIMARY KEY (id),
+                                CONSTRAINT fk_visited_places_user
+                                    FOREIGN KEY (user_id)
+                                        REFERENCES users(user_id)
+                                        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

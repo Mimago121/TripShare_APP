@@ -139,4 +139,13 @@ export class TripService {
   getTripsByUserId(userId: number): Observable<Trip[]> {
     return this.http.get<Trip[]>(`${this.baseUrl}/user/${userId}`);
   }
+
+  addVisitedPlace(place: any): Observable<any> {
+    return this.http.post('http://localhost:8080/places', place);
+  }
+
+  // Y esta para leerlos
+  getVisitedPlaces(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`http://localhost:8080/places/user/${userId}`);
+  }
 }

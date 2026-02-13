@@ -91,6 +91,8 @@ object TripMembers : Table("trip_members") {
     override val primaryKey = PrimaryKey(tripId, userId)
 }
 
+
+
 // ===========================
 // ENTIDADES (DAO)
 // ===========================
@@ -146,4 +148,19 @@ class MemoryEntity(id: EntityID<Long>) : LongEntity(id) {
     var description by Memories.description
     var mediaUrl by Memories.mediaUrl
     var createdAt by Memories.createdAt
+}
+
+object VisitedPlaces : LongIdTable("visited_places") {
+    val userId = reference("user_id", Users)
+    val name = varchar("name", 255)
+    val latitude = double("latitude")
+    val longitude = double("longitude")
+}
+
+class VisitedPlaceEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<VisitedPlaceEntity>(VisitedPlaces)
+    var userId by VisitedPlaces.userId
+    var name by VisitedPlaces.name
+    var latitude by VisitedPlaces.latitude
+    var longitude by VisitedPlaces.longitude
 }
