@@ -1,19 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms'; 
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
-import { 
-  TripService, 
-  Trip, 
-  Activity, 
-  Expense, 
-  Memory,
-  CreateActivityRequest,
-  CreateExpenseRequest,
-  CreateMemoryRequest
-} from '../../services/trip.service';
+import { TripService, Trip, Member } from '../../services/trip.service';
 
 @Component({
   selector: 'app-trip-detail',
@@ -23,19 +14,27 @@ import {
   styleUrls: ['./trip-detail.css']
 })
 export class TripDetailComponent implements OnInit {
-  tripId!: number;
   trip: Trip | null = null;
-  currentUserId: number = 0; // Necesario para saber quién crea las cosas
+  activities: any[] = [];
+  expenses: any[] = [];
+  memories: any[] = [];
+  members: any[] = []; 
+  myFriends: Member[] = []; 
   
-  // Pestaña activa por defecto
-  activeTab: 'itinerary' | 'expenses' | 'memories' = 'itinerary';
-
-  // Datos
-  activities: Activity[] = [];
-  expenses: Expense[] = [];
-  memories: Memory[] = [];
-
+  tripId!: number;
+  currentUserId: number | null = null;
+  activeTab: string = 'itinerary';
   isLoading: boolean = true;
+  totalExpenses: number = 0;
+
+  // --- VARIABLES PARA LOS FORMULARIOS Y MODALES ---
+  showModal: boolean = false;
+  modalType: string = '';
+  selectedFriendEmail: string = '';
+
+  newActivity = { title: '', start: '', end: '' };
+  newExpense = { description: '', amount: 0 };
+  newMemory = { type: 'photo', description: '', url: '' };
 
   constructor(
     private route: ActivatedRoute,
@@ -43,7 +42,6 @@ export class TripDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // 1. Obtener mi ID de usuario
     if (typeof localStorage !== 'undefined') {
       const userStr = localStorage.getItem('user');
       if (userStr) {
@@ -51,131 +49,115 @@ export class TripDetailComponent implements OnInit {
       }
     }
 
-    // 2. Leer el ID del viaje de la URL
     this.route.params.subscribe(params => {
       this.tripId = Number(params['id']);
       if (this.tripId) {
         this.loadTripData();
+        this.loadFriends();
       }
     });
   }
 
   loadTripData() {
     this.isLoading = true;
-    
-    // Cargamos la info general del viaje
-    this.tripService.getTripById(this.tripId).subscribe(tripData => {
-      this.trip = tripData;
-      
-      // Cargamos el resto de datos en paralelo
-      this.tripService.getActivities(this.tripId).subscribe(act => this.activities = act);
-      this.tripService.getExpenses(this.tripId).subscribe(exp => this.expenses = exp);
-      this.tripService.getMemories(this.tripId).subscribe(mem => {
-        this.memories = mem;
+    this.tripService.getTripById(this.tripId).subscribe({
+      next: (data) => {
+        this.trip = data;
+        this.tripService.getActivities(this.tripId).subscribe(a => this.activities = a);
+        this.tripService.getExpenses(this.tripId).subscribe(e => {
+          this.expenses = e;
+          this.calculateTotal();
+        });
+        this.tripService.getMemories(this.tripId).subscribe(m => this.memories = m);
+        this.tripService.getMembers(this.tripId).subscribe(mem => this.members = mem);
         this.isLoading = false;
-      });
+      },
+      error: () => this.isLoading = false
     });
   }
 
-  setTab(tab: 'itinerary' | 'expenses' | 'memories') {
+  loadFriends() {
+    if (this.currentUserId) {
+      this.tripService.getMyFriends(this.currentUserId).subscribe(f => this.myFriends = f);
+    }
+  }
+
+  setTab(tab: string) {
     this.activeTab = tab;
   }
 
-  // ==========================================
-  // CONTROL DE MODALES Y FORMULARIOS
-  // ==========================================
-  showModal: boolean = false;
-  modalType: 'activity' | 'expense' | 'memory' | null = null;
-
-  // Modelos temporales para los formularios
-  newActivity = { title: '', start: '', end: '' };
-  newExpense = { description: '', amount: null };
-  newMemory = { type: 'photo', description: '', url: '' };
-  totalExpenses: number = 0;
   calculateTotal() {
     this.totalExpenses = this.expenses.reduce((sum, item) => sum + item.amount, 0);
   }
-  // ABRIR MODAL
-  openModal(type: 'activity' | 'expense' | 'memory') {
+
+  // --- MÉTODOS DEL MODAL ---
+  openModal(type: string) {
     this.modalType = type;
     this.showModal = true;
-    
-    // Reseteamos datos al abrir
+    // Reset de formularios al abrir
     this.newActivity = { title: '', start: '', end: '' };
-    this.newExpense = { description: '', amount: null };
+    this.newExpense = { description: '', amount: 0 };
     this.newMemory = { type: 'photo', description: '', url: '' };
   }
 
-  // CERRAR MODAL
   closeModal() {
     this.showModal = false;
-    this.modalType = null;
   }
 
-  // ==========================================
-  // GUARDAR DATOS (SAVE)
-  // ==========================================
-
+  // --- MÉTODOS DE GUARDADO (SAVE) ---
   saveActivity() {
-    if (!this.newActivity.title || !this.newActivity.start) return alert("Rellena título y fecha inicio");
-
-    const activityData: CreateActivityRequest = {
-      tripId: this.tripId,
-      title: this.newActivity.title,
-      // Añadimos :00 al final porque el input type="datetime-local" no manda segundos
-      startDatetime: this.newActivity.start + ':00', 
-      endDatetime: this.newActivity.end ? this.newActivity.end + ':00' : this.newActivity.start + ':00',
-      createdByUserId: this.currentUserId
+    const data = { 
+      ...this.newActivity, 
+      tripId: this.tripId, 
+      createdByUserId: this.currentUserId,
+      startDatetime: this.newActivity.start,
+      endDatetime: this.newActivity.end || this.newActivity.start
     };
-
-    this.tripService.addActivity(this.tripId, activityData).subscribe({
-      next: (res) => {
-        this.activities.push(res); // Actualizamos lista
-        this.closeModal();         // Cerramos modal
-      },
-      error: (e) => alert("Error al guardar actividad")
+    this.tripService.addActivity(this.tripId, data as any).subscribe(() => {
+      this.loadTripData();
+      this.closeModal();
     });
   }
 
   saveExpense() {
-    if (!this.newExpense.description || !this.newExpense.amount) return alert("Rellena descripción y cantidad");
-
-    const expenseData: CreateExpenseRequest = {
-      description: this.newExpense.description,
-      amount: Number(this.newExpense.amount),
-      paidByUserId: this.currentUserId
+    const data = { 
+      ...this.newExpense, 
+      paidByUserId: this.currentUserId 
     };
-
-    this.tripService.addExpense(this.tripId, expenseData).subscribe({
-      next: (res) => {
-        this.expenses.push(res);
-        this.calculateTotal(); // Recalcular total
-        this.closeModal();
-      },
-      error: (e) => alert("Error al guardar gasto")
+    this.tripService.addExpense(this.tripId, data as any).subscribe(() => {
+      this.loadTripData();
+      this.closeModal();
     });
   }
 
   saveMemory() {
-    // Si es foto y no ponen URL, ponemos una aleatoria
-    let finalUrl = this.newMemory.url;
-    if (this.newMemory.type === 'photo' && !finalUrl) {
-      finalUrl = `https://picsum.photos/seed/${Date.now()}/300/200`;
-    }
-
-    const memoryData: CreateMemoryRequest = {
+    const data = { 
+      ...this.newMemory, 
       userId: this.currentUserId,
-      type: this.newMemory.type,
-      description: this.newMemory.description,
-      mediaUrl: finalUrl
+      mediaUrl: this.newMemory.url 
     };
-
-    this.tripService.addMemory(this.tripId, memoryData).subscribe({
-      next: (res) => {
-        this.memories.push(res);
-        this.closeModal();
-      },
-      error: (e) => alert("Error al guardar recuerdo")
+    this.tripService.addMemory(this.tripId, data as any).subscribe(() => {
+      this.loadTripData();
+      this.closeModal();
     });
+  }
+
+  inviteSelectedFriend() {
+    if (!this.selectedFriendEmail) return;
+    this.tripService.inviteMember(this.tripId, this.selectedFriendEmail).subscribe({
+      next: () => {
+        this.selectedFriendEmail = '';
+        this.tripService.getMembers(this.tripId).subscribe(m => this.members = m);
+      }
+    });
+  }
+
+  inviteByEmail() {
+    const email = prompt("Email del invitado:");
+    if (email) {
+      this.tripService.inviteMember(this.tripId, email).subscribe(() => {
+        this.tripService.getMembers(this.tripId).subscribe(m => this.members = m);
+      });
+    }
   }
 }

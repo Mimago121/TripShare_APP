@@ -347,4 +347,9 @@
   background-color: rgba(var(--primary-rgb), 0.1); /* O un color suave */
   transform: translateX(5px); /* Efecto de movimiento */
 }
+.trip-item {
+  border-left: 3px solid #6366f1; /* Un borde azul/indigo para diferenciarlo del chat */
+  background: rgba(99, 102, 241, 0.05);
+  margin-bottom: 5px;
+}
 }

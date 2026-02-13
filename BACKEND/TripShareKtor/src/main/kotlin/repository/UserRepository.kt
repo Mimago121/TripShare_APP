@@ -6,6 +6,7 @@ import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class UserRepository {
@@ -86,9 +87,12 @@ class UserRepository {
     }
 
     suspend fun getAcceptedFriends(userId: Long): List<UserModel> = dbQuery {
+        // 1. Amigos a los que YO invité
         val sentIds = FriendRequests.slice(FriendRequests.toUser)
             .select { (FriendRequests.fromUser eq userId) and (FriendRequests.status eq "accepted") }
             .map { it[FriendRequests.toUser] }
+
+        // 2. Amigos que ME invitaron
         val receivedIds = FriendRequests.slice(FriendRequests.fromUser)
             .select { (FriendRequests.toUser eq userId) and (FriendRequests.status eq "accepted") }
             .map { it[FriendRequests.fromUser] }
@@ -96,18 +100,19 @@ class UserRepository {
         val allFriendIds = (sentIds + receivedIds).distinct()
         if (allFriendIds.isEmpty()) return@dbQuery emptyList()
 
+        // Devolvemos los modelos completos de usuario
         UserEntity.find { Users.id inList allFriendIds }.map { it.toModel() }
     }
 
     // ==========================================
-    // 3. CHAT (Solución TEXTO para evitar Error 500)
+    // 3. CHAT
     // ==========================================
     suspend fun saveMessage(fromId: Long, toId: Long, content: String): Boolean = dbQuery {
         Messages.insert {
             it[fromUser] = fromId
             it[toUser] = toId
             it[this.content] = content
-            it[timestamp] = LocalDateTime.now().toString() // <--- TEXTO
+            it[timestamp] = LocalDateTime.now().toString()
         }
         true
     }
@@ -117,32 +122,23 @@ class UserRepository {
             ((Messages.fromUser eq myId) and (Messages.toUser eq friendId)) or
                     ((Messages.fromUser eq friendId) and (Messages.toUser eq myId))
         }
-            .orderBy(Messages.id to SortOrder.ASC) // Ordenamos por ID (seguro)
+            .orderBy(Messages.id to SortOrder.ASC)
             .map {
                 MessageDto(
                     id = it[Messages.id].value,
                     fromId = it[Messages.fromUser].value,
                     toId = it[Messages.toUser].value,
                     content = it[Messages.content],
-                    timestamp = it[Messages.timestamp], // <--- TEXTO
+                    timestamp = it[Messages.timestamp],
                     isMine = it[Messages.fromUser].value == myId
                 )
             }
     }
 
-    // 1. OBTENER NOTIFICACIONES DE CHAT
     suspend fun getUnreadChatNotifications(myId: Long): List<ChatNotificationDto> = dbQuery {
-        // Hacemos JOIN con Users para sacar el nombre y avatar del que envía
         Messages.join(Users, JoinType.INNER, Messages.fromUser, Users.id)
-            .slice(
-                Messages.fromUser,
-                Users.userName,
-                Users.avatarUrl,
-                Messages.id.count() // Contamos cuántos mensajes hay
-            )
-            .select {
-                (Messages.toUser eq myId) and (Messages.isRead eq false)
-            }
+            .slice(Messages.fromUser, Users.userName, Users.avatarUrl, Messages.id.count())
+            .select { (Messages.toUser eq myId) and (Messages.isRead eq false) }
             .groupBy(Messages.fromUser, Users.userName, Users.avatarUrl)
             .map {
                 ChatNotificationDto(
@@ -154,12 +150,9 @@ class UserRepository {
             }
     }
 
-    // 2. MARCAR COMO LEÍDOS (Cuando abres el chat)
     suspend fun markMessagesAsRead(myId: Long, friendId: Long): Boolean = dbQuery {
         Messages.update({
-            (Messages.toUser eq myId) and
-                    (Messages.fromUser eq friendId) and
-                    (Messages.isRead eq false)
+            (Messages.toUser eq myId) and (Messages.fromUser eq friendId) and (Messages.isRead eq false)
         }) {
             it[isRead] = true
         } > 0
@@ -173,15 +166,137 @@ class UserRepository {
     }
 
     suspend fun getTripsByUserId(userId: Long): List<TripModel> = dbQuery {
-        TripEntity.find { Trips.createdBy eq userId }.map { it.toModel() }
-    }
+        // 1. Buscamos los IDs de los viajes donde el usuario YA ha aceptado ser miembro
+        val acceptedTripIds = TripMembers
+            .select {
+                (TripMembers.userId eq userId) and (TripMembers.status eq "accepted")
+            }
+            .map { it[TripMembers.tripId].value }
 
+        // 2. Seleccionamos los viajes:
+        //    - Los que yo he creado (soy el dueño)
+        //    - O los que he aceptado (están en la lista anterior)
+        Trips.select {
+            (Trips.createdBy eq userId) or (Trips.id inList acceptedTripIds)
+        }.map { row ->
+            TripModel(
+                id = row[Trips.id].value,
+                name = row[Trips.name],
+                destination = row[Trips.destination],
+                origin = row[Trips.origin],
+                startDate = row[Trips.startDate].toString(), // Asegúrate de que el formato sea ISO
+                endDate = row[Trips.endDate].toString(),
+                createdByUserId = row[Trips.createdBy].value
+            )
+        }
+    }
     suspend fun getTripById(tripId: Long): TripModel? = dbQuery {
         TripEntity.findById(tripId)?.toModel()
     }
 
+
+    suspend fun createTrip(request: CreateTripRequest): TripModel = dbQuery {
+        // 1. Crear el viaje
+        val insertStatement = Trips.insert {
+            it[name] = request.name
+            it[destination] = request.destination
+            it[startDate] = LocalDate.parse(request.startDate)
+            it[endDate] = LocalDate.parse(request.endDate)
+            it[createdBy] = request.createdByUserId
+            it[origin] = request.origin
+        }
+        val newTripId = insertStatement[Trips.id]
+
+        // 2. Añadirte a ti mismo como OWNER y ya ACEPTADO
+        TripMembers.insert {
+            it[tripId] = newTripId
+            it[userId] = request.createdByUserId
+            it[role] = "owner"
+            it[status] = "accepted" // <--- ¡ESTA LÍNEA ES LA CLAVE!
+        }
+
+        TripModel(
+            newTripId.value, request.name, request.destination, request.origin,
+            request.startDate, request.endDate, request.createdByUserId
+        )
+    }
+
+    // ===========================
+    // GESTIÓN DE MIEMBROS
+    // ===========================
+
+    suspend fun getTripMembers(tripId: Long): List<TripMemberResponse> = dbQuery {
+        (Users innerJoin TripMembers)
+            .select { TripMembers.tripId eq tripId }
+            .map {
+                TripMemberResponse(
+                    id = it[Users.id].value,
+                    userName = it[Users.userName],
+                    email = it[Users.email],
+                    avatarUrl = it[Users.avatarUrl],
+                    role = it[TripMembers.role],    // Extraemos el rol
+                    status = it[TripMembers.status] // Extraemos el estado
+                )
+            }
+    }
+
+    suspend fun addMemberByEmail(tripId: Long, email: String): Boolean = dbQuery {
+        val userRow = Users.select { Users.email eq email }.singleOrNull()
+        if (userRow == null) return@dbQuery false
+
+        val userIdToAdd = userRow[Users.id].value
+
+        // Verificamos si ya existe (sea pending o accepted)
+        val alreadyExists = TripMembers.select {
+            (TripMembers.tripId eq tripId) and (TripMembers.userId eq userIdToAdd)
+        }.count() > 0
+
+        if (!alreadyExists) {
+            TripMembers.insert {
+                it[this.tripId] = tripId
+                it[this.userId] = userIdToAdd
+                it[this.role] = "member"
+                it[this.status] = "pending" // <--- CAMBIO CLAVE: Entra como pendiente
+            }
+            true
+        } else {
+            false
+        }
+    } // <--- ¡AQUÍ FALTABA ESTA LLAVE DE CIERRE!
+
+    // Obtener invitaciones pendientes para un usuario
+    suspend fun getTripInvitations(userId: Long): List<TripResponse> = dbQuery {
+        (Trips innerJoin TripMembers)
+            .select { (TripMembers.userId eq userId) and (TripMembers.status eq "pending") and (TripMembers.role neq "owner")}
+            .map {
+                TripResponse(
+                    id = it[Trips.id].value,
+                    name = it[Trips.name],
+                    destination = it[Trips.destination],
+                    origin = it[Trips.origin],
+                    startDate = it[Trips.startDate].toString(),
+                    endDate = it[Trips.endDate].toString(),
+                    createdByUserId = it[Trips.createdBy].value
+                )
+            }
+    }
+
+    // Responder a una invitación (Aceptar o Rechazar)
+    suspend fun respondToTripInvitation(tripId: Long, userId: Long, accept: Boolean): Boolean = dbQuery {
+        if (accept) {
+            // Si acepta, cambiamos estado a 'accepted'
+            TripMembers.update({ (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) }) {
+                it[status] = "accepted"
+            } > 0
+        } else {
+            // Si rechaza, borramos la entrada de la tabla
+            TripMembers.deleteWhere { (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) } > 0
+        }
+    }
+    // (He eliminado el bloque duplicado de getAcceptedFriends que tenías aquí mal pegado)
+
     // ==========================================
-    // ACTIVIDADES, GASTOS Y MEMORIAS (ITINERARIO)
+    // ACTIVIDADES, GASTOS Y MEMORIAS
     // ==========================================
 
     suspend fun getActivitiesByTrip(tripId: Long): List<ActivityResponse> = dbQuery {
@@ -204,7 +319,7 @@ class UserRepository {
                 tripId = entity.tripId.value,
                 paidByUserId = entity.paidBy.value,
                 description = entity.description,
-                amount = entity.amount.toDouble(), // Convertimos a Double para Angular
+                amount = entity.amount.toDouble(),
                 createdAt = entity.createdAt.toString()
             )
         }
@@ -228,22 +343,18 @@ class UserRepository {
     // CREAR DATOS (INSERT)
     // ==========================================
 
-    // 1. Crear Actividad
     suspend fun addActivity(tripId: Long, userId: Long, title: String, start: String, end: String): ActivityResponse? = dbQuery {
         val insert = Activities.insert {
             it[this.tripId] = tripId
             it[this.createdBy] = userId
             it[this.title] = title
-            it[this.startDatetime] = LocalDateTime.parse(start) // Asegúrate de enviar formato ISO
+            it[this.startDatetime] = LocalDateTime.parse(start)
             it[this.endDatetime] = LocalDateTime.parse(end)
         }
         val id = insert[Activities.id]
-
-        // Devolvemos el objeto creado
         ActivityResponse(id.value, tripId, title, start, end, userId)
     }
 
-    // 2. Crear Gasto
     suspend fun addExpense(tripId: Long, userId: Long, description: String, amount: Double): ExpenseModel? = dbQuery {
         val insert = Expenses.insert {
             it[this.tripId] = tripId
@@ -252,11 +363,9 @@ class UserRepository {
             it[this.amount] = amount.toBigDecimal()
         }
         val id = insert[Expenses.id]
-
         ExpenseModel(id.value, tripId, userId, description, amount, LocalDateTime.now().toString())
     }
 
-    // 3. Crear Memoria (Foto/Nota)
     suspend fun addMemory(tripId: Long, userId: Long, type: String, description: String?, url: String?): MemoryModel? = dbQuery {
         val insert = Memories.insert {
             it[this.tripId] = tripId
@@ -266,7 +375,6 @@ class UserRepository {
             it[this.mediaUrl] = url
         }
         val id = insert[Memories.id]
-
         MemoryModel(id.value, tripId, userId, type, description, url, LocalDateTime.now().toString())
     }
 

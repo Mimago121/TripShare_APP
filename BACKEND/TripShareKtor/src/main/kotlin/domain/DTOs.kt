@@ -122,3 +122,30 @@ data class CreateMemoryRequest(
     val description: String?,
     val mediaUrl: String?
 )
+
+@Serializable
+data class CreateTripRequest(
+    val name: String,
+    val destination: String,
+    val origin: String?,       // Puede ser null
+    val startDate: String,     // Formato "YYYY-MM-DD"
+    val endDate: String,       // Formato "YYYY-MM-DD"
+    val createdByUserId: Long
+)
+
+@Serializable
+data class InvitationResponseRequest(
+    val tripId: Long,
+    val userId: Long,
+    val accept: Boolean
+)
+
+@Serializable
+data class TripMemberResponse(
+    val id: Long,
+    val userName: String,
+    val email: String,
+    val avatarUrl: String?,
+    val role: String,   // "owner" o "member"
+    val status: String  // "accepted" o "pending"
+)

@@ -12,10 +12,9 @@ USE trip_share_db;
 -- 2) TABLES
 -- =========================================================
 
--- Orden de borrado (primero las que tienen FKs)
-DROP TABLE IF EXISTS messages;        -- <--- NUEVA TABLA (CHAT)
+-- Orden de borrado
+DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS friend_requests;
-DROP TABLE IF EXISTS trip_invites;
 DROP TABLE IF EXISTS memories;
 DROP TABLE IF EXISTS expense_splits;
 DROP TABLE IF EXISTS expenses;
@@ -33,12 +32,9 @@ CREATE TABLE users (
   user_name      VARCHAR(120) NOT NULL,
   avatar_url     VARCHAR(500) NULL,
   bio            TEXT NULL,
-
-  -- Auth related
-  provider       VARCHAR(20) NOT NULL,   -- 'google' | 'local'
-  provider_uid   VARCHAR(255) NULL,      -- if provider='google'
-  password_hash  VARCHAR(255) NULL,      -- if provider='local'
-
+  provider       VARCHAR(20) NOT NULL,
+  provider_uid   VARCHAR(255) NULL,
+  password_hash  VARCHAR(255) NULL,
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (user_id),
@@ -53,40 +49,34 @@ CREATE TABLE friend_requests (
   request_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   from_user_id    BIGINT UNSIGNED NOT NULL,
   to_user_id      BIGINT UNSIGNED NOT NULL,
-  status          VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
+  status          VARCHAR(20) NOT NULL DEFAULT 'pending',
   created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (request_id),
   KEY idx_friend_req_from (from_user_id),
   KEY idx_friend_req_to (to_user_id),
-
-  CONSTRAINT fk_friend_req_from 
-    FOREIGN KEY (from_user_id) REFERENCES users(user_id) 
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_friend_req_to 
-    FOREIGN KEY (to_user_id) REFERENCES users(user_id) 
-    ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT fk_friend_req_from FOREIGN KEY (from_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_friend_req_to FOREIGN KEY (to_user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- -------------------------
--- MESSAGES (NUEVA TABLA PARA EL CHAT)
+-- MESSAGES
 -- -------------------------
 CREATE TABLE messages (
   message_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   from_user_id    BIGINT UNSIGNED NOT NULL,
   to_user_id      BIGINT UNSIGNED NOT NULL,
   content         TEXT NOT NULL,
-  timestamp       VARCHAR(100) NOT NULL, -- Texto para evitar errores de fecha
-  is_read         BOOLEAN DEFAULT FALSE, -- Para las notificaciones (0 = no leído, 1 = leído)
+  timestamp       VARCHAR(100) NOT NULL,
+  is_read         BOOLEAN DEFAULT FALSE,
 
   PRIMARY KEY (message_id),
   KEY idx_messages_from (from_user_id),
   KEY idx_messages_to (to_user_id),
-
   CONSTRAINT fk_messages_from FOREIGN KEY (from_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
   CONSTRAINT fk_messages_to FOREIGN KEY (to_user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
 -- -------------------------
 -- TRIPS
 -- -------------------------
@@ -102,30 +92,23 @@ CREATE TABLE trips (
 
   PRIMARY KEY (trip_id),
   KEY idx_trips_created_by (created_by_user_id),
-  CONSTRAINT fk_trips_created_by
-    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_trips_created_by FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- -------------------------
--- TRIP MEMBERS (USERS_TRIPS)
+-- TRIP MEMBERS (CON LA NUEVA COLUMNA STATUS)
 -- -------------------------
 CREATE TABLE trip_members (
   trip_id    BIGINT UNSIGNED NOT NULL,
   user_id    BIGINT UNSIGNED NOT NULL,
   role       VARCHAR(20) NOT NULL DEFAULT 'member',  -- 'owner'|'member'
+  status     VARCHAR(20) NOT NULL DEFAULT 'accepted', -- 'pending'|'accepted'
   joined_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+  
   PRIMARY KEY (trip_id, user_id),
   KEY idx_trip_members_user (user_id),
-
-  CONSTRAINT fk_trip_members_trip
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_trip_members_user
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-    ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT fk_trip_members_trip FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
+  CONSTRAINT fk_trip_members_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- -------------------------
@@ -135,203 +118,94 @@ CREATE TABLE activities (
   activity_id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   trip_id             BIGINT UNSIGNED NOT NULL,
   created_by_user_id  BIGINT UNSIGNED NOT NULL,
-
   title               VARCHAR(160) NOT NULL,
   description         TEXT NULL,
   location            VARCHAR(200) NULL,
   start_datetime      DATETIME NOT NULL,
   end_datetime        DATETIME NOT NULL,
-
   created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (activity_id),
   KEY idx_activities_trip (trip_id),
-  KEY idx_activities_created_by (created_by_user_id),
-  KEY idx_activities_start (start_datetime),
-
-  CONSTRAINT fk_activities_trip
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_activities_created_by
-    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_activities_trip FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
+  CONSTRAINT fk_activities_created_by FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- -------------------------
--- EXPENSES
+-- EXPENSES & SPLITS
 -- -------------------------
 CREATE TABLE expenses (
-  expense_id        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  trip_id           BIGINT UNSIGNED NOT NULL,
-  paid_by_user_id   BIGINT UNSIGNED NOT NULL,
-
-  description       VARCHAR(255) NOT NULL,
-  amount            DECIMAL(10,2) NOT NULL,
-
-  created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expense_id       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  trip_id          BIGINT UNSIGNED NOT NULL,
+  paid_by_user_id  BIGINT UNSIGNED NOT NULL,
+  description      VARCHAR(255) NOT NULL,
+  amount           DECIMAL(10,2) NOT NULL,
+  created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (expense_id),
-  KEY idx_expenses_trip (trip_id),
-  KEY idx_expenses_paid_by (paid_by_user_id),
-
-  CONSTRAINT fk_expenses_trip
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_expenses_paid_by
-    FOREIGN KEY (paid_by_user_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_expenses_trip FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
+  CONSTRAINT fk_expenses_paid_by FOREIGN KEY (paid_by_user_id) REFERENCES users(user_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- -------------------------
--- EXPENSE SPLITS
--- -------------------------
 CREATE TABLE expense_splits (
-  expense_id     BIGINT UNSIGNED NOT NULL,
-  user_id        BIGINT UNSIGNED NOT NULL,
-  share_amount   DECIMAL(10,2) NOT NULL,
+  expense_id    BIGINT UNSIGNED NOT NULL,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  share_amount  DECIMAL(10,2) NOT NULL,
 
   PRIMARY KEY (expense_id, user_id),
-  KEY idx_splits_user (user_id),
-
-  CONSTRAINT fk_splits_expense
-    FOREIGN KEY (expense_id) REFERENCES expenses(expense_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_splits_user
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT fk_splits_expense FOREIGN KEY (expense_id) REFERENCES expenses(expense_id) ON DELETE CASCADE,
+  CONSTRAINT fk_splits_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- -------------------------
--- MEMORIES (photo/video/note)
+-- MEMORIES
 -- -------------------------
 CREATE TABLE memories (
-  memory_id     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  trip_id       BIGINT UNSIGNED NOT NULL,
-  user_id       BIGINT UNSIGNED NOT NULL,
-
-  type          VARCHAR(10) NOT NULL,        -- 'photo'|'video'|'note'
-  description   TEXT NULL,
-  media_url     VARCHAR(500) NULL,           -- NULL for notes
-  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-  PRIMARY KEY (memory_id),
-  KEY idx_memories_trip (trip_id),
-  KEY idx_memories_user (user_id),
-  KEY idx_memories_created_at (created_at),
-
-  CONSTRAINT fk_memories_trip
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-
-  CONSTRAINT fk_memories_user
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
--- -------------------------
--- TRIP INVITES
--- -------------------------
-CREATE TABLE trip_invites (
-  invite_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  memory_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   trip_id      BIGINT UNSIGNED NOT NULL,
-  email        VARCHAR(255) NOT NULL,
-  token        VARCHAR(64) NOT NULL,
-  status       VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending|accepted|revoked
-  expires_at   DATETIME NULL,
+  user_id      BIGINT UNSIGNED NOT NULL,
+  type         VARCHAR(10) NOT NULL,
+  description  TEXT NULL,
+  media_url    VARCHAR(500) NULL,
   created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  PRIMARY KEY (invite_id),
-  UNIQUE KEY uq_invites_token (token),
-  KEY idx_invites_trip (trip_id),
-  KEY idx_invites_email (email),
-
-  CONSTRAINT fk_invites_trip
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-    ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (memory_id),
+  CONSTRAINT fk_memories_trip FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
+  CONSTRAINT fk_memories_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 
 -- =========================================================
--- 3) TEST INSERTS (SEED)
+-- 3) SEED DATA (DATOS DE PRUEBA)
 -- =========================================================
 
 -- USERS
-INSERT INTO users (email, user_name, avatar_url, bio, provider, provider_uid, password_hash)
-VALUES
-  ('ana@gmail.com',   'Ana',   'https://cdn-icons-png.flaticon.com/512/149/149071.png',   'Me encanta viajar', 'google', 'google_ana_001', NULL),
-  ('juan@gmail.com',  'Juan',  'https://cdn-icons-png.flaticon.com/512/149/149071.png',  NULL,               'local',  NULL,            '$2b$12$fakehashjuan'),
-  ('marta@gmail.com', 'Marta', NULL,                                         'Foodie',           'google', 'google_marta_002', NULL),
-  ('pablo@gmail.com', 'Pablo', NULL,                                         NULL,              'local',  NULL,            '$2b$12$fakehashpablo');
+INSERT INTO users (email, user_name, avatar_url, provider, password_hash) VALUES
+  ('ana@gmail.com',   'Ana',   'https://i.pravatar.cc/150?u=ana', 'local', '$2b$12$fakehash'), -- ID 1
+  ('juan@gmail.com',  'Juan',  'https://i.pravatar.cc/150?u=juan', 'local', '$2b$12$fakehash'), -- ID 2
+  ('marta@gmail.com', 'Marta', 'https://i.pravatar.cc/150?u=marta', 'local', '$2b$12$fakehash'); -- ID 3
 
--- FRIEND REQUESTS (DATOS DE PRUEBA)
--- Marta y Pablo piden a Ana. 
--- Vamos a hacer que Ana y Juan sean amigos YA para probar el chat
-INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (3, 1, 'pending');
-INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (4, 1, 'pending');
-INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (1, 2, 'accepted'); -- Ana y Juan son amigos
-
--- MESSAGES (CHAT DE PRUEBA)
--- Conversación entre Ana (1) y Juan (2)
-INSERT INTO messages (from_user_id, to_user_id, content, timestamp) VALUES 
-(1, 2, 'Hola Juan! Listo para el viaje?', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
-(2, 1, 'Hola Ana, sí! Ya tengo todo preparado.', DATE_SUB(NOW(), INTERVAL 55 MINUTE)),
-(1, 2, 'Perfecto, nos vemos en el aeropuerto.', DATE_SUB(NOW(), INTERVAL 10 MINUTE));
-
+-- AMIGOS (Ana y Juan ya son amigos)
+INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES (1, 2, 'accepted');
 
 -- TRIPS
-INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id)
-VALUES
-  ('Roma 2026', 'Roma', 'Madrid', '2026-04-10', '2026-04-15', 1),
-  ('Lisboa finde', 'Lisboa', 'Sevilla', '2026-02-07', '2026-02-09', 2);
+INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id) VALUES
+  ('Roma 2026', 'Roma', 'Madrid', '2026-04-10', '2026-04-15', 1), -- Creado por Ana
+  ('Lisboa Finde', 'Lisboa', 'Sevilla', '2026-05-01', '2026-05-03', 2); -- Creado por Juan
 
 -- TRIP MEMBERS
-INSERT INTO trip_members (trip_id, user_id, role)
-VALUES
-  (1, 1, 'owner'),
-  (1, 2, 'member'),
-  (1, 3, 'member'),
-  (2, 2, 'owner'),
-  (2, 4, 'member');
+-- 1. Viaje a Roma (Ana es dueña, Juan aceptado, Marta aceptada)
+INSERT INTO trip_members (trip_id, user_id, role, status) VALUES 
+  (1, 1, 'owner', 'accepted'),
+  (1, 2, 'member', 'accepted'),
+  (1, 3, 'member', 'accepted');
 
--- ACTIVITIES
-INSERT INTO activities (trip_id, created_by_user_id, title, description, location, start_datetime, end_datetime)
-VALUES
-  (1, 1, 'Llegada y check-in', 'Dejar maletas y descansar', 'Hotel Centro', '2026-04-10 16:00:00', '2026-04-10 17:00:00'),
-  (1, 2, 'Coliseo', 'Entrada reservada', 'Coliseo', '2026-04-11 10:00:00', '2026-04-11 12:00:00'),
-  (1, 3, 'Cena Trastevere', 'Buscar sitio con pasta', 'Trastevere', '2026-04-11 20:30:00', '2026-04-11 22:00:00');
+-- 2. Viaje a Lisboa (Juan es dueño)
+INSERT INTO trip_members (trip_id, user_id, role, status) VALUES 
+  (2, 2, 'owner', 'accepted');
 
--- EXPENSES + SPLITS
-INSERT INTO expenses (trip_id, paid_by_user_id, description, amount) VALUES (1, 1, 'Cena (Trastevere)', 60.00);
-SET @exp1 := LAST_INSERT_ID();
-INSERT INTO expense_splits (expense_id, user_id, share_amount) VALUES (@exp1, 1, 20.00), (@exp1, 2, 20.00), (@exp1, 3, 20.00);
-
-INSERT INTO expenses (trip_id, paid_by_user_id, description, amount) VALUES (1, 2, 'Entradas Coliseo', 75.00);
-SET @exp2 := LAST_INSERT_ID();
-INSERT INTO expense_splits (expense_id, user_id, share_amount) VALUES (@exp2, 1, 25.00), (@exp2, 2, 25.00), (@exp2, 3, 25.00);
-
-INSERT INTO expenses (trip_id, paid_by_user_id, description, amount) VALUES (2, 2, 'Uber aeropuerto', 18.00);
-SET @exp3 := LAST_INSERT_ID();
-INSERT INTO expense_splits (expense_id, user_id, share_amount) VALUES (@exp3, 2, 9.00), (@exp3, 4, 9.00);
-
--- MEMORIES
-INSERT INTO memories (trip_id, user_id, type, description, media_url)
-VALUES
-  (1, 1, 'note',  'Primer día: hemos llegado y todo perfecto.', NULL),
-  (1, 2, 'photo', 'Atardecer desde el puente', 'https://media.example/roma/atardecer.jpg'),
-  (1, 3, 'video', 'Mini resumen del Coliseo', 'https://media.example/roma/coliseo.mp4');
-
--- TRIP INVITES
-INSERT INTO trip_invites (trip_id, email, token, status, expires_at)
-VALUES
-  (1, 'amigo1@example.com', 'tok_roma_0001', 'pending', '2026-03-31 23:59:59'),
-  (2, 'amigo2@example.com', 'tok_lisboa_0001', 'pending', '2026-02-01 23:59:59');
-
--- =========================================================
--- 4) PERMISSIONS
--- =========================================================
-
-GRANT ALL PRIVILEGES ON trip_share_db.* TO 'johan'@'%';
-FLUSH PRIVILEGES;
+-- 🔥 PRUEBA DE NOTIFICACIÓN 🔥
+-- Juan invita a Ana a Lisboa, pero está PENDIENTE.
+-- Cuando entres como Ana, deberías ver la notificación.
+INSERT INTO trip_members (trip_id, user_id, role, status) VALUES 
+  (2, 1, 'member', 'pending');

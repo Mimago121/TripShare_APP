@@ -43,9 +43,20 @@ export interface CreateMemoryRequest {
   mediaUrl: string;
 }
 
+// Si la tienes dentro del componente o en un archivo de modelos
+export interface Member {
+  id: number;
+  userName: string;
+  email: string;
+  avatarUrl?: string; // El ? es por si es nulo
+  role: string;       // <--- AÑADE ESTO
+  status: string;     // <--- AÑADE ESTO
+}
+
 @Injectable({ providedIn: 'root' })
 export class TripService {
   private baseUrl = 'http://localhost:8080/trips';
+  private friendsUrl = 'http://localhost:8080/friends';
 
   constructor(private http: HttpClient) {}
 
@@ -88,4 +99,39 @@ export class TripService {
   addMemory(tripId: number, data: CreateMemoryRequest): Observable<Memory> {
     return this.http.post<Memory>(`${this.baseUrl}/${tripId}/memories`, data);
   }
+
+ 
+  getMyFriends(userId: number): Observable<Member[]> {
+    return this.http.get<Member[]>(`${this.friendsUrl}/accepted/${userId}`);
+  }
+
+  getMembers(tripId: number): Observable<Member[]> {
+    return this.http.get<Member[]>(`${this.baseUrl}/${tripId}/members`);
+  }
+
+  inviteMember(tripId: number, email: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${tripId}/invite`, { email });
+  }
+
+  createTrip(tripData: any): Observable<Trip> {
+    // tripData debe coincidir con el DTO del backend:
+    // { name, destination, origin, startDate, endDate, createdByUserId }
+    return this.http.post<Trip>(this.baseUrl, tripData);
+  }
+
+  // Obtener invitaciones pendientes
+  getInvitations(userId: number): Observable<Trip[]> {
+    return this.http.get<Trip[]>(`${this.baseUrl}/invitations/${userId}`);
+  }
+
+  // Responder (Aceptar = true, Rechazar = false)
+  respondToInvitation(tripId: number, userId: number, accept: boolean): Observable<any> {
+  // Construimos el objeto explícitamente
+  const body = {
+    tripId: tripId,
+    userId: userId,
+    accept: accept
+  };
+  return this.http.put(`${this.baseUrl}/invitations/respond`, body);
+}
 }

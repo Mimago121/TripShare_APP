@@ -1,130 +1,84 @@
-<!--<section style="max-width: 900px; margin: 24px auto; padding: 0 16px;">
-  <header style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-    <h2 style="margin:0;">Mis viajes</h2>
-    <button (click)="openCreate()" style="padding:8px 12px; cursor:pointer;">
-      + Crear viaje
-    </button>
-  </header>
-
-  <div *ngIf="loading" style="margin-top: 12px;">Cargando...</div>
-
-  <div *ngIf="error" style="margin-top: 12px; padding: 10px; background:#ffe5e5;">
-    {{ error }}
-  </div>
-
-  <div *ngIf="!loading && trips.length === 0" style="margin-top: 12px; opacity: .8;">
-    No tienes viajes todavía.
-  </div>
-
-  <ul style="list-style:none; padding:0; margin-top: 12px;">
-    <li *ngFor="let t of trips; trackBy: trackById"
-        style="border:1px solid #ddd; border-radius:10px; padding:12px; margin-bottom:10px;">
-      <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-        <div>
-          <div style="font-weight:600;">{{ t.name }}</div>
-          <div style="opacity:.85;">
-            {{ t.destination }} · {{ t.startDate }} → {{ t.endDate }}
-          </div>
-          <div style="margin-top:6px;">
-            <a [routerLink]="['/trips', t.id]" style="text-decoration:underline;">Ver detalle</a>
-          </div>
-        </div>
-
-        <button (click)="deleteTrip(t.id)"
-                style="padding:6px 10px; cursor:pointer;">
-          Borrar
-        </button>
-      </div>
-    </li>
-  </ul>
--->
-  <!-- MODAL CREAR 
-  <div *ngIf="isCreateOpen"
-       (click)="closeCreate()"
-       style="position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:16px;">
-    <div (click)="$event.stopPropagation()"
-         style="width: min(520px, 100%); background:white; border-radius:12px; padding:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">Crear viaje</h3>
-        <button (click)="closeCreate()" [disabled]="submitting" style="cursor:pointer;">✕</button>
-      </div>
-
-      <form [formGroup]="tripForm" (ngSubmit)="createTrip()" style="margin-top:12px; display:grid; gap:10px;">
-        <div>
-          <label>Nombre</label>
-          <input formControlName="name" placeholder="Ej: Roma 2026" style="width:100%; padding:8px;">
-          <small *ngIf="tripForm.get('name')?.touched && tripForm.get('name')?.invalid" style="color:#b00020;">
-            El nombre es obligatorio (mín 2).
-          </small>
-        </div>
-
-        <div>
-          <label>Destino</label>
-          <input formControlName="destination" placeholder="Ej: Roma" style="width:100%; padding:8px;">
-          <small *ngIf="tripForm.get('destination')?.touched && tripForm.get('destination')?.invalid" style="color:#b00020;">
-            El destino es obligatorio (mín 2).
-          </small>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <label>Inicio</label>
-            <input type="date" formControlName="startDate" style="width:100%; padding:8px;">
-          </div>
-
-          <div>
-            <label>Fin</label>
-            <input type="date" formControlName="endDate" style="width:100%; padding:8px;">
-          </div>
-        </div>
-
-        <button type="submit" [disabled]="submitting" style="padding:10px 12px; cursor:pointer;">
-          {{ submitting ? 'Creando...' : 'Crear' }}
-        </button>
-      </form>
-    </div>
-  </div>
-</section>
--->
 <app-navbar></app-navbar>
 
 <div class="trips-container">
+  
   <div class="trips-header">
     <div class="header-titles">
       <h1>Mis Viajes ✈️</h1>
-      <p>Explora tus próximas aventuras y recuerdos.</p>
+      <p>Gestiona tus próximas aventuras y destinos</p>
     </div>
-    <button class="btn-primary" style="opacity: 0.5; cursor: not-allowed;">+ Crear Nuevo Viaje (Próximamente)</button>
+    <button class="btn-primary" (click)="openCreateModal()">
+      + Nuevo Viaje
+    </button>
   </div>
 
-  <div class="loading-state" *ngIf="isLoading">
+  <div *ngIf="isLoading" class="loading-state">
     <div class="spinner"></div>
-    <p>Cargando viajes...</p>
+    <p>Cargando tus viajes...</p>
   </div>
 
-  <div class="empty-state" *ngIf="!isLoading && trips.length === 0">
-    <h2>Aún no tienes viajes programados</h2>
-    <p>Pronto podrás planear una nueva escapada desde aquí.</p>
-  </div>
-
-  <div class="trips-grid" *ngIf="!isLoading && trips.length > 0">
+  <div class="trips-grid" *ngIf="!isLoading">
     
-    <div class="trip-card" *ngFor="let trip of trips">
-      <div class="trip-card-img">
-        <img [src]="'https://picsum.photos/seed/' + trip.id + '/400/200'" alt="Trip cover">
+    <div *ngFor="let trip of trips" class="trip-card">
+      <div class="trip-card-img" (click)="goToDetail(trip.id)" style="cursor: pointer;">
+        <img [src]="'https://source.unsplash.com/featured/?'+trip.destination" alt="Destino">
       </div>
+      
       <div class="trip-card-body">
         <h3>{{ trip.name }}</h3>
         <div class="trip-info">
-          <span>📍 {{ trip.origin ? trip.origin + ' ➔ ' : '' }}{{ trip.destination }}</span>
-          <span>📅 {{ trip.startDate | date:'dd MMM yyyy' }} - {{ trip.endDate | date:'dd MMM yyyy' }}</span>
+          <span>📍 {{ trip.destination }}</span>
+          <span>📅 {{ trip.startDate | date:'mediumDate' }}</span>
         </div>
       </div>
-    <div class="trip-card-footer">
+
+      <div class="trip-card-footer">
         <button class="btn-outline-small" (click)="goToDetail(trip.id)">Ver detalles</button>
       </div>
     </div>
+
+    <div *ngIf="trips.length === 0 && !isLoading" class="empty-state">
+      <p>Aún no has creado ningún viaje. ¡Empieza tu primera aventura!</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <button class="close-btn" (click)="closeCreateModal()">✕</button>
     
+    <div class="header-titles" style="margin-bottom: 20px;">
+      <h2 style="color: var(--text-main);">Planear Nuevo Viaje 🌍</h2>
+    </div>
+    
+    <div class="form-group">
+      <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Nombre del Viaje *</label>
+      <input type="text" [(ngModel)]="newTrip.name" class="custom-input" placeholder="Ej: Verano en Grecia">
+    </div>
+
+    <div style="display: flex; gap: 15px;">
+      <div class="form-group" style="flex: 1;">
+        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Destino *</label>
+        <input type="text" [(ngModel)]="newTrip.destination" class="custom-input" placeholder="Ej: Atenas">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 15px;">
+      <div class="form-group" style="flex: 1;">
+        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Fecha Inicio</label>
+        <input type="date" [(ngModel)]="newTrip.startDate" class="custom-input">
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label style="color: var(--text-secondary); display: block; margin-bottom: 5px;">Fecha Fin</label>
+        <input type="date" [(ngModel)]="newTrip.endDate" class="custom-input">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+      <button class="btn-outline-small" style="border-color: #ccc; color: #666;" (click)="closeCreateModal()">Cancelar</button>
+      <button class="btn-primary" style="flex: 1;" (click)="saveNewTrip()">Crear Viaje</button>
+    </div>
   </div>
 </div>
 

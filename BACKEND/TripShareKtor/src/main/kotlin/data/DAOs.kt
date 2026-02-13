@@ -1,9 +1,11 @@
-package data
+package data // O el paquete que uses, ej: com.tuproyecto.domain
 
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
+import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
@@ -18,7 +20,7 @@ object Users : LongIdTable("users", "user_id") {
     val userName = varchar("user_name", 120)
     val avatarUrl = varchar("avatar_url", 500).nullable()
     val bio = text("bio").nullable()
-    val provider = varchar("provider", 20)
+    val provider = varchar("provider", 20).default("local") // Default por seguridad
     val providerUid = varchar("provider_uid", 255).nullable()
     val passwordHash = varchar("password_hash", 255).nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
@@ -31,16 +33,14 @@ object FriendRequests : LongIdTable("friend_requests", "request_id") {
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-// 👇👇👇 AQUÍ ESTÁ EL ARREGLO DEL CHAT 👇👇👇
+// 👇 TABLA DE MENSAJES (Con el arreglo del timestamp string) 👇
 object Messages : LongIdTable("messages", "message_id") {
     val fromUser = reference("from_user_id", Users)
     val toUser = reference("to_user_id", Users)
     val content = text("content")
-    // USAMOS VARCHAR PARA EVITAR ERRORES DE FECHAS
-    val timestamp = varchar("timestamp", 100)
+    val timestamp = varchar("timestamp", 100) // String para evitar errores de parseo
     val isRead = bool("is_read").default(false)
 }
-// 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
 object Trips : LongIdTable("trips", "trip_id") {
     val name = varchar("name", 120)
@@ -52,8 +52,6 @@ object Trips : LongIdTable("trips", "trip_id") {
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-// ... Tus otras tablas (Activities, Expenses, Memories, TripMembers, TripInvites) ...
-// (Pégalas aquí si las tienes, no cambian nada para el chat)
 object Activities : LongIdTable("activities", "activity_id") {
     val tripId = reference("trip_id", Trips)
     val createdBy = reference("created_by_user_id", Users)
@@ -76,31 +74,29 @@ object Expenses : LongIdTable("expenses", "expense_id") {
 object Memories : LongIdTable("memories", "memory_id") {
     val tripId = reference("trip_id", Trips)
     val userId = reference("user_id", Users)
-    val type = varchar("type", 10)
+    val type = varchar("type", 10) // 'photo' o 'note'
     val description = text("description").nullable()
     val mediaUrl = varchar("media_url", 500).nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-object TripMembers : LongIdTable("trip_members") { // Ojo con la PK compuesta si usas Exposed DAO, LongIdTable fuerza una ID
-    val tripId = reference("trip_id", Trips)
-    val userId = reference("user_id", Users)
-    val role = varchar("role", 20).default("member")
-    val joinedAt = timestamp("joined_at").defaultExpression(CurrentTimestamp())
-}
+// 👇👇👇 CORREGIDO: Usamos Table (no LongIdTable) para la tabla intermedia 👇👇👇
+object TripMembers : Table("trip_members") {
+    val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val role = varchar("role", 20).default("member") // "owner", "member"
+    // 👇 NUEVA COLUMNA 👇
+    val status = varchar("status", 20).default("pending") // "pending", "accepted", "rejected"
 
-object TripInvites : LongIdTable("trip_invites", "invite_id") {
-    val tripId = reference("trip_id", Trips)
-    val email = varchar("email", 255)
-    val token = varchar("token", 64).uniqueIndex()
-    val status = varchar("status", 20).default("pending")
-    val expiresAt = datetime("expires_at").nullable()
-    val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+    override val primaryKey = PrimaryKey(tripId, userId)
 }
 
 // ===========================
 // ENTIDADES (DAO)
 // ===========================
+// Estas clases sirven para manejar los datos como objetos.
+// TripMembers NO TIENE ENTIDAD DAO porque es una tabla de enlace,
+// se usa directamente con Joins en el Repository.
 
 class UserEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<UserEntity>(Users)
@@ -124,7 +120,6 @@ class TripEntity(id: EntityID<Long>) : LongEntity(id) {
     var createdAt by Trips.createdAt
 }
 
-// Agrega aquí ActivityEntity, ExpenseEntity, etc.
 class ActivityEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<ActivityEntity>(Activities)
     var tripId by Activities.tripId

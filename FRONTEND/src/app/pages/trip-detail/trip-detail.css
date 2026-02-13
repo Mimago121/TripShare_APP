@@ -1,133 +1,438 @@
-:host { display: flex; flex-direction: column; min-height: 100vh; background-color: var(--bg-color); }
-.trip-detail-container { flex: 1; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; padding-bottom: 50px; }
+/* =========================================
+   CONTENEDOR PRINCIPAL
+   ========================================= */
+/* ACTUALIZACIÓN DEL FONDO */
+.trip-detail-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 80vh;
+  /* 👇 Cambia esto para que sea transparente o use la variable global */
+  background-color: transparent !important; 
+}
 
-/* HERO SECTION */
+/* 2. Asegurar que el fondo del BODY también cambie si Angular lo bloquea */
+:host-context(body.light-theme) {
+  background-color: #f3f4f6 !important; /* Color claro de fondo */
+}
+
+:host-context(body.dark-theme) {
+  background-color: #111827 !important; /* Color oscuro de fondo */
+}
+
+/* =========================================
+   HERO / CABECERA
+   ========================================= */
 .trip-hero {
-  background: linear-gradient(135deg, var(--primary) 0%, #2980b9 100%);
-  color: white; padding: 40px 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px;
-}
-.back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; margin-bottom: 10px; display: inline-block; }
-.back-link:hover { color: white; text-decoration: underline; }
-.hero-content h1 { font-size: 2.5rem; margin: 10px 0; }
-.hero-info { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
-.hero-info span { background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; }
-
-/* TABS NAV */
-.tabs-nav { display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); margin: 0 20px 30px 20px; }
-.tabs-nav button {
-  background: none; border: none; font-size: 1.1rem; padding: 15px 20px; cursor: pointer; color: var(--text-secondary);
-  font-weight: 600; border-bottom: 3px solid transparent; transition: 0.2s; margin-bottom: -2px;
-}
-.tabs-nav button:hover { color: var(--primary); }
-.tabs-nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
-
-/* CONTENIDO */
-.tab-content { padding: 0 20px; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.section-header h2 { color: var(--text-main); margin: 0; }
-.btn-outline-small { background: transparent; border: 2px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.btn-outline-small:hover { background: var(--primary); color: white; }
-
-/* LISTA ACTIVIDADES */
-.activity-card { display: flex; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 15px; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-.time-block { min-width: 80px; text-align: center; border-right: 2px dashed var(--border-color); padding-right: 15px; margin-right: 15px; display: flex; flex-direction: column; color: var(--primary); }
-.time-block strong { font-size: 1.2rem; }
-.act-details h4 { margin: 0; color: var(--text-main); font-size: 1.1rem; }
-
-/* LISTA GASTOS */
-.expense-item { display: flex; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 15px; }
-.expense-item:last-child { border-bottom: none; }
-.exp-icon { font-size: 1.5rem; margin-right: 15px; background: rgba(128,128,128,0.1); padding: 10px; border-radius: 50%; }
-.exp-info { flex: 1; display: flex; flex-direction: column; color: var(--text-main); }
-.exp-info strong { font-size: 1.1rem; }
-.exp-info small { color: var(--text-secondary); }
-.exp-amount { font-size: 1.2rem; font-weight: bold; color: #e74c3c; }
-
-/* GRID MEMORIAS */
-.memories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-.memory-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; height: 200px; border: 1px solid var(--border-color); }
-.memory-card img { width: 100%; height: 100%; object-fit: cover; }
-.memory-note { padding: 20px; font-style: italic; color: var(--text-main); display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; background: rgba(128,128,128,0.05); }
-
-/* UTILIDADES */
-.empty-state { text-align: center; padding: 40px; color: var(--text-secondary); background: var(--card-bg); border-radius: 12px; border: 1px dashed var(--border-color); }
-.loading-state { display: flex; justify-content: center; align-items: center; height: 60vh; }
-.spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-/* MODAL STYLES */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  backdrop-filter: blur(4px); /* Efecto borroso chulo */
+  background: linear-gradient(135deg, var(--primary), #a855f7);
+  border-radius: 20px;
+  padding: 40px;
+  color: white;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-.modal-content {
-  background: var(--card-bg); /* Se adapta a modo oscuro/claro */
-  padding: 30px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 450px;
-  position: relative;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-  animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.close-btn {
-  position: absolute;
-  top: 15px; right: 15px;
-  background: none; border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text-secondary);
-}
-
-.modal-content h2 {
-  margin-top: 0;
-  color: var(--text-main);
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-/* FORMULARIOS */
-.form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-.form-row { display: flex; gap: 10px; }
-.half { flex: 1; }
-
-label {
+.back-link {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
   font-size: 0.9rem;
-  font-weight: 600;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.trip-hero h1 {
+  margin: 10px 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.hero-info {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.hero-info span {
+  background: rgba(0,0,0,0.2);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   PESTAÑAS (TABS)
+   ========================================= */
+.tabs-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  overflow-x: auto;
+}
+
+.tabs-nav button {
+  background: none;
+  border: none;
   color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-
-input, select, textarea {
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--bg-color);
-  color: var(--text-main);
   font-size: 1rem;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-input:focus, textarea:focus {
-  outline: 2px solid var(--primary);
-  border-color: transparent;
+.tabs-nav button.active {
+  background-color: var(--card-bg);
+  color: var(--primary);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-.full-width {
+.tabs-nav button:hover:not(.active) {
+  background-color: rgba(128,128,128,0.1);
+}
+
+/* =========================================
+   SECCIONES DE CONTENIDO COMUNES
+   ========================================= */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  color: var(--text-main);
+  margin: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+/* =========================================
+   ESTILOS: ACTIVIDADES, GASTOS, MEMORIES
+   ========================================= */
+/* Actividades */
+.activity-list { display: flex; flex-direction: column; gap: 15px; }
+.activity-card {
+  display: flex; gap: 20px; padding: 15px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+.time-block {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 60px; border-right: 1px solid var(--border-color); padding-right: 15px;
+  color: var(--text-main);
+}
+.act-details h4 { margin: 0 0 5px 0; color: var(--text-main); }
+.act-end { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* Gastos */
+.expense-list { display: grid; gap: 10px; }
+.expense-item {
+  display: flex; align-items: center; gap: 15px; padding: 15px;
+  background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color);
+}
+.exp-icon { font-size: 1.5rem; }
+.exp-info { flex: 1; display: flex; flex-direction: column; }
+.exp-info strong { color: var(--text-main); }
+.exp-info small { color: var(--text-secondary); font-size: 0.8rem; }
+.exp-amount { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+
+/* Memories */
+.memories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+.memory-card { border-radius: 10px; overflow: hidden; background: var(--card-bg); }
+.memory-card img { width: 100%; height: 150px; object-fit: cover; }
+.memory-note { padding: 15px; color: var(--text-main); font-style: italic; background: var(--card-bg); border: 1px solid var(--border-color); }
+
+/* =========================================
+   NUEVO DISEÑO DE MIEMBROS (THEME AWARE)
+   ========================================= */
+
+/* Contenedor de invitación */
+.invite-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  /* 👇 CAMBIO CLAVE: Usar variables, no colores fijos */
+  background: var(--card-bg); 
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra suave */
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* SELECTOR MODERNO */
+.modern-select {
   width: 100%;
-  margin-top: 10px;
-  padding: 12px;
-  font-size: 1.1rem;
+  padding: 12px 12px 12px 40px;
+  /* 👇 CAMBIO CLAVE: Fondo del input según el tema */
+  background-color: var(--bg-color); 
+  color: var(--text-main);           
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  appearance: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: border 0.2s;
+}
+
+.modern-select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* BOTONES */
+.btn-invite-action {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-invite-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-outline-small {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 10px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-small:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* GRID DE MIEMBROS */
+.members-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* TARJETA DE MIEMBRO NUEVA */
+.member-card-new {
+  /* 👇 CAMBIO CLAVE: Ahora obedecerá al tema claro/oscuro */
+  background: var(--card-bg);      
+  border: 1px solid var(--border-color);
+  
+  border-radius: 16px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra para que destaque en blanco */
+}
+
+.member-card-new:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.member-card-new.pending-card {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+/* INFO PRINCIPAL TARJETA */
+.card-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-initials {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, var(--primary), #a855f7);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #94a3b8; /* Gris (pendiente) */
+  border: 2px solid var(--card-bg); /* Borde del color de la tarjeta */
+  border-radius: 50%;
+}
+
+.status-dot.is-accepted {
+  background: #22c55e; /* Verde (aceptado) */
+}
+
+.name-email {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.m-name {
+  font-weight: 700;
+  color: var(--text-main); /* Se pondrá negro en modo claro */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-email {
+  font-size: 0.75rem;
+  color: var(--text-secondary); /* Gris medio en ambos modos */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* BADGES / ETIQUETAS */
+.card-footer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Colores de Badges (Semi-transparentes para funcionar en Dark/Light) */
+.role-tag {
+  background: rgba(99, 102, 241, 0.15); 
+  color: #6366f1; /* Indigo */
+}
+.role-tag.is-owner {
+  background: rgba(245, 158, 11, 0.15); 
+  color: #f59e0b; /* Amber/Gold */
+}
+.pending-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444; /* Red */
+}
+.accepted-tag {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e; /* Green */
+}
+
+/* =========================================
+   MODALES (ESTILO GENÉRICO)
+   ========================================= */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-content {
+  background: var(--card-bg);
+  padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;
+  position: relative; border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+.close-btn {
+  position: absolute; top: 15px; right: 15px; background: none; border: none;
+  font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);
+}
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 10px; border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color); color: var(--text-main);
+  box-sizing: border-box;
+}
+.form-row { display: flex; gap: 15px; }
+.half { flex: 1; }
+.btn-primary.full-width { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+/* CUANDO EL BODY TIENE LA CLASE LIGHT-THEME (Modo Claro) */
+:host-context(body.light-theme) .member-card-new,
+:host-context(body.light-theme) .invite-container {
+  background-color: #ffffff !important;
+  border-color: #dee2e6 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+:host-context(body.light-theme) .modern-select {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+  border-color: #ced4da !important;
+}
+
+:host-context(body.light-theme) .m-name {
+  color: #212529 !important;
+}
+
+:host-context(body.light-theme) .m-email {
+  color: #6c757d !important;
+}
+
+/* CUANDO EL BODY TIENE LA CLASE DARK-THEME (Modo Oscuro) */
+:host-context(body.dark-theme) .member-card-new,
+:host-context(body.dark-theme) .invite-container {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+:host-context(body.dark-theme) .modern-select {
+  background-color: #111827 !important;
+  color: #ffffff !important;
 }

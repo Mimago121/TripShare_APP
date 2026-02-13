@@ -17,6 +17,7 @@
     <button [class.active]="activeTab === 'itinerary'" (click)="setTab('itinerary')">🗓️ Itinerario</button>
     <button [class.active]="activeTab === 'expenses'" (click)="setTab('expenses')">💸 Gastos</button>
     <button [class.active]="activeTab === 'memories'" (click)="setTab('memories')">📸 Recuerdos</button>
+    <button [class.active]="activeTab === 'members'" (click)="setTab('members')">👥 Miembros</button>
   </div>
 
   <div class="tab-content">
@@ -37,6 +38,7 @@
           </div>
           <div class="act-details">
             <h4>{{ act.title }}</h4>
+            <span class="act-end" *ngIf="act.endDatetime">Hasta {{ act.endDatetime | date:'HH:mm' }}</span>
           </div>
         </div>
       </div>
@@ -80,6 +82,60 @@
       </div>
     </div>
 
+    <div *ngIf="activeTab === 'members'" class="content-section">
+      <div class="section-header">
+        <h2>Viajeros ({{ members.length }})</h2>
+      </div>
+
+      <div class="invite-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <select [(ngModel)]="selectedFriendEmail" class="modern-select">
+            <option value="" disabled selected>Elige un amigo para invitar...</option>
+            <option *ngFor="let friend of myFriends" [value]="friend.email">
+              {{ friend.userName }} ({{ friend.email }})
+            </option>
+          </select>
+        </div>
+        <button class="btn-invite-action" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">
+          + Invitar
+        </button>
+        <button class="btn-outline-small" (click)="inviteByEmail()">
+          ✉️ Email
+        </button>
+      </div>
+
+      <div class="members-grid-modern">
+        <div class="member-card-new" *ngFor="let member of members" [class.pending-card]="member.status === 'pending'">
+          
+          <div class="card-main-info">
+            <div class="avatar-wrapper">
+              <div class="avatar-initials">{{ member.userName.charAt(0).toUpperCase() }}</div>
+              <div class="status-dot" [class.is-accepted]="member.status === 'accepted'"></div>
+            </div>
+            
+            <div class="name-email">
+              <span class="m-name">{{ member.userName }}</span>
+              <span class="m-email">{{ member.email }}</span>
+            </div>
+          </div>
+          
+          <div class="card-footer-tags">
+            <span class="tag role-tag" [class.is-owner]="member.role === 'owner'">
+              {{ member.role === 'owner' ? '👑 Organizador' : '👤 Viajero' }}
+            </span>
+            <span class="tag pending-tag" *ngIf="member.status === 'pending'">
+              ⏳ Pendiente
+            </span>
+            <span class="tag accepted-tag" *ngIf="member.status === 'accepted'">
+              ✅ Confirmado
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -89,7 +145,6 @@
 
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
-    
     <button class="close-btn" (click)="closeModal()">✕</button>
 
     <div *ngIf="modalType === 'activity'">
@@ -104,11 +159,11 @@
           <input type="datetime-local" [(ngModel)]="newActivity.start">
         </div>
         <div class="form-group half">
-          <label>Fin (Opcional)</label>
+          <label>Fin</label>
           <input type="datetime-local" [(ngModel)]="newActivity.end">
         </div>
       </div>
-      <button class="btn-primary full-width" (click)="saveActivity()">Guardar Actividad</button>
+      <button class="btn-primary full-width" (click)="saveActivity()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'expense'">
@@ -121,7 +176,7 @@
         <label>Cantidad (€) *</label>
         <input type="number" [(ngModel)]="newExpense.amount" placeholder="0.00">
       </div>
-      <button class="btn-primary full-width" (click)="saveExpense()">Guardar Gasto</button>
+      <button class="btn-primary full-width" (click)="saveExpense()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'memory'">
@@ -133,19 +188,15 @@
           <option value="note">Nota de texto</option>
         </select>
       </div>
-
       <div class="form-group" *ngIf="newMemory.type === 'photo'">
-        <label>URL de la imagen (Opcional)</label>
+        <label>URL Imagen</label>
         <input type="text" [(ngModel)]="newMemory.url" placeholder="https://...">
-        <small>Si lo dejas vacío, se pondrá una aleatoria.</small>
       </div>
-
       <div class="form-group">
-        <label>Descripción / Nota *</label>
+        <label>Descripción *</label>
         <textarea rows="3" [(ngModel)]="newMemory.description" placeholder="Escribe aquí..."></textarea>
       </div>
-      
-      <button class="btn-primary full-width" (click)="saveMemory()">Guardar Recuerdo</button>
+      <button class="btn-primary full-width" (click)="saveMemory()">Guardar</button>
     </div>
 
   </div>

@@ -1,6 +1,6 @@
 <nav class="navbar">
   <div class="navbar-brand">
-    <a routerLink="/friends">🌍 TripShare</a>
+    <a routerLink="/trips">🌍 TripShare</a>
   </div>
 
   <div class="navbar-links" *ngIf="isLoggedIn">
@@ -19,16 +19,31 @@
       <div class="nav-item dropdown">
         <button class="icon-btn notification-btn" (click)="toggleNotifications()">
           🔔
-          <span class="badge" *ngIf="(pendingRequests.length + chatNotifications.length) > 0">
-            {{ pendingRequests.length + chatNotifications.length }}
+          <span class="badge" *ngIf="totalNotificationsCount > 0">
+            {{ totalNotificationsCount }}
           </span>
         </button>
 
         <div class="dropdown-menu notifications-menu" *ngIf="isNotificationsOpen">
           <div class="dropdown-header">Notificaciones</div>
 
-          <div class="empty-state" *ngIf="pendingRequests.length === 0 && chatNotifications.length === 0">
+          <div class="empty-state" *ngIf="totalNotificationsCount === 0">
             <p>No tienes notificaciones nuevas</p>
+          </div>
+
+          <div class="notif-section" *ngIf="tripInvitations.length > 0">
+            <small class="section-title">✈️ Invitaciones de Viaje</small>
+            
+            <div class="notif-item trip-item" *ngFor="let trip of tripInvitations">
+              <div class="notif-info">
+                <strong>{{ trip.name }}</strong>
+                <span>Te han invitado a este viaje</span>
+              </div>
+              <div class="req-actions">
+                <button class="btn-accept" (click)="respondToTrip(trip.id, true)">✅</button>
+                <button class="btn-reject" (click)="respondToTrip(trip.id, false)">❌</button>
+              </div>
+            </div>
           </div>
 
           <div class="notif-section" *ngIf="chatNotifications.length > 0">
@@ -36,7 +51,8 @@
             
             <div class="notif-item chat-item" 
                  *ngFor="let chat of chatNotifications"
-                 (click)="openChatFromNotification(chat)"> <img [src]="chat.fromUserAvatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="avatar-mini">
+                 (click)="openChatFromNotification(chat)">
+              <img [src]="chat.fromUserAvatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="avatar-mini">
               <div class="notif-info">
                 <strong>{{ chat.fromUserName }}</strong>
                 <span>{{ chat.count }} mensaje(s) nuevo(s)</span>

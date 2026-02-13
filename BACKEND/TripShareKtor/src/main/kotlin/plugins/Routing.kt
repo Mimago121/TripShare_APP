@@ -9,7 +9,6 @@ import io.ktor.http.*
 import io.ktor.server.request.receive
 
 fun Application.configureRouting() {
-    // Instanciamos el repositorio UNA vez
     val repository = UserRepository()
 
     routing {
@@ -21,94 +20,50 @@ fun Application.configureRouting() {
         // ===========================
         // AUTENTICACIÓN
         // ===========================
-
-        // --- LOGIN ---
         post("/login") {
             try {
                 val request = call.receive<LoginRequest>()
                 val user = repository.validateUser(request.email, request.pass)
-
-                if (user != null) {
-                    call.respond(HttpStatusCode.OK, user)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Credenciales incorrectas")
-                }
+                if (user != null) call.respond(HttpStatusCode.OK, user)
+                else call.respond(HttpStatusCode.Unauthorized, "Credenciales incorrectas")
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Error en datos: ${e.message}")
+                call.respond(HttpStatusCode.BadRequest, "Error en login: ${e.message}")
             }
         }
 
-        // --- REGISTER ---
         post("/register") {
             try {
                 val request = call.receive<RegisterRequest>()
-                println("Registrando: ${request.userName}")
-
                 val success = repository.createUser(request.userName, request.email, request.pass)
-
-                if (success) {
-                    call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
-                } else {
-                    call.respond(HttpStatusCode.Conflict, "El email ya existe")
-                }
+                if (success) call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
+                else call.respond(HttpStatusCode.Conflict, "El email ya existe")
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Datos inválidos")
+                call.respond(HttpStatusCode.BadRequest, "Error en registro")
             }
         }
 
         // ===========================
         // USUARIOS
         // ===========================
-
-        // --- OBTENER TODOS LOS USUARIOS ---
-        get("/users") {
-            try {
+        route("/users") {
+            get {
                 val users = repository.getAllUsers()
-                if (users.isNotEmpty()) {
-                    call.respond(HttpStatusCode.OK, users)
-                } else {
-                    call.respond(HttpStatusCode.OK, emptyList<UserModel>())
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Error server: ${e.message}")
-            }
-        }
-
-        // --- OBTENER UN USUARIO POR ID ---
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                return@get
+                call.respond(users)
             }
 
-            val user = repository.getUserById(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Usuario no encontrado")
-            }
-        }
-
-        // --- ACTUALIZAR USUARIO ---
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                return@put
+            get("/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                val user = repository.getUserById(id)
+                if (user != null) call.respond(user)
+                else call.respond(HttpStatusCode.NotFound)
             }
 
-            try {
+            put("/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
                 val request = call.receive<UpdateUserRequest>()
-                val updated = repository.updateUser(id, request.userName, request.bio, request.avatarUrl)
-
-                if (updated) {
+                if (repository.updateUser(id, request.userName, request.bio, request.avatarUrl)) {
                     call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
-                } else {
-                    call.respond(HttpStatusCode.NotFound, "Usuario no encontrado")
-                }
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Error al actualizar: ${e.message}")
+                } else call.respond(HttpStatusCode.NotFound)
             }
         }
 
@@ -116,235 +71,187 @@ fun Application.configureRouting() {
         // VIAJES (TRIPS)
         // ===========================
         route("/trips") {
-            // GET /trips (Todos)
-            get {
-                val trips = repository.getAllTrips()
-                call.respond(trips)
+
+            // Ver mis invitaciones pendientes
+            get("/invitations/{userId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getTripInvitations(userId))
             }
 
-            // GET /trips/user/{userId} (Por usuario)
-            get("/user/{userId}") {
-                val userId = call.parameters["userId"]?.toLongOrNull()
-                if (userId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                    return@get
+            // Responder invitación (PUT /trips/invitations/respond)
+            put("/invitations/respond") {
+                try {
+                    // Recibimos el objeto tipado directamente
+                    val req = call.receive<InvitationResponseRequest>()
+
+                    val success = repository.respondToTripInvitation(req.tripId, req.userId, req.accept)
+
+                    if (success) {
+                        call.respond(HttpStatusCode.OK, mapOf("status" to "success"))
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, "No se encontró el registro")
+                    }
+                } catch (e: Exception) {
+                    println("Error en respond invitation: ${e.message}")
+                    call.respond(HttpStatusCode.BadRequest, "Datos inválidos")
                 }
-                val trips = repository.getTripsByUserId(userId)
-                call.respond(trips)
+            }
+
+            post {
+                try {
+                    val request = call.receive<CreateTripRequest>()
+                    val newTrip = repository.createTrip(request)
+                    call.respond(HttpStatusCode.Created, newTrip)
+                } catch (e: Exception) {
+                    // Imprime el error en la consola de IntelliJ para saber qué falla
+                    println("Error creando viaje: ${e.message}")
+                    call.respond(HttpStatusCode.BadRequest, "Error al procesar el viaje")
+                }
+            }
+
+            get { call.respond(repository.getAllTrips()) }
+
+            get("/user/{userId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getTripsByUserId(userId))
             }
 
             get("/{id}") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 val trip = repository.getTripById(id)
-                if (trip != null) call.respond(HttpStatusCode.OK, trip)
-                else call.respond(HttpStatusCode.NotFound, "Viaje no encontrado")
+                if (trip != null) call.respond(trip) else call.respond(HttpStatusCode.NotFound)
             }
 
-            // 2. Obtener Actividades (Itinerario)
+            // Datos específicos del viaje
             get("/{id}/activities") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getActivitiesByTrip(id))
             }
 
-            // 3. Obtener Gastos
             get("/{id}/expenses") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getExpensesByTrip(id))
             }
 
-            // 4. Obtener Memorias
             get("/{id}/memories") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getMemoriesByTrip(id))
             }
 
-            // POST: Crear Actividad
-            post("/{id}/activities") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val params = call.receive<CreateActivityRequest>() // Asegúrate de tener este DTO
-                val result = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
-                if (result != null) call.respond(HttpStatusCode.Created, result)
-                else call.respond(HttpStatusCode.BadRequest)
+            get("/{id}/members") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getTripMembers(id))
             }
 
-            // POST: Crear Gasto
+            // --- INSERCIONES ---
+            post("/{id}/activities") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                try {
+                    val params = call.receive<CreateActivityRequest>()
+                    val result = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
+                    if (result != null) call.respond(HttpStatusCode.Created, result)
+                    else call.respond(HttpStatusCode.BadRequest)
+                } catch (e: Exception) { call.respond(HttpStatusCode.InternalServerError, e.message ?: "Error") }
+            }
+
             post("/{id}/expenses") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 try {
-                    // 👇 CAMBIO IMPORTANTE AQUÍ 👇
                     val params = call.receive<CreateExpenseRequest>()
-
                     val result = repository.addExpense(id, params.paidByUserId, params.description, params.amount)
-
                     if (result != null) call.respond(HttpStatusCode.Created, result)
                     else call.respond(HttpStatusCode.BadRequest)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
-                }
+                } catch (e: Exception) { call.respond(HttpStatusCode.BadRequest, e.message ?: "Error") }
             }
 
-            // POST: Crear Memoria
             post("/{id}/memories") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 try {
-                    // 👇 CAMBIO IMPORTANTE AQUÍ 👇
                     val params = call.receive<CreateMemoryRequest>()
-
                     val result = repository.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
-
                     if (result != null) call.respond(HttpStatusCode.Created, result)
                     else call.respond(HttpStatusCode.BadRequest)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
-                }
+                } catch (e: Exception) { call.respond(HttpStatusCode.BadRequest) }
             }
 
+            post("/{id}/invite") {
+                val tripId = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<Map<String, String>>()
+                val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Email requerido")
+
+                if (repository.addMemberByEmail(tripId, email)) {
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "Invitado correctamente"))
+                } else {
+                    call.respond(HttpStatusCode.Conflict, "Error al invitar (usuario no existe o ya es miembro)")
+                }
+            }
         }
 
         // ===========================
-        // AMIGOS (FRIENDS) - ¡NUEVO!
+        // AMIGOS (FRIENDS)
         // ===========================
         route("/friends") {
-
-            // 1. ENVIAR SOLICITUD: POST /friends/request
             post("/request") {
-                try {
-                    val params = call.receive<CreateRequestParams>()
-                    val success = repository.sendFriendRequest(params.fromId, params.toId)
-
-                    if (success) {
-                        call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
-                    } else {
-                        call.respond(HttpStatusCode.Conflict, "La solicitud ya existe")
-                    }
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
-                }
+                val params = call.receive<CreateRequestParams>()
+                if (repository.sendFriendRequest(params.fromId, params.toId)) call.respond(HttpStatusCode.Created)
+                else call.respond(HttpStatusCode.Conflict)
             }
 
-            // 2. VER PENDIENTES: GET /friends/pending/{userId}
             get("/pending/{userId}") {
-                val userId = call.parameters["userId"]?.toLongOrNull()
-                if (userId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                    return@get
-                }
-
-                try {
-                    val requests = repository.getPendingRequestsForUser(userId)
-                    call.respond(requests)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
-                }
+                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getPendingRequestsForUser(userId))
             }
 
-            // 3. ACEPTAR SOLICITUD: PUT /friends/accept/{id}
             put("/accept/{id}") {
-                val requestId = call.parameters["id"]?.toLongOrNull()
-                if (requestId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                    return@put
-                }
-
-                val updated = repository.acceptFriendRequest(requestId)
-                if (updated) {
-                    call.respond(HttpStatusCode.OK, mapOf("status" to "accepted"))
-                } else {
-                    call.respond(HttpStatusCode.NotFound, "Solicitud no encontrada")
-                }
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                if (repository.acceptFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                else call.respond(HttpStatusCode.NotFound)
             }
 
-            // 4. RECHAZAR SOLICITUD: DELETE /friends/reject/{id}
             delete("/reject/{id}") {
-                val requestId = call.parameters["id"]?.toLongOrNull()
-                if (requestId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                    return@delete
-                }
-
-                val deleted = repository.rejectFriendRequest(requestId)
-                if (deleted) {
-                    call.respond(HttpStatusCode.OK, mapOf("status" to "rejected"))
-                } else {
-                    call.respond(HttpStatusCode.NotFound, "Solicitud no encontrada")
-                }
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                if (repository.rejectFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                else call.respond(HttpStatusCode.NotFound)
             }
 
-            // GET: Obtener mis amigos aceptados -> /friends/accepted/{userId}
             get("/accepted/{userId}") {
-                val userId = call.parameters["userId"]?.toLongOrNull()
-                if (userId == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                    return@get
-                }
-
-                try {
-                    val friends = repository.getAcceptedFriends(userId)
-                    call.respond(friends)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
-                }
+                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getAcceptedFriends(userId))
             }
-        }
-
-        // --- HEALTH CHECK ---
-        get("/health") {
-            call.respond(mapOf("status" to "OK", "database" to "Connected"))
         }
 
         // --- CHAT ---
         route("/chat") {
-            // Enviar mensaje: POST /chat/send
             post("/send") {
                 val params = call.receive<Map<String, String>>()
                 val fromId = params["fromId"]?.toLongOrNull()
                 val toId = params["toId"]?.toLongOrNull()
                 val content = params["content"]
-
                 if (fromId != null && toId != null && content != null) {
                     repository.saveMessage(fromId, toId, content)
-                    call.respond(HttpStatusCode.OK, "Mensaje enviado")
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "Datos incompletos")
-                }
+                    call.respond(HttpStatusCode.OK)
+                } else call.respond(HttpStatusCode.BadRequest)
             }
 
-            // Obtener conversación: GET /chat/{myId}/{friendId}
             get("/{myId}/{friendId}") {
-                val myId = call.parameters["myId"]?.toLongOrNull()
-                val friendId = call.parameters["friendId"]?.toLongOrNull()
-
-                if (myId != null && friendId != null) {
-                    val messages = repository.getConversation(myId, friendId)
-                    call.respond(messages)
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
-                }
+                val myId = call.parameters["myId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                val friendId = call.parameters["friendId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getConversation(myId, friendId))
             }
 
             get("/notifications/{myId}") {
-                val myId = call.parameters["myId"]?.toLongOrNull()
-                if (myId != null) {
-                    val notifs = repository.getUnreadChatNotifications(myId)
-                    call.respond(notifs)
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "ID inválido")
-                }
+                val myId = call.parameters["myId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getUnreadChatNotifications(myId))
             }
 
-            // PUT: Marcar como leído al abrir chat
             put("/read/{myId}/{friendId}") {
-                val myId = call.parameters["myId"]?.toLongOrNull()
-                val friendId = call.parameters["friendId"]?.toLongOrNull()
-                if (myId != null && friendId != null) {
-                    repository.markMessagesAsRead(myId, friendId)
-                    call.respond(HttpStatusCode.OK, "Leído")
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
-                }
+                val myId = call.parameters["myId"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val friendId = call.parameters["friendId"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                repository.markMessagesAsRead(myId, friendId)
+                call.respond(HttpStatusCode.OK)
             }
         }
+
+        get("/health") { call.respond(mapOf("status" to "OK")) }
     }
-
-
 }
