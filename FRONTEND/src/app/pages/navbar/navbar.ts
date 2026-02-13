@@ -158,7 +158,7 @@ respondToTrip(tripId: number | undefined, accept: boolean) {
     if (this.intervalId) clearInterval(this.intervalId);
     localStorage.removeItem('user');
     this.isLoggedIn = false;
-    this.router.navigate(['/login']).then(() => window.location.reload());
+    this.router.navigate(['/home']).then(() => window.location.reload());
   }
 
   openChatFromNotification(notification: ChatNotification) {
