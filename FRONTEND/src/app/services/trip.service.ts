@@ -162,4 +162,8 @@ sendTripMessage(tripId: number, userId: number, content: string): Observable<any
 getTripMessages(tripId: number): Observable<any[]> {
   return this.http.get<any[]>(`${this.baseUrl}/${tripId}/messages`);
 }
+
+markAsPaid(expenseId: number, userId: number): Observable<any> {
+    return this.http.put(`${this.baseUrl}/expenses/pay`, { expenseId, userId });
+  }
 }

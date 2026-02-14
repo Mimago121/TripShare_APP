@@ -190,3 +190,21 @@ data class TripMessageResponse(
     val content: String,
     val created_at: String
 )
+
+@Serializable
+data class SplitDto(
+    val userId: Long, // Añadimos ID para poder marcarlo
+    val userName: String,
+    val amount: Double,
+    val isPaid: Boolean // Nuevo campo
+)
+
+@Serializable
+data class ExpenseResponse(
+    val id: Long,
+    val description: String,
+    val amount: Double,
+    val paidByUserName: String, // ¡Ahora mandamos el nombre!
+    val paidById: Long,
+    val splits: List<SplitDto>  // Lista de deudores
+)

@@ -198,15 +198,84 @@ fun Application.configureRouting() {
                 if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
 
+            // ---------------------------------------------------------
+            // GET: OBTENER GASTOS (CORREGIDO Y DEFINITIVO)
+            // ---------------------------------------------------------
             get("/{id}/expenses") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getExpensesByTrip(id))
+                val id = call.parameters["id"]?.toLongOrNull()
+                if (id == null) return@get call.respond(HttpStatusCode.BadRequest)
+
+                try {
+                    val expensesList = transaction {
+                        // 1. Obtener gasto y pagador
+                        (Expenses innerJoin Users)
+                            .slice(Expenses.id, Expenses.description, Expenses.amount, Expenses.paidBy, Users.userName)
+                            .select { Expenses.tripId eq id }
+                            .map { row ->
+                                val expenseId = row[Expenses.id].value
+
+                                // 2. SUB-CONSULTA: Sacar deudas (Splits)
+                                // IMPORTANTE: Aquí incluimos Users.id y ExpenseSplits.isPaid en el slice
+                                val splitsList = (ExpenseSplits innerJoin Users)
+                                    .slice(
+                                        Users.id,                // <--- NECESARIO
+                                        Users.userName,
+                                        ExpenseSplits.shareAmount,
+                                        ExpenseSplits.isPaid     // <--- NECESARIO
+                                    )
+                                    .select { ExpenseSplits.expenseId eq expenseId }
+                                    .map { splitRow ->
+                                        SplitDto(
+                                            userId = splitRow[Users.id].value,
+                                            userName = splitRow[Users.userName],
+                                            amount = splitRow[ExpenseSplits.shareAmount].toDouble(),
+                                            isPaid = splitRow[ExpenseSplits.isPaid] // Leemos el valor real de la BD
+                                        )
+                                    }
+
+                                ExpenseResponse(
+                                    id = expenseId,
+                                    description = row[Expenses.description],
+                                    amount = row[Expenses.amount].toDouble(),
+                                    paidByUserName = row[Users.userName],
+                                    paidById = row[Expenses.paidBy].value,
+                                    splits = splitsList
+                                )
+                            }
+                    }
+                    call.respond(expensesList)
+                } catch (e: Exception) {
+                    // Si falla, imprimimos el error real en la consola
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
+                }
             }
-            post("/{id}/expenses") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val params = call.receive<CreateExpenseRequest>()
-                val res = repository.addExpense(id, params.paidByUserId, params.description, params.amount)
-                if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
+
+            // ---------------------------------------------------------
+            // PUT: MARCAR COMO PAGADO (El Check)
+            // ---------------------------------------------------------
+            put("/expenses/pay") {
+                try {
+                    // Recibimos: { "expenseId": 1, "userId": 4 }
+                    val params = call.receive<Map<String, String>>()
+                    val expenseId = params["expenseId"]?.toLongOrNull()
+                    val userId = params["userId"]?.toLongOrNull()
+
+                    if (expenseId != null && userId != null) {
+                        transaction {
+                            // Actualizamos a TRUE
+                            ExpenseSplits.update({ (ExpenseSplits.expenseId eq expenseId) and (ExpenseSplits.userId eq userId) }) {
+                                it[isPaid] = true
+                            }
+                        }
+                        call.respond(HttpStatusCode.OK, mapOf("status" to "Deuda saldada"))
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest, "Faltan IDs")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
 
             get("/{id}/memories") {

@@ -1,23 +1,21 @@
 /* =========================================
    CONTENEDOR PRINCIPAL
    ========================================= */
-/* ACTUALIZACIÓN DEL FONDO */
 .trip-detail-container {
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
   min-height: 80vh;
-  /* 👇 Cambia esto para que sea transparente o use la variable global */
   background-color: transparent !important; 
 }
 
-/* 2. Asegurar que el fondo del BODY también cambie si Angular lo bloquea */
+/* Asegurar que el fondo del BODY cambie si Angular lo bloquea */
 :host-context(body.light-theme) {
-  background-color: #f3f4f6 !important; /* Color claro de fondo */
+  background-color: #f3f4f6 !important;
 }
 
 :host-context(body.dark-theme) {
-  background-color: #111827 !important; /* Color oscuro de fondo */
+  background-color: #111827 !important;
 }
 
 /* =========================================
@@ -27,24 +25,24 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* Ejemplo */
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); /* O tu imagen de fondo */
     padding: 2rem;
     border-radius: 16px;
     margin-bottom: 2rem;
     gap: 20px;
+    color: #ffffff;
 }
 
 .hero-content {
     flex: 1;
 }
 
-.hero-map-wrapper {
-    width: 300px; /* Tamaño de la "mini ventana" */
-    height: 180px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border: 2px solid white;
+.trip-hero h1 {
+  color: #ffffff !important; /* Forzamos blanco puro */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Sombra para leerse bien */
+  margin: 10px 0;
+  font-size: 2.5rem;
+  font-weight: 800;
 }
 
 .back-link {
@@ -55,12 +53,6 @@
   display: inline-block;
 }
 
-.trip-hero h1 {
-  margin: 10px 0;
-  font-size: 2.5rem;
-  font-weight: 800;
-}
-
 .hero-info {
   display: flex;
   gap: 15px;
@@ -68,11 +60,14 @@
   margin-top: 15px;
 }
 
-.hero-info span {
-  background: rgba(0,0,0,0.2);
+.badge-location, .badge-date {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  backdrop-filter: blur(5px);
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 /* =========================================
@@ -135,7 +130,7 @@
 }
 
 /* =========================================
-   ESTILOS: ACTIVIDADES, GASTOS, MEMORIES
+   ESTILOS: ACTIVIDADES Y MEMORIES
    ========================================= */
 /* Actividades */
 .activity-list { display: flex; flex-direction: column; gap: 15px; }
@@ -153,243 +148,234 @@
 .act-details h4 { margin: 0 0 5px 0; color: var(--text-main); }
 .act-end { font-size: 0.8rem; color: var(--text-secondary); }
 
-/* Gastos */
-.expense-list { display: grid; gap: 10px; }
-.expense-item {
-  display: flex; align-items: center; gap: 15px; padding: 15px;
-  background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color);
-}
-.exp-icon { font-size: 1.5rem; }
-.exp-info { flex: 1; display: flex; flex-direction: column; }
-.exp-info strong { color: var(--text-main); }
-.exp-info small { color: var(--text-secondary); font-size: 0.8rem; }
-.exp-amount { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
-
 /* Memories */
 .memories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
 .memory-card { border-radius: 10px; overflow: hidden; background: var(--card-bg); }
 .memory-card img { width: 100%; height: 150px; object-fit: cover; }
 .memory-note { padding: 15px; color: var(--text-main); font-style: italic; background: var(--card-bg); border: 1px solid var(--border-color); }
+.memory-caption { padding: 10px; font-size: 0.9rem; color: var(--text-main); }
 
 /* =========================================
-   NUEVO DISEÑO DE MIEMBROS (THEME AWARE)
+   ESTILOS NUEVOS PARA GASTOS (CON CHECKBOX)
    ========================================= */
+.expense-list { display: flex; flex-direction: column; gap: 10px; }
 
-/* Contenedor de invitación */
-.invite-container {
+.expense-item {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  /* 👇 CAMBIO CLAVE: Usar variables, no colores fijos */
-  background: var(--card-bg); 
-  border: 1px solid var(--border-color);
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 30px;
-  align-items: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra suave */
-}
-
-.search-box {
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1rem;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* SELECTOR MODERNO */
-.modern-select {
-  width: 100%;
-  padding: 12px 12px 12px 40px;
-  /* 👇 CAMBIO CLAVE: Fondo del input según el tema */
-  background-color: var(--bg-color); 
-  color: var(--text-main);           
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  appearance: none;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: border 0.2s;
-}
-
-.modern-select:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-/* BOTONES */
-.btn-invite-action {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-invite-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-outline-small {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 10px 15px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-outline-small:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-/* GRID DE MIEMBROS */
-.members-grid-modern {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-/* TARJETA DE MIEMBRO NUEVA */
-.member-card-new {
-  /* 👇 CAMBIO CLAVE: Ahora obedecerá al tema claro/oscuro */
-  background: var(--card-bg);      
-  border: 1px solid var(--border-color);
-  
-  border-radius: 16px;
+  flex-direction: column; /* Columna para poner los splits debajo */
   padding: 15px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s;
+}
+
+/* Cabecera del Gasto (Icono, Titulo, Total) */
+.exp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.exp-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.exp-icon { font-size: 1.5rem; }
+
+.exp-info { flex: 1; display: flex; flex-direction: column; }
+.exp-info strong { color: var(--text-main); }
+.paid-by { color: var(--text-secondary); font-size: 0.8rem; }
+.paid-by span { color: var(--primary); font-weight: 600; }
+
+.exp-amount { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+
+/* SECCIÓN DE DEUDAS (SPLITS) */
+.exp-splits {
+  margin-left: 48px; /* Indentado para alinear con el texto */
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra para que destaque en blanco */
+  gap: 8px;
 }
 
-.member-card-new:hover {
-  transform: translateY(-3px);
-  border-color: var(--primary);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-}
-
-.member-card-new.pending-card {
-  border-style: dashed;
-  opacity: 0.75;
-}
-
-/* INFO PRINCIPAL TARJETA */
-.card-main-info {
+.split-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  font-size: 0.9rem;
+  transition: opacity 0.3s;
 }
 
-.avatar-wrapper {
-  position: relative;
-  flex-shrink: 0;
+/* Cuando está pagado se vuelve un poco transparente */
+.split-row.is-paid {
+  opacity: 0.5; 
 }
 
-.avatar-initials {
-  width: 45px;
-  height: 45px;
-  background: linear-gradient(135deg, var(--primary), #a855f7);
-  color: white;
-  border-radius: 50%;
+/* CHECKBOX PERSONALIZADO (EL CUADRADITO) */
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: white;
+  font-size: 14px;
+  background: var(--bg-color);
+  transition: all 0.2s;
+}
+
+.custom-checkbox:hover {
+  border-color: var(--primary);
+}
+
+.custom-checkbox.checked {
+  background-color: #10b981; /* Verde éxito */
+  border-color: #10b981;
+}
+
+/* TEXTOS DE LA DEUDA */
+.split-name {
+  font-weight: 500;
+  color: var(--text-main);
+  min-width: 60px;
+}
+
+.split-status {
+  color: var(--text-secondary);
+}
+
+.debt-amount {
+  color: #ef4444; /* Rojo deuda */
   font-weight: bold;
-  font-size: 1.2rem;
 }
 
-.status-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  background: #94a3b8; /* Gris (pendiente) */
-  border: 2px solid var(--card-bg); /* Borde del color de la tarjeta */
-  border-radius: 50%;
-}
-
-.status-dot.is-accepted {
-  background: #22c55e; /* Verde (aceptado) */
-}
-
-.name-email {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.m-name {
-  font-weight: 700;
-  color: var(--text-main); /* Se pondrá negro en modo claro */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.m-email {
-  font-size: 0.75rem;
-  color: var(--text-secondary); /* Gris medio en ambos modos */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* BADGES / ETIQUETAS */
-.card-footer-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 12px;
-}
-
-.tag {
-  font-size: 0.7rem;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Colores de Badges (Semi-transparentes para funcionar en Dark/Light) */
-.role-tag {
-  background: rgba(99, 102, 241, 0.15); 
-  color: #6366f1; /* Indigo */
-}
-.role-tag.is-owner {
-  background: rgba(245, 158, 11, 0.15); 
-  color: #f59e0b; /* Amber/Gold */
-}
-.pending-tag {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444; /* Red */
-}
-.accepted-tag {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e; /* Green */
+.paid-text {
+  color: #10b981; /* Verde pagado */
+  font-weight: 600;
 }
 
 /* =========================================
-   MODALES (ESTILO GENÉRICO)
+   DISEÑO DE MIEMBROS (THEME AWARE)
+   ========================================= */
+.invite-container {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  background: var(--card-bg); 
+  border: 1px solid var(--border-color);
+  padding: 20px; border-radius: 15px; margin-bottom: 30px;
+  align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.search-box { position: relative; flex: 1; min-width: 200px; }
+.search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 1rem; pointer-events: none; }
+
+.modern-select {
+  width: 100%; padding: 12px 12px 12px 40px;
+  background-color: var(--bg-color); color: var(--text-main);           
+  border: 1px solid var(--border-color); border-radius: 10px;
+  cursor: pointer; outline: none; transition: border 0.2s;
+}
+.modern-select:focus { border-color: var(--primary); }
+
+.btn-invite-action { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; }
+.btn-invite-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-outline-small { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 10px 15px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.btn-outline-small:hover { border-color: var(--primary); color: var(--primary); }
+
+.members-grid-modern { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+
+.member-card-new {
+  background: var(--card-bg);      
+  border: 1px solid var(--border-color);
+  border-radius: 16px; padding: 15px;
+  display: flex; flex-direction: column; gap: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.member-card-new:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+.member-card-new.pending-card { border-style: dashed; opacity: 0.75; }
+
+.card-main-info { display: flex; align-items: center; gap: 12px; }
+.avatar-initials { width: 45px; height: 45px; background: linear-gradient(135deg, var(--primary), #a855f7); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; }
+.name-email { display: flex; flex-direction: column; overflow: hidden; }
+.m-name { font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-email { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* THEME OVERRIDES FOR MEMBERS (Si Angular encapsula estilos) */
+:host-context(body.light-theme) .member-card-new,
+:host-context(body.light-theme) .invite-container { background-color: #ffffff !important; border-color: #dee2e6 !important; }
+:host-context(body.light-theme) .modern-select { background-color: #f8f9fa !important; color: #212529 !important; }
+:host-context(body.light-theme) .m-name { color: #212529 !important; }
+
+:host-context(body.dark-theme) .member-card-new,
+:host-context(body.dark-theme) .invite-container { background-color: #1f2937 !important; border-color: #374151 !important; }
+:host-context(body.dark-theme) .modern-select { background-color: #111827 !important; color: #ffffff !important; }
+
+/* =========================================
+   ESTILOS DEL CHAT (Moderno & Responsive)
+   ========================================= */
+.chat-section { height: 65vh; min-height: 400px; display: flex; flex-direction: column; }
+.chat-container {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--bg-color); border: 1px solid var(--border-color);
+  border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.messages-list {
+  flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;
+  background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.messages-list::-webkit-scrollbar { width: 6px; }
+.messages-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+
+.message-row { display: flex; align-items: flex-end; gap: 10px; max-width: 80%; }
+.my-row { align-self: flex-end; flex-direction: row-reverse; }
+.other-row { align-self: flex-start; }
+
+.chat-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--card-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0;
+}
+
+.message-bubble {
+  padding: 10px 16px; position: relative; font-size: 0.95rem; line-height: 1.4; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.my-row .message-bubble {
+  background: var(--primary); color: white; border-radius: 18px 18px 4px 18px;
+}
+.other-row .message-bubble {
+  background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 18px 18px 18px 4px;
+}
+
+.msg-author-name { font-size: 0.75rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; display: block; }
+.msg-time { font-size: 0.65rem; display: block; text-align: right; margin-top: 4px; opacity: 0.7; }
+
+.chat-input-area { padding: 15px; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+.modern-input-chat {
+  flex: 1; padding: 12px 20px; border-radius: 25px;
+  border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main);
+  outline: none; transition: border 0.3s;
+}
+.modern-input-chat:focus { border-color: var(--primary); }
+
+.btn-send-chat {
+  background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  transition: transform 0.2s; box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+.btn-send-chat:hover { transform: scale(1.05); }
+
+/* =========================================
+   MODALES
    ========================================= */
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -397,216 +383,16 @@
   display: flex; align-items: center; justify-content: center; z-index: 1000;
 }
 .modal-content {
-  background: var(--card-bg);
-  padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;
-  position: relative; border: 1px solid var(--border-color);
-  color: var(--text-main);
+  background: var(--card-bg); padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;
+  position: relative; border: 1px solid var(--border-color); color: var(--text-main);
 }
-.close-btn {
-  position: absolute; top: 15px; right: 15px; background: none; border: none;
-  font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);
-}
+.close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.9rem; }
 .form-group input, .form-group select, .form-group textarea {
-  width: 100%; padding: 10px; border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-color); color: var(--text-main);
-  box-sizing: border-box;
+  width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);
+  background: var(--bg-color); color: var(--text-main); box-sizing: border-box;
 }
 .form-row { display: flex; gap: 15px; }
 .half { flex: 1; }
 .btn-primary.full-width { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-
-/* CUANDO EL BODY TIENE LA CLASE LIGHT-THEME (Modo Claro) */
-:host-context(body.light-theme) .member-card-new,
-:host-context(body.light-theme) .invite-container {
-  background-color: #ffffff !important;
-  border-color: #dee2e6 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
-}
-
-:host-context(body.light-theme) .modern-select {
-  background-color: #f8f9fa !important;
-  color: #212529 !important;
-  border-color: #ced4da !important;
-}
-
-:host-context(body.light-theme) .m-name {
-  color: #212529 !important;
-}
-
-:host-context(body.light-theme) .m-email {
-  color: #6c757d !important;
-}
-
-/* CUANDO EL BODY TIENE LA CLASE DARK-THEME (Modo Oscuro) */
-:host-context(body.dark-theme) .member-card-new,
-:host-context(body.dark-theme) .invite-container {
-  background-color: #1f2937 !important;
-  border-color: #374151 !important;
-}
-
-:host-context(body.dark-theme) .modern-select {
-  background-color: #111827 !important;
-  color: #ffffff !important;
-}
-
-/* =========================================
-   ESTILOS DEL CHAT (Moderno & Responsive)
-   ========================================= */
-
-/* Contenedor principal que ajusta la altura */
-.chat-section {
-  height: 65vh; /* Altura fija cómoda */
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Caja del chat (Borde y fondo) */
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-color); /* Fondo base */
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-
-/* LISTA DE MENSAJES */
-.messages-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* Espacio entre mensajes */
-  background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
-  background-size: 20px 20px; /* Patrón de puntos sutil */
-  opacity: 1;
-}
-
-/* Scrollbar fina */
-.messages-list::-webkit-scrollbar { width: 6px; }
-.messages-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
-
-/* MENSAJES (CONTENEDOR FILA) */
-.message-row {
-  display: flex;
-  align-items: flex-end; /* Alinear avatar abajo */
-  gap: 10px;
-  max-width: 80%;
-}
-
-/* Mis mensajes (A la derecha) */
-.my-row {
-  align-self: flex-end;
-  flex-direction: row-reverse; /* Avatar (si hubiera) al otro lado */
-}
-
-/* Mensajes de otros (A la izquierda) */
-.other-row {
-  align-self: flex-start;
-}
-
-/* AVATAR (Foto pequeña) */
-.chat-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--card-bg);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  flex-shrink: 0;
-}
-
-/* BURBUJA DE MENSAJE */
-.message-bubble {
-  padding: 10px 16px;
-  position: relative;
-  font-size: 0.95rem;
-  line-height: 1.4;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-/* Estilo burbuja MÍA */
-.my-row .message-bubble {
-  background: var(--primary); /* Color azul/primary */
-  color: white; /* Texto blanco siempre */
-  border-radius: 18px 18px 4px 18px; /* Esquina inferior derecha recta */
-}
-
-/* Estilo burbuja OTROS */
-.other-row .message-bubble {
-  background: var(--card-bg); /* Gris/Negro suave según tema */
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: 18px 18px 18px 4px; /* Esquina inferior izquierda recta */
-}
-
-/* Nombre del autor (Pequeño arriba) */
-.msg-author-name {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 4px;
-  display: block;
-}
-
-/* Hora del mensaje */
-.msg-time {
-  font-size: 0.65rem;
-  display: block;
-  text-align: right;
-  margin-top: 4px;
-  opacity: 0.7;
-}
-
-/* INPUT AREA (Abajo) */
-.chat-input-area {
-  padding: 15px;
-  background: var(--card-bg);
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.modern-input-chat {
-  flex: 1;
-  padding: 12px 20px;
-  border-radius: 25px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-color); /* Se adapta al tema */
-  color: var(--text-main);
-  outline: none;
-  transition: border 0.3s;
-}
-
-.modern-input-chat:focus {
-  border-color: var(--primary);
-}
-
-.btn-send-chat {
-  background: var(--primary);
-  color: white;
-  border: none;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  transition: transform 0.2s, background 0.3s;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-}
-
-.btn-send-chat:hover {
-  transform: scale(1.05);
-  background: var(--primary-hover, #4f46e5); /* Fallback si no existe la variable */
-}

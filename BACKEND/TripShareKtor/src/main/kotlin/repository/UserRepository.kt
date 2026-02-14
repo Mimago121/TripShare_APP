@@ -6,6 +6,7 @@ import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -355,15 +356,15 @@ class UserRepository {
         ActivityResponse(id.value, tripId, title, start, end, userId)
     }
 
-    suspend fun addExpense(tripId: Long, userId: Long, description: String, amount: Double): ExpenseModel? = dbQuery {
-        val insert = Expenses.insert {
-            it[this.tripId] = tripId
-            it[this.paidBy] = userId
-            it[this.description] = description
-            it[this.amount] = amount.toBigDecimal()
+    fun addExpense(tripId: Long, paidByUserId: Long, description: String, amount: Double): Long? {
+        return transaction {
+            Expenses.insertAndGetId {
+                it[this.tripId] = tripId
+                it[this.paidBy] = paidByUserId
+                it[this.description] = description
+                it[this.amount] = java.math.BigDecimal.valueOf(amount)
+            }.value // .value saca el ID Long
         }
-        val id = insert[Expenses.id]
-        ExpenseModel(id.value, tripId, userId, description, amount, LocalDateTime.now().toString())
     }
 
     suspend fun addMemory(tripId: Long, userId: Long, type: String, description: String?, url: String?): MemoryModel? = dbQuery {

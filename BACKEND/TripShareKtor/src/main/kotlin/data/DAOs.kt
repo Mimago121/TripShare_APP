@@ -99,6 +99,17 @@ object TripMessages : LongIdTable("trip_messages") { // Nombre exacto de la tabl
     val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
 }
 
+object ExpenseSplits : Table("expense_splits") {
+    // Claves foráneas
+    val expenseId = reference("expense_id", Expenses) // Vincula con la tabla Expenses
+    val userId = reference("user_id", Users)       // Vincula con la tabla Users
+
+    // La cantidad que le toca pagar a este usuario (ej: 20.50)
+    val shareAmount = decimal("share_amount", 10, 2)
+    val isPaid = bool("is_paid").default(false)
+    // Clave primaria compuesta (Un usuario solo puede estar una vez en el mismo gasto)
+    override val primaryKey = PrimaryKey(expenseId, userId)
+}
 // ===========================
 // ENTIDADES (DAO)
 // ===========================

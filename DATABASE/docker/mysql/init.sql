@@ -146,7 +146,8 @@ CREATE TABLE expense_splits (
   expense_id    BIGINT UNSIGNED NOT NULL,
   user_id       BIGINT UNSIGNED NOT NULL,
   share_amount  DECIMAL(10,2) NOT NULL,
-
+  is_paid       BOOLEAN DEFAULT FALSE,
+  
   PRIMARY KEY (expense_id, user_id),
   CONSTRAINT fk_splits_expense FOREIGN KEY (expense_id) REFERENCES expenses(expense_id) ON DELETE CASCADE,
   CONSTRAINT fk_splits_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT

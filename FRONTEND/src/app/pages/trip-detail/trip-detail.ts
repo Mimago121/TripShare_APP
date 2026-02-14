@@ -261,4 +261,16 @@ export class TripDetailComponent implements OnInit {
       });
     }
   }
+
+  togglePaid(expenseId: number, split: any) {
+    if (split.isPaid) return; // Si ya está pagado, no hacemos nada (o podrías implementar desmarcar)
+
+    this.tripService.markAsPaid(expenseId, split.userId).subscribe({
+      next: () => {
+        // Actualizamos visualmente sin recargar
+        split.isPaid = true; 
+      },
+      error: (err) => console.error(err)
+    });
+  }
 }

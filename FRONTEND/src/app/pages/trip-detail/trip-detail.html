@@ -59,15 +59,40 @@
         <h2>Control de Gastos</h2>
         <button class="btn-outline-small" (click)="openModal('expense')">+ Añadir</button>
       </div>
+      
       <div class="empty-state" *ngIf="expenses.length === 0">No hay gastos.</div>
+      
       <div class="expense-list">
         <div class="expense-item" *ngFor="let exp of expenses">
-          <div class="exp-icon">🛒</div>
-          <div class="exp-info">
-            <strong>{{ exp.description }}</strong>
-            <small>Pagado por ID: {{ exp.paidByUserId }}</small>
+          
+          <div class="exp-header">
+            <div class="exp-left">
+              <div class="exp-icon">💸</div>
+              <div class="exp-info">
+                <strong>{{ exp.description }}</strong>
+                <small class="paid-by">Pagado por: <span>{{ exp.paidByUserName }}</span></small>
+              </div>
+            </div>
+            <div class="exp-amount">{{ exp.amount }} €</div>
           </div>
-          <div class="exp-amount">{{ exp.amount }} €</div>
+
+          <div class="exp-splits" *ngIf="exp.splits && exp.splits.length > 0">
+            
+            <div class="split-row" *ngFor="let split of exp.splits" [class.is-paid]="split.isPaid">
+              
+              <div class="custom-checkbox" (click)="togglePaid(exp.id, split)" [class.checked]="split.isPaid">
+                <span *ngIf="split.isPaid">✓</span>
+              </div>
+
+              <span class="split-name">{{ split.userName }}</span>
+
+              <span class="split-status" *ngIf="!split.isPaid">debe <span class="debt-amount">{{ split.amount }} €</span></span>
+              <span class="split-status paid-text" *ngIf="split.isPaid">¡Pagado!</span>
+              
+            </div>
+
+          </div>
+
         </div>
       </div>
     </div>
@@ -118,11 +143,9 @@
     </div>
 
     <div *ngIf="activeTab === 'chat'" class="content-section chat-section">
-      
       <div class="chat-container">
         
         <div class="messages-list" #scrollMe [scrollTop]="scrollMe.scrollHeight">
-          
           <div class="empty-state" *ngIf="chatMessages.length === 0">
             👋 ¡Sé el primero en saludar al grupo!
           </div>
@@ -140,16 +163,9 @@
               <span class="msg-author-name" *ngIf="currentUserId !== msg.user_id">
                 {{ msg.user_name }}
               </span>
-
-              <div class="msg-text">
-                {{ msg.content }}
-              </div>
-              
-              <span class="msg-time">
-                {{ msg.created_at | date:'HH:mm' }}
-              </span>
+              <div class="msg-text">{{ msg.content }}</div>
+              <span class="msg-time">{{ msg.created_at | date:'HH:mm' }}</span>
             </div>
-
           </div>
         </div>
 
@@ -159,15 +175,13 @@
                  (keyup.enter)="sendMessage()" 
                  placeholder="Escribe un mensaje..." 
                  class="modern-input-chat">
-          
-          <button class="btn-send-chat" (click)="sendMessage()">
-            ➤
-          </button>
+          <button class="btn-send-chat" (click)="sendMessage()">➤</button>
         </div>
 
       </div>
     </div>
-    </div>
+
+  </div>
 </div>
 
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
