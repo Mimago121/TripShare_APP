@@ -14,25 +14,36 @@
         <button class="btn-create-small" routerLink="/trips">+ Nuevo Viaje</button>
       </div>
 
-      <div class="trips-scroll-container">
+      <div *ngIf="isLoading" style="text-align: center; padding: 20px;">
+        <p>Cargando tus viajes...</p>
+      </div>
+
+      <div class="trips-scroll-container" *ngIf="!isLoading">
+        
         <div class="trip-card create-card" routerLink="/trips">
           <div class="plus-icon">➕</div>
           <span>Planear nuevo viaje</span>
         </div>
 
-        <div class="trip-card" *ngFor="let trip of demoTrips">
+        <div class="trip-card" *ngFor="let trip of myTrips" [routerLink]="['/trip-detail', trip.tripId || trip.id]">
           <div class="card-image">
-            <img [src]="trip.image" [alt]="trip.destination">
-            <span class="days-badge">{{ trip.days }} días</span>
+            <img [src]="'https://source.unsplash.com/800x600/?' + trip.destination" [alt]="trip.destination">
+            <span class="days-badge">{{ trip.startDate | date:'dd MMM' }}</span>
           </div>
           <div class="card-details">
-            <h3>{{ trip.destination }}</h3>
-            <p class="dates">{{ trip.dates }}</p>
+            <h3>{{ trip.name }}</h3>
+            <p class="dates">📍 {{ trip.destination }}</p>
+            
             <div class="collaborators">
-              <img *ngFor="let friend of trip.friends" [src]="friend" alt="Amigo">
+               <span style="font-size: 0.8rem; color: #666;">Ver detalles →</span>
             </div>
           </div>
         </div>
+
+        <div *ngIf="myTrips.length === 0" style="padding: 20px; color: #666;">
+           Aún no tienes viajes. ¡Crea el primero!
+        </div>
+
       </div>
     </section>
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
+import { TripService } from '../../services/trip.service'; // Asegúrate de importar esto
 
 @Component({
   selector: 'app-home',
@@ -14,32 +15,13 @@ import { FooterComponent } from '../footer/footer';
 export class HomeComponent implements OnInit {
   isLoggedIn: boolean = false;
   userName: string = 'Viajero';
+  currentUserId: number | null = null;
+  
+  // AQUÍ GUARDAMOS LOS VIAJES REALES DE LA BASE DE DATOS
+  myTrips: any[] = []; 
+  isLoading: boolean = false;
 
-  // DATOS PARA DASHBOARD (LOGUEADO)
-  demoTrips = [
-    {
-      destination: 'Escapada a París',
-      dates: '12 - 15 Oct',
-      days: 4,
-      image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073',
-      friends: ['https://i.pravatar.cc/150?u=1', 'https://i.pravatar.cc/150?u=2']
-    },
-    {
-      destination: 'Ruta por Japón',
-      dates: 'Próximo Verano',
-      days: 15,
-      image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=2070',
-      friends: ['https://i.pravatar.cc/150?u=3']
-    },
-    {
-      destination: 'Roadtrip USA',
-      dates: 'Pendiente',
-      days: 10,
-      image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021',
-      friends: []
-    }
-  ];
-
+  // ESTO NO LO TOCAMOS (Destinos populares visuales)
   popularDestinations = [
     { name: 'Bali', country: 'Indonesia', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2000' },
     { name: 'Nueva York', country: 'USA', image: 'https://images.unsplash.com/photo-1496442226666-8d4a0e62e6e9?q=80&w=2070' },
@@ -47,37 +29,48 @@ export class HomeComponent implements OnInit {
     { name: 'Santorini', country: 'Grecia', image: 'https://images.unsplash.com/photo-1613395877344-13d4c2ce5d4d?q=80&w=2070' }
   ];
 
-  // DATOS PARA LANDING PAGE (NO LOGUEADO)
+  // ESTO NO LO TOCAMOS (Testimonios)
   testimonials = [
-    {
-      name: 'Lucia Gómez',
-      comment: 'TripShare es la app que siempre soñé. Por fin dejamos de usar Excel para las cuentas del grupo.',
-      avatar: 'https://i.pravatar.cc/150?u=marta'
-    },
-    {
-      name: 'Pablo Ruiz',
-      comment: 'La mejor forma de tener todos los billetes, reservas y la ruta en un solo sitio. Imprescindible.',
-      avatar: 'https://i.pravatar.cc/150?u=pablo'
-    },
-    {
-      name: 'Manolo Sánchez',
-      comment: 'Organizamos nuestro viaje a Italia en una tarde. La función de gastos compartidos es magia.',
-      avatar: 'https://i.pravatar.cc/150?u=iker'
-    }
+    { name: 'Lucia Gómez', comment: 'TripShare es la app que siempre soñé. Por fin dejamos de usar Excel.', avatar: 'https://i.pravatar.cc/150?u=marta' },
+    { name: 'Pablo Ruiz', comment: 'La mejor forma de tener todos los billetes y la ruta en un solo sitio.', avatar: 'https://i.pravatar.cc/150?u=pablo' },
+    { name: 'Manolo Sánchez', comment: 'Organizamos nuestro viaje a Italia en una tarde. Magia pura.', avatar: 'https://i.pravatar.cc/150?u=iker' }
   ];
 
-  constructor() {}
+  constructor(private tripService: TripService) {}
 
   ngOnInit(): void {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      this.isLoggedIn = true;
-      this.userName = user.userName;
+    // 1. Verificar si hay usuario en localStorage
+    if (typeof localStorage !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        this.isLoggedIn = true;
+        this.userName = user.user_name || user.userName || user.name; // Intenta varios nombres por si acaso
+        this.currentUserId = user.id || user.user_id;
+
+        // 2. Cargar viajes reales
+        if (this.currentUserId) {
+          this.loadUserTrips(this.currentUserId);
+        }
+      }
     }
   }
 
-  // Función para scroll suave en la Landing
+  loadUserTrips(userId: number) {
+    this.isLoading = true;
+    // Asumimos que tienes este método en tu servicio. Si no, avísame.
+    this.tripService.getTripsByUserId(userId).subscribe({
+      next: (data) => {
+        this.myTrips = data;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error("Error cargando viajes:", err);
+        this.isLoading = false;
+      }
+    });
+  }
+
   scrollToFeatures() {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   }

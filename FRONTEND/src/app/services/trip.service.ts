@@ -148,4 +148,18 @@ export class TripService {
   getVisitedPlaces(userId: number): Observable<any[]> {
     return this.http.get<any[]>(`http://localhost:8080/places/user/${userId}`);
   }
+
+  // --- CHAT GRUPAL ---
+
+// ✅ BIEN (Quita el /trips que sobra):
+sendTripMessage(tripId: number, userId: number, content: string): Observable<any> {
+  const body = { userId, content };
+  // Fíjate que aquí YA NO pongo /trips, porque this.apiUrl ya lo lleva
+  return this.http.post(`${this.baseUrl}/${tripId}/messages`, body);
+}
+
+// Revisa también el GET para que no te pase lo mismo:
+getTripMessages(tripId: number): Observable<any[]> {
+  return this.http.get<any[]>(`${this.baseUrl}/${tripId}/messages`);
+}
 }

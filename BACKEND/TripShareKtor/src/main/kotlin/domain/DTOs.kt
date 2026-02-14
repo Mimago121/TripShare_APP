@@ -166,3 +166,27 @@ data class CreatePlaceRequest(
     val latitude: Double,
     val longitude: Double
 )
+
+@Serializable
+data class TripMessageDto(
+    val id: Long,
+    val trip_id: Long,
+    val user_id: Long,
+    val user_name: String, // ¡Importante! Enviamos el nombre para mostrarlo en el chat
+    val content: String,
+    val created_at: String
+)
+@Serializable
+data class CreateMessageRequest(
+    val userId: Long,
+    val content: String
+)
+@Serializable
+data class TripMessageResponse(
+    val id: Long,
+    val trip_id: Long,
+    val user_id: Long,
+    val user_name: String,
+    val content: String,
+    val created_at: String
+)

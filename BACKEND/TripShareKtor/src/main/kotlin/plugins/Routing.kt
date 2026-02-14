@@ -1,12 +1,15 @@
 package com.tuproyecto.plugins
 
-import domain.*
+import data.*
+import domain.* // Aquí deben estar tus DTOs (CreateMessageRequest, TripMessageResponse, etc.)
 import repository.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
 import io.ktor.server.request.receive
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureRouting() {
     val repository = UserRepository()
@@ -47,15 +50,13 @@ fun Application.configureRouting() {
         // ===========================
         route("/users") {
             get {
-                val users = repository.getAllUsers()
-                call.respond(users)
+                call.respond(repository.getAllUsers())
             }
 
             get("/{id}") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 val user = repository.getUserById(id)
-                if (user != null) call.respond(user)
-                else call.respond(HttpStatusCode.NotFound)
+                if (user != null) call.respond(user) else call.respond(HttpStatusCode.NotFound)
             }
 
             put("/{id}") {
@@ -72,30 +73,70 @@ fun Application.configureRouting() {
         // ===========================
         route("/trips") {
 
-            // Ver mis invitaciones pendientes
-            get("/invitations/{userId}") {
-                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getTripInvitations(userId))
-            }
+            // ==========================================
+            //  CHAT GRUPAL (Usando tus DTOs)
+            // ==========================================
 
-            // Responder invitación (PUT /trips/invitations/respond)
-            put("/invitations/respond") {
+            // GET: Obtener mensajes
+            get("/{id}/messages") {
+                val id = call.parameters["id"]?.toLongOrNull()
+                if (id == null) return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
+
                 try {
-                    // Recibimos el objeto tipado directamente
-                    val req = call.receive<InvitationResponseRequest>()
-
-                    val success = repository.respondToTripInvitation(req.tripId, req.userId, req.accept)
-
-                    if (success) {
-                        call.respond(HttpStatusCode.OK, mapOf("status" to "success"))
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "No se encontró el registro")
+                    val messages = transaction {
+                        (TripMessages innerJoin Users)
+                            .slice(TripMessages.id, TripMessages.tripId, TripMessages.userId, TripMessages.content, TripMessages.createdAt, Users.userName)
+                            .select { TripMessages.tripId eq id }
+                            .orderBy(TripMessages.createdAt to SortOrder.ASC)
+                            .map { row ->
+                                // AQUÍ USAMOS TU DTO 'TripMessageResponse'
+                                TripMessageResponse(
+                                    id = row[TripMessages.id].value,
+                                    trip_id = row[TripMessages.tripId].value,
+                                    user_id = row[TripMessages.userId].value,
+                                    user_name = row[Users.userName],
+                                    content = row[TripMessages.content],
+                                    created_at = row[TripMessages.createdAt].toString()
+                                )
+                            }
                     }
+                    call.respond(messages)
                 } catch (e: Exception) {
-                    println("Error en respond invitation: ${e.message}")
-                    call.respond(HttpStatusCode.BadRequest, "Datos inválidos")
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError, "Error al cargar chat")
                 }
             }
+
+            // POST: Enviar mensaje
+            post("/{id}/messages") {
+                val id = call.parameters["id"]?.toLongOrNull()
+                if (id == null) return@post call.respond(HttpStatusCode.BadRequest)
+
+                try {
+                    // AQUÍ USAMOS TU DTO 'CreateMessageRequest'
+                    val req = call.receive<CreateMessageRequest>()
+
+                    if (req.content.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, "Mensaje vacío")
+
+                    transaction {
+                        TripMessages.insert {
+                            it[tripId] = id
+                            it[userId] = req.userId
+                            it[content] = req.content
+                        }
+                    }
+                    call.respond(HttpStatusCode.Created, mapOf("status" to "Mensaje enviado")) // <-- Esto es un JSON {"status": "..."}
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.BadRequest, "Datos inválidos o JSON mal formado")
+                }
+            }
+
+            // ==========================================
+            //  RESTO DE GESTIÓN DE VIAJES
+            // ==========================================
+
+            get { call.respond(repository.getAllTrips()) }
 
             post {
                 try {
@@ -103,13 +144,10 @@ fun Application.configureRouting() {
                     val newTrip = repository.createTrip(request)
                     call.respond(HttpStatusCode.Created, newTrip)
                 } catch (e: Exception) {
-                    // Imprime el error en la consola de IntelliJ para saber qué falla
                     println("Error creando viaje: ${e.message}")
                     call.respond(HttpStatusCode.BadRequest, "Error al procesar el viaje")
                 }
             }
-
-            get { call.respond(repository.getAllTrips()) }
 
             get("/user/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -122,68 +160,69 @@ fun Application.configureRouting() {
                 if (trip != null) call.respond(trip) else call.respond(HttpStatusCode.NotFound)
             }
 
-            // Datos específicos del viaje
+            // --- INVITACIONES ---
+            get("/invitations/{userId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(repository.getTripInvitations(userId))
+            }
+
+            put("/invitations/respond") {
+                try {
+                    val req = call.receive<InvitationResponseRequest>()
+                    val success = repository.respondToTripInvitation(req.tripId, req.userId, req.accept)
+                    if (success) call.respond(HttpStatusCode.OK, mapOf("status" to "success"))
+                    else call.respond(HttpStatusCode.NotFound)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+
+            post("/{id}/invite") {
+                val tripId = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<Map<String, String>>()
+                val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                if (repository.addMemberByEmail(tripId, email)) call.respond(HttpStatusCode.OK)
+                else call.respond(HttpStatusCode.Conflict)
+            }
+
+            // --- DETALLES DEL VIAJE (Actividades, Gastos, Etc) ---
+
             get("/{id}/activities") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getActivitiesByTrip(id))
+            }
+            post("/{id}/activities") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<CreateActivityRequest>()
+                val res = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
+                if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
 
             get("/{id}/expenses") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getExpensesByTrip(id))
             }
+            post("/{id}/expenses") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<CreateExpenseRequest>()
+                val res = repository.addExpense(id, params.paidByUserId, params.description, params.amount)
+                if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
+            }
 
             get("/{id}/memories") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getMemoriesByTrip(id))
             }
+            post("/{id}/memories") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val params = call.receive<CreateMemoryRequest>()
+                val res = repository.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
+                if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
+            }
 
             get("/{id}/members") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getTripMembers(id))
-            }
-
-            // --- INSERCIONES ---
-            post("/{id}/activities") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                try {
-                    val params = call.receive<CreateActivityRequest>()
-                    val result = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
-                    if (result != null) call.respond(HttpStatusCode.Created, result)
-                    else call.respond(HttpStatusCode.BadRequest)
-                } catch (e: Exception) { call.respond(HttpStatusCode.InternalServerError, e.message ?: "Error") }
-            }
-
-            post("/{id}/expenses") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                try {
-                    val params = call.receive<CreateExpenseRequest>()
-                    val result = repository.addExpense(id, params.paidByUserId, params.description, params.amount)
-                    if (result != null) call.respond(HttpStatusCode.Created, result)
-                    else call.respond(HttpStatusCode.BadRequest)
-                } catch (e: Exception) { call.respond(HttpStatusCode.BadRequest, e.message ?: "Error") }
-            }
-
-            post("/{id}/memories") {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                try {
-                    val params = call.receive<CreateMemoryRequest>()
-                    val result = repository.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
-                    if (result != null) call.respond(HttpStatusCode.Created, result)
-                    else call.respond(HttpStatusCode.BadRequest)
-                } catch (e: Exception) { call.respond(HttpStatusCode.BadRequest) }
-            }
-
-            post("/{id}/invite") {
-                val tripId = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val params = call.receive<Map<String, String>>()
-                val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Email requerido")
-
-                if (repository.addMemberByEmail(tripId, email)) {
-                    call.respond(HttpStatusCode.OK, mapOf("status" to "Invitado correctamente"))
-                } else {
-                    call.respond(HttpStatusCode.Conflict, "Error al invitar (usuario no existe o ya es miembro)")
-                }
             }
         }
 
@@ -220,7 +259,7 @@ fun Application.configureRouting() {
             }
         }
 
-        // --- CHAT ---
+        // --- CHAT PRIVADO (Usuario a Usuario) ---
         route("/chat") {
             post("/send") {
                 val params = call.receive<Map<String, String>>()
@@ -243,18 +282,11 @@ fun Application.configureRouting() {
                 val myId = call.parameters["myId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getUnreadChatNotifications(myId))
             }
-
-            put("/read/{myId}/{friendId}") {
-                val myId = call.parameters["myId"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
-                val friendId = call.parameters["friendId"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
-                repository.markMessagesAsRead(myId, friendId)
-                call.respond(HttpStatusCode.OK)
-            }
         }
 
-        get("/health") { call.respond(mapOf("status" to "OK")) }
-
-        // --- ENDPOINTS DE PINES (MAPA) ---
+        // ===========================
+        // MAPA (VISITED PLACES)
+        // ===========================
         route("/places") {
             post {
                 val req = call.receive<CreatePlaceRequest>()
@@ -263,10 +295,11 @@ fun Application.configureRouting() {
             }
 
             get("/user/{id}") {
-                val id = call.parameters["id"]?.toLongOrNull()
-                if (id == null) return@get call.respond(HttpStatusCode.BadRequest)
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 call.respond(repository.getVisitedPlaces(id))
             }
         }
+
+        get("/health") { call.respond(mapOf("status" to "OK")) }
     }
 }

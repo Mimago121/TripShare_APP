@@ -11,16 +11,17 @@
         <span class="badge-date">📅 {{ trip.startDate | date:'mediumDate' }} al {{ trip.endDate | date:'mediumDate' }}</span>
       </div>
     </div>
+  </div>
 
-    <div class="hero-map-wrapper" *ngIf="showMap">
-        <google-map 
-            height="100%" 
-            width="100%" 
-            [options]="mapOptions"
-            [center]="mapCenter">
-            <map-marker *ngIf="markerPosition" [position]="markerPosition"></map-marker>
-        </google-map>
-    </div>
+  <div class="map-wrapper" *ngIf="showMap" style="margin: 20px auto; max-width: 1000px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <google-map 
+      height="350px" 
+      width="100%" 
+      [center]="mapCenter" 
+      [zoom]="12" 
+      [options]="mapOptions">
+      <map-marker *ngIf="markerPosition" [position]="markerPosition"></map-marker>
+    </google-map>
   </div>
 
   <div class="tabs-nav">
@@ -28,18 +29,17 @@
     <button [class.active]="activeTab === 'expenses'" (click)="setTab('expenses')">💸 Gastos</button>
     <button [class.active]="activeTab === 'memories'" (click)="setTab('memories')">📸 Recuerdos</button>
     <button [class.active]="activeTab === 'members'" (click)="setTab('members')">👥 Miembros</button>
+    <button [class.active]="activeTab === 'chat'" (click)="setTab('chat')">💬 Chat Grupo</button>
   </div>
 
   <div class="tab-content">
 
-    <div *ngIf="activeTab === 'itinerary'" class="content-section fade-in">
+    <div *ngIf="activeTab === 'itinerary'" class="content-section">
       <div class="section-header">
-        <h2>Itinerario y Actividades</h2>
+        <h2>Itinerario</h2>
         <button class="btn-outline-small" (click)="openModal('activity')">+ Añadir</button>
       </div>
-      
       <div class="empty-state" *ngIf="activities.length === 0">No hay actividades programadas.</div>
-      
       <div class="activity-list">
         <div class="activity-card" *ngFor="let act of activities">
           <div class="time-block">
@@ -54,14 +54,12 @@
       </div>
     </div>
 
-    <div *ngIf="activeTab === 'expenses'" class="content-section fade-in">
+    <div *ngIf="activeTab === 'expenses'" class="content-section">
       <div class="section-header">
         <h2>Control de Gastos</h2>
-        <button class="btn-outline-small" (click)="openModal('expense')">+ Añadir Gasto</button>
+        <button class="btn-outline-small" (click)="openModal('expense')">+ Añadir</button>
       </div>
-
-      <div class="empty-state" *ngIf="expenses.length === 0">No hay gastos registrados.</div>
-
+      <div class="empty-state" *ngIf="expenses.length === 0">No hay gastos.</div>
       <div class="expense-list">
         <div class="expense-item" *ngFor="let exp of expenses">
           <div class="exp-icon">🛒</div>
@@ -72,89 +70,104 @@
           <div class="exp-amount">{{ exp.amount }} €</div>
         </div>
       </div>
-      
-      <div class="expense-total" *ngIf="expenses.length > 0">
-         <h3>Total: {{ totalExpenses }} €</h3>
-      </div>
     </div>
 
-    <div *ngIf="activeTab === 'memories'" class="content-section fade-in">
+    <div *ngIf="activeTab === 'memories'" class="content-section">
       <div class="section-header">
         <h2>Álbum de Recuerdos</h2>
         <button class="btn-outline-small" (click)="openModal('memory')">+ Subir Foto</button>
       </div>
-
-      <div class="empty-state" *ngIf="memories.length === 0">Aún no hay fotos o notas.</div>
-
+      <div class="empty-state" *ngIf="memories.length === 0">No hay recuerdos aún.</div>
       <div class="memories-grid">
         <div class="memory-card" *ngFor="let mem of memories">
-          <img *ngIf="mem.type === 'photo'" [src]="mem.mediaUrl" alt="Memoria">
-          <div class="memory-note" *ngIf="mem.type === 'note'">
-            📝 {{ mem.description }}
-          </div>
+          <img *ngIf="mem.type === 'photo'" [src]="mem.mediaUrl" alt="Recuerdo">
+          <div class="memory-note" *ngIf="mem.type === 'note'">📝 {{ mem.description }}</div>
+          <div class="memory-caption" *ngIf="mem.type === 'photo'">{{ mem.description }}</div>
         </div>
       </div>
     </div>
 
-    <div *ngIf="activeTab === 'members'" class="content-section fade-in">
+    <div *ngIf="activeTab === 'members'" class="content-section">
       <div class="section-header">
-        <h2>Viajeros ({{ members.length }})</h2>
+        <h2>Viajeros</h2>
       </div>
-
       <div class="invite-container">
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <select [(ngModel)]="selectedFriendEmail" class="modern-select">
-            <option value="" disabled selected>Elige un amigo para invitar...</option>
-            <option *ngFor="let friend of myFriends" [value]="friend.email">
-              {{ friend.userName }} ({{ friend.email }})
-            </option>
+            <option value="" disabled selected>Elige un amigo...</option>
+            <option *ngFor="let friend of myFriends" [value]="friend.email">{{ friend.userName }}</option>
           </select>
         </div>
-        <button class="btn-invite-action" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">
-          + Invitar
-        </button>
-        <button class="btn-outline-small" (click)="inviteByEmail()">
-          ✉️ Email
-        </button>
+        <button class="btn-invite-action" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">+ Invitar</button>
+        <button class="btn-outline-small" (click)="inviteByEmail()">Email</button>
       </div>
-
       <div class="members-grid-modern">
         <div class="member-card-new" *ngFor="let member of members" [class.pending-card]="member.status === 'pending'">
-          
           <div class="card-main-info">
             <div class="avatar-wrapper">
               <div class="avatar-initials">{{ member.userName.charAt(0).toUpperCase() }}</div>
-              <div class="status-dot" [class.is-accepted]="member.status === 'accepted'"></div>
             </div>
-            
             <div class="name-email">
               <span class="m-name">{{ member.userName }}</span>
-              <span class="m-email">{{ member.email }}</span>
+              <span class="m-email">{{ member.role === 'owner' ? '👑 Admin' : '👤 Viajero' }}</span>
             </div>
           </div>
-          
-          <div class="card-footer-tags">
-            <span class="tag role-tag" [class.is-owner]="member.role === 'owner'">
-              {{ member.role === 'owner' ? '👑 Organizador' : '👤 Viajero' }}
-            </span>
-            <span class="tag pending-tag" *ngIf="member.status === 'pending'">
-              ⏳ Pendiente
-            </span>
-            <span class="tag accepted-tag" *ngIf="member.status === 'accepted'">
-              ✅ Confirmado
-            </span>
-          </div>
-
         </div>
       </div>
     </div>
 
-  </div>
-</div>
+    <div *ngIf="activeTab === 'chat'" class="content-section chat-section">
+      
+      <div class="chat-container">
+        
+        <div class="messages-list" #scrollMe [scrollTop]="scrollMe.scrollHeight">
+          
+          <div class="empty-state" *ngIf="chatMessages.length === 0">
+            👋 ¡Sé el primero en saludar al grupo!
+          </div>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
+          <div *ngFor="let msg of chatMessages" 
+               class="message-row"
+               [ngClass]="{'my-row': currentUserId === msg.user_id, 'other-row': currentUserId !== msg.user_id}">
+            
+            <img *ngIf="currentUserId !== msg.user_id" 
+                 [src]="'https://ui-avatars.com/api/?name=' + msg.user_name + '&background=random&color=fff&size=64'" 
+                 class="chat-avatar" 
+                 alt="Avatar">
+
+            <div class="message-bubble">
+              <span class="msg-author-name" *ngIf="currentUserId !== msg.user_id">
+                {{ msg.user_name }}
+              </span>
+
+              <div class="msg-text">
+                {{ msg.content }}
+              </div>
+              
+              <span class="msg-time">
+                {{ msg.created_at | date:'HH:mm' }}
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <input type="text" 
+                 [(ngModel)]="newMessageText" 
+                 (keyup.enter)="sendMessage()" 
+                 placeholder="Escribe un mensaje..." 
+                 class="modern-input-chat">
+          
+          <button class="btn-send-chat" (click)="sendMessage()">
+            ➤
+          </button>
+        </div>
+
+      </div>
+    </div>
+    </div>
 </div>
 
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
@@ -162,53 +175,43 @@
     <button class="close-btn" (click)="closeModal()">✕</button>
 
     <div *ngIf="modalType === 'activity'">
-      <h2>Nueva Actividad 🗓️</h2>
-      <div class="form-group">
-        <label>Título *</label>
-        <input type="text" [(ngModel)]="newActivity.title" placeholder="Ej: Visita al Coliseo">
-      </div>
+      <h2>Nueva Actividad</h2>
+      <div class="form-group"><label>Título</label><input type="text" [(ngModel)]="newActivity.title"></div>
       <div class="form-row">
-        <div class="form-group half">
-          <label>Inicio *</label>
-          <input type="datetime-local" [(ngModel)]="newActivity.start">
-        </div>
-        <div class="form-group half">
-          <label>Fin</label>
-          <input type="datetime-local" [(ngModel)]="newActivity.end">
-        </div>
+        <div class="form-group half"><label>Inicio</label><input type="datetime-local" [(ngModel)]="newActivity.start"></div>
+        <div class="form-group half"><label>Fin</label><input type="datetime-local" [(ngModel)]="newActivity.end"></div>
       </div>
       <button class="btn-primary full-width" (click)="saveActivity()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'expense'">
-      <h2>Nuevo Gasto 💸</h2>
-      <div class="form-group">
-        <label>Concepto *</label>
-        <input type="text" [(ngModel)]="newExpense.description" placeholder="Ej: Cena del viernes">
-      </div>
-      <div class="form-group">
-        <label>Cantidad (€) *</label>
-        <input type="number" [(ngModel)]="newExpense.amount" placeholder="0.00">
-      </div>
+      <h2>Nuevo Gasto</h2>
+      <div class="form-group"><label>Concepto</label><input type="text" [(ngModel)]="newExpense.description"></div>
+      <div class="form-group"><label>Cantidad</label><input type="number" [(ngModel)]="newExpense.amount"></div>
       <button class="btn-primary full-width" (click)="saveExpense()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'memory'">
-      <h2>Nuevo Recuerdo 📸</h2>
+      <h2>Nuevo Recuerdo</h2>
       <div class="form-group">
         <label>Tipo</label>
         <select [(ngModel)]="newMemory.type">
           <option value="photo">Foto</option>
-          <option value="note">Nota de texto</option>
+          <option value="note">Nota</option>
         </select>
       </div>
+      
       <div class="form-group" *ngIf="newMemory.type === 'photo'">
-        <label>URL Imagen</label>
-        <input type="text" [(ngModel)]="newMemory.url" placeholder="https://...">
+        <label>Subir Foto</label>
+        <input type="file" (change)="onFileSelected($event)" accept="image/*" class="custom-file-input">
+        <div class="image-preview" *ngIf="newMemory.url">
+          <img [src]="newMemory.url" alt="Previsualización" style="max-height: 200px; margin-top: 10px;">
+        </div>
       </div>
+
       <div class="form-group">
-        <label>Descripción *</label>
-        <textarea rows="3" [(ngModel)]="newMemory.description" placeholder="Escribe aquí..."></textarea>
+        <label>Descripción</label>
+        <textarea [(ngModel)]="newMemory.description"></textarea>
       </div>
       <button class="btn-primary full-width" (click)="saveMemory()">Guardar</button>
     </div>

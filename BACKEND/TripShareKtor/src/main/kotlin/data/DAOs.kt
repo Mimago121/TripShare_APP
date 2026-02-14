@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.javatime.CurrentDateTime
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
@@ -91,7 +92,12 @@ object TripMembers : Table("trip_members") {
     override val primaryKey = PrimaryKey(tripId, userId)
 }
 
-
+object TripMessages : LongIdTable("trip_messages") { // Nombre exacto de la tabla SQL
+    val tripId = reference("trip_id", Trips)
+    val userId = reference("user_id", Users)
+    val content = text("content")
+    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+}
 
 // ===========================
 // ENTIDADES (DAO)

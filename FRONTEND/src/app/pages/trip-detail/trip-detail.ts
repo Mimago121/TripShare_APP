@@ -5,14 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { TripService, Trip, Member } from '../../services/trip.service';
-
-// --- IMPORTANTE: ESTOS SON LOS IMPORTS QUE FALTAN ---
 import { GoogleMapsModule, MapGeocoder } from '@angular/google-maps';
 
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  // --- IMPORTANTE: AÑADE GoogleMapsModule AQUÍ ---
   imports: [CommonModule, RouterModule, NavbarComponent, FooterComponent, FormsModule, GoogleMapsModule],
   templateUrl: './trip-detail.html',
   styleUrls: ['./trip-detail.css']
@@ -25,6 +22,10 @@ export class TripDetailComponent implements OnInit {
   members: any[] = []; 
   myFriends: Member[] = []; 
   
+  // --- VARIABLES NUEVAS DEL CHAT ---
+  chatMessages: any[] = [];
+  newMessageText: string = '';
+
   tripId!: number;
   currentUserId: number | null = null;
   activeTab: string = 'itinerary';
@@ -40,7 +41,7 @@ export class TripDetailComponent implements OnInit {
   newExpense = { description: '', amount: 0 };
   newMemory = { type: 'photo', description: '', url: '' };
 
-  // --- IMPORTANTE: ESTAS SON LAS VARIABLES QUE EL HTML NO ENCUENTRA ---
+  // --- VARIABLES GOOGLE MAPS ---
   mapOptions: google.maps.MapOptions = {
     zoom: 12,
     disableDefaultUI: true,
@@ -49,12 +50,11 @@ export class TripDetailComponent implements OnInit {
   markerPosition: google.maps.LatLngLiteral | undefined;
   mapCenter: google.maps.LatLngLiteral = { lat: 40.416, lng: -3.703 };
   showMap: boolean = false;
-  // ------------------------------------------------------------------
 
   constructor(
     private route: ActivatedRoute,
     private tripService: TripService,
-    private geocoder: MapGeocoder // Inyectamos el geocoder
+    private geocoder: MapGeocoder
   ) {}
 
   ngOnInit(): void {
@@ -80,7 +80,7 @@ export class TripDetailComponent implements OnInit {
       next: (data) => {
         this.trip = data;
 
-        // Si hay destino, cargamos el mapa
+        // Cargar mapa si hay destino
         if (this.trip && this.trip.destination) {
             this.cargarUbicacion(this.trip.destination);
         }
@@ -92,13 +92,34 @@ export class TripDetailComponent implements OnInit {
         });
         this.tripService.getMemories(this.tripId).subscribe(m => this.memories = m);
         this.tripService.getMembers(this.tripId).subscribe(mem => this.members = mem);
+        
+        // --- CARGAR EL CHAT ---
+        this.loadChat();
+
         this.isLoading = false;
       },
       error: () => this.isLoading = false
     });
   }
 
-  // Función para el mapa
+  // --- LÓGICA DEL CHAT GRUPAL (NUEVO) ---
+  loadChat() {
+    this.tripService.getTripMessages(this.tripId).subscribe(msgs => {
+      this.chatMessages = msgs;
+    });
+  }
+
+  sendMessage() {
+    if (!this.newMessageText.trim() || !this.currentUserId) return;
+
+    this.tripService.sendTripMessage(this.tripId, this.currentUserId, this.newMessageText)
+      .subscribe(() => {
+        this.newMessageText = ''; // Limpiar input
+        this.loadChat(); // Recargar mensajes
+      });
+  }
+
+  // --- LÓGICA GOOGLE MAPS ---
   cargarUbicacion(destino: string) {
     this.geocoder.geocode({ address: destino }).subscribe(({ results }) => {
       if (results && results.length) {
@@ -118,6 +139,10 @@ export class TripDetailComponent implements OnInit {
 
   setTab(tab: string) {
     this.activeTab = tab;
+    // Si entramos al chat, recargamos por si hay mensajes nuevos
+    if (tab === 'chat') {
+      this.loadChat();
+    }
   }
 
   calculateTotal() {
@@ -127,14 +152,59 @@ export class TripDetailComponent implements OnInit {
   openModal(type: string) {
     this.modalType = type;
     this.showModal = true;
-    this.newActivity = { title: '', start: '', end: '' };
-    this.newExpense = { description: '', amount: 0 };
-    this.newMemory = { type: 'photo', description: '', url: '' };
+    
+    // Resetear formularios
+    if (type === 'activity') this.newActivity = { title: '', start: '', end: '' };
+    if (type === 'expense') this.newExpense = { description: '', amount: 0 };
+    if (type === 'memory') this.newMemory = { type: 'photo', description: '', url: '' };
   }
 
   closeModal() {
     this.showModal = false;
   }
+
+  // --- PROCESAMIENTO DE IMÁGENES (NECESARIO PARA MODAL RECUERDOS) ---
+  onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (file && file.type.match(/image\/*/)) {
+      this.compressImage(file, 800, 0.7).then(compressedBase64 => {
+        this.newMemory.url = compressedBase64;
+      });
+    }
+  }
+
+  compressImage(file: File, maxWidth: number, quality: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event: any) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+             ctx.drawImage(img, 0, 0, width, height);
+             const dataUrl = canvas.toDataURL('image/jpeg', quality);
+             resolve(dataUrl);
+          } else {
+             reject(new Error("Canvas error"));
+          }
+        };
+      };
+      reader.onerror = error => reject(error);
+    });
+  }
+
+  // --- GUARDADO DE DATOS ---
 
   saveActivity() {
     const data = { 
