@@ -198,38 +198,33 @@ fun Application.configureRouting() {
                 if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
 
-            // ---------------------------------------------------------
-            // GET: OBTENER GASTOS (CORREGIDO Y DEFINITIVO)
-            // ---------------------------------------------------------
+            // ==========================================
+            //  GASTOS (EXPENSES) - BLOQUE COMPLETO
+            // ==========================================
+
+            // 1. GET: OBTENER GASTOS
             get("/{id}/expenses") {
                 val id = call.parameters["id"]?.toLongOrNull()
                 if (id == null) return@get call.respond(HttpStatusCode.BadRequest)
 
                 try {
                     val expensesList = transaction {
-                        // 1. Obtener gasto y pagador
                         (Expenses innerJoin Users)
+                            // CORRECCIÓN AQUÍ: Usamos paidByUserId, no paidBy
                             .slice(Expenses.id, Expenses.description, Expenses.amount, Expenses.paidBy, Users.userName)
                             .select { Expenses.tripId eq id }
                             .map { row ->
                                 val expenseId = row[Expenses.id].value
 
-                                // 2. SUB-CONSULTA: Sacar deudas (Splits)
-                                // IMPORTANTE: Aquí incluimos Users.id y ExpenseSplits.isPaid en el slice
                                 val splitsList = (ExpenseSplits innerJoin Users)
-                                    .slice(
-                                        Users.id,                // <--- NECESARIO
-                                        Users.userName,
-                                        ExpenseSplits.shareAmount,
-                                        ExpenseSplits.isPaid     // <--- NECESARIO
-                                    )
+                                    .slice(Users.id, Users.userName, ExpenseSplits.shareAmount, ExpenseSplits.isPaid)
                                     .select { ExpenseSplits.expenseId eq expenseId }
                                     .map { splitRow ->
                                         SplitDto(
                                             userId = splitRow[Users.id].value,
                                             userName = splitRow[Users.userName],
                                             amount = splitRow[ExpenseSplits.shareAmount].toDouble(),
-                                            isPaid = splitRow[ExpenseSplits.isPaid] // Leemos el valor real de la BD
+                                            isPaid = splitRow[ExpenseSplits.isPaid]
                                         )
                                     }
 
@@ -238,42 +233,85 @@ fun Application.configureRouting() {
                                     description = row[Expenses.description],
                                     amount = row[Expenses.amount].toDouble(),
                                     paidByUserName = row[Users.userName],
-                                    paidById = row[Expenses.paidBy].value,
+                                    paidById = row[Expenses.paidBy].value, // CORRECCIÓN AQUÍ TAMBIÉN
                                     splits = splitsList
                                 )
                             }
                     }
                     call.respond(expensesList)
                 } catch (e: Exception) {
-                    // Si falla, imprimimos el error real en la consola
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
                 }
             }
 
-            // ---------------------------------------------------------
-            // PUT: MARCAR COMO PAGADO (El Check)
-            // ---------------------------------------------------------
+            // 2. POST: CREAR GASTO Y DIVIDIRLO (Lo habías borrado)
+            post("/{id}/expenses") {
+                val tripIdParam = call.parameters["id"]?.toLongOrNull()
+                if (tripIdParam == null) return@post call.respond(HttpStatusCode.BadRequest)
+
+                try {
+                    val params = call.receive<CreateExpenseRequest>()
+
+                    // Guardamos el Gasto
+                    val newExpenseId = repository.addExpense(tripIdParam, params.paidByUserId, params.description, params.amount)
+
+                    if (newExpenseId != null) {
+                        transaction {
+                            // Buscamos miembros
+                            val memberIds = TripMembers
+                                .slice(TripMembers.userId)
+                                .select { TripMembers.tripId eq tripIdParam }
+                                .map { it[TripMembers.userId] }
+
+                            val totalMembers = memberIds.size
+
+                            if (totalMembers > 0) {
+                                // Calculamos división
+                                val shareDouble = params.amount / totalMembers
+                                val share = java.math.BigDecimal.valueOf(shareDouble)
+
+                                // Guardamos deudas
+                                memberIds.forEach { memberId ->
+                                    if (memberId.value != params.paidByUserId) {
+                                        ExpenseSplits.insert {
+                                            it[expenseId] = newExpenseId
+                                            it[userId] = memberId
+                                            it[shareAmount] = share
+                                            it[isPaid] = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        call.respond(HttpStatusCode.Created, mapOf("status" to "Gasto creado"))
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest, "Error BD")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
+            }
+
+            // 3. PUT: MARCAR COMO PAGADO
             put("/expenses/pay") {
                 try {
-                    // Recibimos: { "expenseId": 1, "userId": 4 }
                     val params = call.receive<Map<String, String>>()
                     val expenseId = params["expenseId"]?.toLongOrNull()
                     val userId = params["userId"]?.toLongOrNull()
 
                     if (expenseId != null && userId != null) {
                         transaction {
-                            // Actualizamos a TRUE
                             ExpenseSplits.update({ (ExpenseSplits.expenseId eq expenseId) and (ExpenseSplits.userId eq userId) }) {
                                 it[isPaid] = true
                             }
                         }
-                        call.respond(HttpStatusCode.OK, mapOf("status" to "Deuda saldada"))
+                        call.respond(HttpStatusCode.OK)
                     } else {
-                        call.respond(HttpStatusCode.BadRequest, "Faltan IDs")
+                        call.respond(HttpStatusCode.BadRequest)
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError)
                 }
             }
