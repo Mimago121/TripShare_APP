@@ -1,108 +1,60 @@
+<app-navbar></app-navbar>
+
 <div class="admin-container">
   
-  <header class="admin-header">
-    <div>
-      <h1>Panel de Administración 🛡️</h1>
-      <p>Gestiona la plataforma</p>
-    </div>
-
-    <div class="admin-social-actions">
-      <a routerLink="/chats" class="btn-social" title="Ir a mis chats">
-        💬 Mis Chats
-      </a>
-      <a routerLink="/friends" class="btn-social" title="Buscar usuarios">
-        👥 Comunidad
-      </a>
-    </div>
-  </header>
-
-  <div class="tabs">
-    <button 
-      [class.active]="activeTab === 'users'" 
-      (click)="activeTab = 'users'">
-      👥 Usuarios
-    </button>
-    <button 
-      [class.active]="activeTab === 'trips'" 
-      (click)="activeTab = 'trips'">
-      ✈️ Viajes Sugeridos
-    </button>
+  <div class="admin-header">
+    <h1> Panel de Control</h1>
+    <p>Bienvenido, Administrador. Aquí tienes el control total.</p>
   </div>
 
-  <div *ngIf="activeTab === 'users'" class="tab-content">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Usuario</th>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of users">
-          <td>
-            <div class="user-cell">
-              <img [src]="user.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="mini-avatar">
-              {{ user.name }}
-            </div>
-          </td>
-          <td>{{ user.email }}</td>
-          <td>
-            <span class="badge" [class.admin]="user.role === 'admin'">
-              {{ user.role || 'user' }}
-            </span>
-          </td>
-          <td>
-            <button class="btn-small" (click)="toggleAdminRole(user)">
-              {{ user.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin' }}
-            </button>
-            <button class="btn-small danger" (click)="deleteUser(user.id)">Borrar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="stats-grid" *ngIf="!isLoading">
+    <div class="stat-card">
+      <h3>{{ stats.totalUsers }}</h3>
+      <span>Usuarios</span>
+    </div>
+    <div class="stat-card">
+      <h3>{{ stats.totalTrips }}</h3>
+      <span>Viajes Totales</span>
+    </div>
   </div>
 
-  <div *ngIf="activeTab === 'trips'" class="tab-content">
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div> Cargando base de datos...
+  </div>
+
+  <div class="users-grid" *ngIf="!isLoading">
     
-    <button class="btn-primary mb" (click)="isCreatingTrip = !isCreatingTrip">
-      {{ isCreatingTrip ? 'Cancelar' : '+ Nueva Plantilla de Viaje' }}
-    </button>
+    <div class="user-card" *ngFor="let user of usersData">
+      <div class="card-header" [class.is-admin]="user.role === 'admin'">
+        <div class="avatar-circle">
+          {{ user.userName.charAt(0).toUpperCase() }}
+        </div>
+        <div class="user-details">
+          <h4>{{ user.userName }} <span *ngIf="user.role === 'admin'" class="badge-admin">ADMIN</span></h4>
+          <small>{{ user.email }}</small>
+        </div>
+      </div>
 
-    <div *ngIf="isCreatingTrip" class="create-box">
-      <form [formGroup]="tripTemplateForm" (ngSubmit)="createTripTemplate()">
-        <div class="form-group">
-          <label>Destino</label>
-          <input type="text" formControlName="destination" placeholder="Ej: París Express">
+      <div class="card-body">
+        <h5>Viajes ({{ user.trips.length }})</h5>
+        
+        <div class="trips-mini-list">
+          <div *ngIf="user.trips.length === 0" class="empty-trips">Sin viajes aún.</div>
+          
+          <div class="mini-trip" *ngFor="let trip of user.trips">
+          <img [src]="trip.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=200&auto=format&fit=crop'" 
+     class="trip-thumb"
+     (error)="$any($event.target).src = 'https://ui-avatars.com/api/?name=' + trip.destination + '&background=random'">
+            <div class="trip-text">
+              <strong>{{ trip.destination }}</strong>
+              <span>{{ trip.startDate | date:'dd/MM/yy' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Descripción corta</label>
-          <input type="text" formControlName="description" placeholder="Ej: 3 días románticos...">
-        </div>
-        <div class="form-group">
-          <label>Días de duración</label>
-          <input type="number" formControlName="durationDays">
-        </div>
-        <div class="form-group">
-          <label>URL Imagen</label>
-          <input type="text" formControlName="imageUrl" placeholder="https://...">
-        </div>
-        <button type="submit" class="btn-save" [disabled]="tripTemplateForm.invalid">Guardar Plantilla</button>
-      </form>
-    </div>
-
-    <div class="templates-grid">
-      <div class="template-card" *ngFor="let trip of tripTemplates">
-        <img [src]="trip.imageUrl || 'https://via.placeholder.com/300'" alt="Trip">
-        <div class="t-info">
-          <h3>{{ trip.destination }}</h3>
-          <p>{{ trip.description }}</p>
-          <small>Duración: {{ trip.durationDays }} días</small>
-        </div>
-        <button class="btn-del" (click)="deleteTemplate(trip.id)">🗑️</button>
       </div>
     </div>
-  </div>
 
+  </div>
 </div>
+
+<app-footer></app-footer>

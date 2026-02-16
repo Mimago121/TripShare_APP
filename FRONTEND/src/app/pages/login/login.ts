@@ -30,19 +30,24 @@ export class LoginComponent {
   }
 
 onSubmit() {
-  // Si el formulario no es válido, cortamos aquí mismo
   if (this.loginForm.invalid) return;
 
   this.isLoading = true;
   const { email, pass } = this.loginForm.value;
 
   this.auth.login(email!, pass!).subscribe({
-    next: (res) => {
-      // 1. Guardamos los datos
+    next: (res: any) => {
+      // 1. Guardamos los datos del usuario (que ahora incluyen el campo 'role')
       localStorage.setItem('user', JSON.stringify(res));
       
-      // 2. Navegamos (esto hará que el componente se desconecte correctamente)
-      this.router.navigate(['/trips']);
+      // 2. Lógica de redirección inteligente
+      if (res.role === 'admin') {
+        console.log('Eres admin, directo al panel de control 👮');
+        this.router.navigate(['/admin']);
+      } else {
+        console.log('Eres usuario normal, a tus viajes ✈️');
+        this.router.navigate(['/trips']);
+      }
     },
     error: (err) => {
       this.isLoading = false;

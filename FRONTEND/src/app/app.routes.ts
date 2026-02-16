@@ -24,7 +24,7 @@ export const routes: Routes = [
   { path: 'trip-detail/:id', component: TripDetailComponent },
   { path: 'friends', component: FriendsComponent },
   { path: 'trips', component: TripsComponent },
-
+  { path: 'admin', component: AdminDashboardComponent },
   // IMPORTANTE: El comodín '**' SIEMPRE debe ser la última ruta
   { path: '**', redirectTo: 'login' }
 ];

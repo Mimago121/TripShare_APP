@@ -1,11 +1,17 @@
 <nav class="navbar">
   <div class="navbar-brand">
-    <a routerLink="/trips">🌍 TripShare</a>
+    <a [routerLink]="isAdmin ? '/admin' : '/trips'">🌍 TripShare</a>
   </div>
 
   <div class="navbar-links" *ngIf="isLoggedIn">
-    <a routerLink="/home" routerLinkActive="active">Inicio</a>
-    <a routerLink="/trips" routerLinkActive="active">Viajes</a>
+    <ng-container *ngIf="!isAdmin">
+      <a routerLink="/trips" routerLinkActive="active">Viajes</a>
+      <a routerLink="/friends" routerLinkActive="active">Amigos</a>
+    </ng-container>
+    
+    <ng-container *ngIf="isAdmin">
+      <a routerLink="/admin" routerLinkActive="active">Panel Admin</a>
+    </ng-container>
   </div>
 
   <div class="navbar-actions">
@@ -16,7 +22,7 @@
 
     <ng-container *ngIf="isLoggedIn">
 
-      <div class="nav-item dropdown">
+      <div class="nav-item dropdown" *ngIf="!isAdmin">
         <button class="icon-btn notification-btn" (click)="toggleNotifications()">
           🔔
           <span class="badge" *ngIf="totalNotificationsCount > 0">
@@ -26,56 +32,10 @@
 
         <div class="dropdown-menu notifications-menu" *ngIf="isNotificationsOpen">
           <div class="dropdown-header">Notificaciones</div>
-
           <div class="empty-state" *ngIf="totalNotificationsCount === 0">
             <p>No tienes notificaciones nuevas</p>
           </div>
-
-          <div class="notif-section" *ngIf="tripInvitations.length > 0">
-            <small class="section-title">✈️ Invitaciones de Viaje</small>
-            
-            <div class="notif-item trip-item" *ngFor="let trip of tripInvitations">
-              <div class="notif-info">
-                <strong>{{ trip.name }}</strong>
-                <span>Te han invitado a este viaje</span>
-              </div>
-              <div class="req-actions">
-                <button class="btn-accept" (click)="respondToTrip(trip.id, true)">✅</button>
-                <button class="btn-reject" (click)="respondToTrip(trip.id, false)">❌</button>
-              </div>
-            </div>
           </div>
-
-          <div class="notif-section" *ngIf="chatNotifications.length > 0">
-            <small class="section-title">💬 Mensajes</small>
-            
-            <div class="notif-item chat-item" 
-                 *ngFor="let chat of chatNotifications"
-                 (click)="openChatFromNotification(chat)">
-              <img [src]="chat.fromUserAvatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="avatar-mini">
-              <div class="notif-info">
-                <strong>{{ chat.fromUserName }}</strong>
-                <span>{{ chat.count }} mensaje(s) nuevo(s)</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="notif-section" *ngIf="pendingRequests.length > 0">
-            <small class="section-title">👥 Solicitudes de Amistad</small>
-            
-            <div class="notif-item request-item" *ngFor="let req of pendingRequests">
-              <div class="req-info">
-                <strong>{{ req.fromUserName }}</strong>
-                <span>quiere ser tu amigo</span>
-              </div>
-              <div class="req-actions">
-                <button class="btn-accept" (click)="acceptRequest(req.id)">✅</button>
-                <button class="btn-reject" (click)="rejectRequest(req.id)">❌</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
       </div>
 
       <div class="nav-item dropdown">
@@ -85,8 +45,15 @@
         </div>
 
         <div class="dropdown-menu profile-menu" *ngIf="isDropdownOpen">
-          <a routerLink="/profile" (click)="closeAllMenus()">👤 Mi Perfil</a>
-          <a routerLink="/friends" (click)="closeAllMenus()">👥 Mis Amigos</a>
+          <ng-container *ngIf="!isAdmin">
+            <a routerLink="/profile" (click)="closeAllMenus()">👤 Mi Perfil</a>
+            <a routerLink="/friends" (click)="closeAllMenus()">👥 Mis Amigos</a>
+          </ng-container>
+
+          <ng-container *ngIf="isAdmin">
+            <a routerLink="/admin" (click)="closeAllMenus()">👮 Dashboard Total</a>
+          </ng-container>
+
           <div class="divider"></div>
           <button class="logout-btn" (click)="logout()">🚪 Cerrar Sesión</button>
         </div>

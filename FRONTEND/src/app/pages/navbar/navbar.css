@@ -352,4 +352,17 @@
   background: rgba(99, 102, 241, 0.05);
   margin-bottom: 5px;
 }
+.admin-badge {
+  background: #ef4444;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.navbar-links span.admin-badge {
+  vertical-align: middle;
+}
 }

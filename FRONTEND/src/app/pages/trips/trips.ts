@@ -34,16 +34,23 @@ export class TripsComponent implements OnInit {
   constructor(private tripService: TripService, private router: Router) {}
 
   ngOnInit(): void {
-    if (typeof localStorage !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        this.currentUser = JSON.parse(userStr);
-        this.loadTrips();
-      } else {
-        this.router.navigate(['/login']);
+  if (typeof localStorage !== 'undefined') {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      this.currentUser = JSON.parse(userStr);
+      
+      // 👇 PROTECCIÓN: Si es admin, no puede estar aquí
+      if (this.currentUser.role === 'admin') {
+        this.router.navigate(['/admin']);
+        return;
       }
+
+      this.loadTrips();
+    } else {
+      this.router.navigate(['/login']);
     }
   }
+}
 
   loadTrips() {
     if (!this.currentUser) return;

@@ -1,89 +1,59 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router'; // <--- IMPORTANTE: Importar esto
-import { Firestore, collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from '@angular/fire/firestore';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { NavbarComponent } from '../../navbar/navbar';
+import { FooterComponent } from "../../footer/footer";
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  // AÑADIR RouterModule AQUÍ ABAJO 👇
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, NavbarComponent, FooterComponent],
   templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.css']
 })
 export class AdminDashboardComponent implements OnInit {
-  private firestore = inject(Firestore);
-  private fb = inject(FormBuilder);
-
-  activeTab: 'users' | 'trips' = 'users'; 
-  users: any[] = [];
-  tripTemplates: any[] = [];
   
-  tripTemplateForm: FormGroup;
-  isCreatingTrip = false;
+  usersData: any[] = [];
+  isLoading = true;
+  stats = {
+    totalUsers: 0,
+    totalTrips: 0,
+    admins: 0
+  };
 
-  constructor() {
-    this.tripTemplateForm = this.fb.group({
-      destination: ['', Validators.required],
-      description: ['', Validators.required],
-      durationDays: [3, Validators.required],
-      imageUrl: ['']
-    });
+  constructor(private http: HttpClient, private router: Router) {}
+
+  ngOnInit(): void {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (user.role !== 'admin') {
+      this.router.navigate(['/trips']); // Si no es admin, a sus viajes
+      return;
+    }
   }
+  this.loadAdminData();
+}
 
-  ngOnInit() {
-    this.loadUsers();
-    this.loadTripTemplates();
-  }
+  loadAdminData() {
+  this.http.get<any[]>('http://localhost:8080/admin/dashboard').subscribe({
+    next: (data) => {
+      // FILTRO: Solo dejamos a los que tienen rol 'user'
+      this.usersData = data.filter(u => u.role === 'user');
+      this.calculateStats();
+      this.isLoading = false;
+    },
+    error: (err) => {
+      console.error("Error cargando dashboard:", err);
+      this.isLoading = false;
+    }
+  });
+}
 
-  // --- GESTIÓN DE USUARIOS ---
-  async loadUsers() {
-    const querySnapshot = await getDocs(collection(this.firestore, 'users'));
-    this.users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  async deleteUser(userId: string) {
-    if(!confirm('¿Estás seguro de borrar este usuario de la base de datos?')) return;
-    try {
-      await deleteDoc(doc(this.firestore, 'users', userId));
-      this.users = this.users.filter(u => u.id !== userId);
-      alert('Usuario eliminado.');
-    } catch (error) { console.error(error); }
-  }
-
-  async toggleAdminRole(user: any) {
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    try {
-      await updateDoc(doc(this.firestore, 'users', user.id), { role: newRole });
-      user.role = newRole; 
-    } catch (error) { console.error(error); }
-  }
-
-  // --- GESTIÓN DE VIAJES SUGERIDOS ---
-  async loadTripTemplates() {
-    const querySnapshot = await getDocs(collection(this.firestore, 'trip_templates'));
-    this.tripTemplates = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  async createTripTemplate() {
-    if (this.tripTemplateForm.invalid) return;
-    const data = this.tripTemplateForm.value;
-    try {
-      const docRef = await addDoc(collection(this.firestore, 'trip_templates'), {
-        ...data,
-        createdAt: Date.now()
-      });
-      this.tripTemplates.push({ id: docRef.id, ...data });
-      this.tripTemplateForm.reset();
-      this.isCreatingTrip = false;
-      alert('Plantilla creada.');
-    } catch (error) { console.error(error); }
-  }
-
-  async deleteTemplate(id: string) {
-    if(!confirm('¿Borrar esta plantilla?')) return;
-    await deleteDoc(doc(this.firestore, 'trip_templates', id));
-    this.tripTemplates = this.tripTemplates.filter(t => t.id !== id);
+  calculateStats() {
+    this.stats.totalUsers = this.usersData.length;
+    this.stats.totalTrips = this.usersData.reduce((acc, user) => acc + user.trips.length, 0);
+    this.stats.admins = this.usersData.filter(u => u.role === 'admin').length;
   }
 }
