@@ -21,6 +21,21 @@ fun Application.configureRouting() {
         }
 
         // ===========================
+        //  RUTAS DE ADMINISTRADOR
+        // ===========================
+        route("/admin") {
+            get("/dashboard") {
+                try {
+                    // Llamamos a la función potente que creamos antes
+                    val data = repository.getAllUsersWithTrips()
+                    call.respond(data)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError, "Error cargando admin dashboard")
+                }
+            }
+        }
+        // ===========================
         // AUTENTICACIÓN
         // ===========================
         post("/login") {

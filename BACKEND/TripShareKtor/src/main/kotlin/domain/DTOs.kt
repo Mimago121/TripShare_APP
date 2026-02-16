@@ -11,7 +11,7 @@ data class MessageDto(
     val fromId: Long,
     val toId: Long,
     val content: String,
-    val timestamp: String, // <--- ESTO ES LA CLAVE: String
+    val timestamp: String,
     val isMine: Boolean
 )
 
@@ -27,7 +27,7 @@ data class ChatNotificationDto(
     val fromUserId: Long,
     val fromUserName: String,
     val fromUserAvatar: String?,
-    val count: Long // Cuántos mensajes sin leer tienes de esta persona
+    val count: Long
 )
 
 // ===========================
@@ -41,7 +41,8 @@ data class UserModel(
     val avatarUrl: String?,
     val bio: String?,
     val provider: String,
-    val createdAt: String
+    val createdAt: String,
+    val role: String // <--- Asegúrate que esto existe
 )
 
 @Serializable
@@ -71,18 +72,59 @@ data class CreateRequestParams(val fromId: Long, val toId: Long)
 // ===========================
 @Serializable
 data class TripResponse(
-    val id: Long, val name: String, val destination: String, val origin: String?,
-    val startDate: String, val endDate: String, val createdByUserId: Long
+    val id: Long,
+    val name: String,
+    val destination: String,
+    val origin: String?,
+    val startDate: String,
+    val endDate: String,
+    val createdByUserId: Long,
+    val imageUrl: String? // <--- AÑADIDO: Faltaba aquí para getAllTrips
 )
 
 @Serializable
-data class TripModel( // A veces usas este nombre
-    val id: Long, val name: String, val destination: String, val origin: String?,
-    val startDate: String, val endDate: String, val createdByUserId: Long, val imageUrl: String? = null
+data class TripModel(
+    val id: Long,
+    val name: String,
+    val destination: String,
+    val origin: String?,
+    val startDate: String,
+    val endDate: String,
+    val createdByUserId: Long,
+    val imageUrl: String? = null
+)
+
+@Serializable
+data class CreateTripRequest(
+    val name: String,
+    val destination: String,
+    val origin: String? = null,
+    val startDate: String,
+    val endDate: String,
+    val createdByUserId: Long,
+    val budget: Double? = 0.0, // <--- AÑADIDO: Faltaba el presupuesto
+    val imageUrl: String? = null
+)
+
+@Serializable
+data class InvitationResponseRequest(
+    val tripId: Long,
+    val userId: Long,
+    val accept: Boolean
+)
+
+@Serializable
+data class TripMemberResponse(
+    val id: Long,
+    val userName: String,
+    val email: String,
+    val avatarUrl: String?,
+    val role: String,
+    val status: String
 )
 
 // ===========================
-// OTROS (Actividades, Gastos, etc)
+// ACTIVIDADES, GASTOS, ETC
 // ===========================
 @Serializable
 data class ActivityResponse(
@@ -103,16 +145,34 @@ data class ExpenseModel(
 )
 
 @Serializable
-data class MemoryModel(
-    val id: Long, val tripId: Long, val userId: Long, val type: String,
-    val description: String?, val mediaUrl: String?, val createdAt: String
-)
-
-@Serializable
 data class CreateExpenseRequest(
     val description: String,
     val amount: Double,
     val paidByUserId: Long
+)
+
+@Serializable
+data class SplitDto(
+    val userId: Long,
+    val userName: String,
+    val amount: Double,
+    val isPaid: Boolean
+)
+
+@Serializable
+data class ExpenseResponse(
+    val id: Long,
+    val description: String,
+    val amount: Double,
+    val paidByUserName: String,
+    val paidById: Long,
+    val splits: List<SplitDto>
+)
+
+@Serializable
+data class MemoryModel(
+    val id: Long, val tripId: Long, val userId: Long, val type: String,
+    val description: String?, val mediaUrl: String?, val createdAt: String
 )
 
 @Serializable
@@ -123,34 +183,9 @@ data class CreateMemoryRequest(
     val mediaUrl: String?
 )
 
-@Serializable
-data class CreateTripRequest(
-    val name: String,
-    val destination: String,
-    val origin: String?,       // Puede ser null
-    val startDate: String,     // Formato "YYYY-MM-DD"
-    val endDate: String,       // Formato "YYYY-MM-DD"
-    val createdByUserId: Long,
-    val imageUrl: String? = null
-)
-
-@Serializable
-data class InvitationResponseRequest(
-    val tripId: Long,
-    val userId: Long,
-    val accept: Boolean
-)
-
-@Serializable
-data class TripMemberResponse(
-    val id: Long,
-    val userName: String,
-    val email: String,
-    val avatarUrl: String?,
-    val role: String,   // "owner" o "member"
-    val status: String  // "accepted" o "pending"
-)
-
+// ===========================
+// MAPAS & MENSAJES VIAJE
+// ===========================
 @Serializable
 data class VisitedPlaceResponse(
     val id: Long,
@@ -169,19 +204,11 @@ data class CreatePlaceRequest(
 )
 
 @Serializable
-data class TripMessageDto(
-    val id: Long,
-    val trip_id: Long,
-    val user_id: Long,
-    val user_name: String, // ¡Importante! Enviamos el nombre para mostrarlo en el chat
-    val content: String,
-    val created_at: String
-)
-@Serializable
 data class CreateMessageRequest(
     val userId: Long,
     val content: String
 )
+
 @Serializable
 data class TripMessageResponse(
     val id: Long,
@@ -190,23 +217,19 @@ data class TripMessageResponse(
     val user_name: String,
     val content: String,
     val created_at: String,
-    val imageUrl: String? = null
+    val imageUrl: String? = null // Opcional, por si mandas foto
 )
 
+// ===========================
+// ADMIN (CORREGIDO)
+// ===========================
 @Serializable
-data class SplitDto(
-    val userId: Long, // Añadimos ID para poder marcarlo
-    val userName: String,
-    val amount: Double,
-    val isPaid: Boolean // Nuevo campo
-)
-
-@Serializable
-data class ExpenseResponse(
+data class UserAdminView(
     val id: Long,
-    val description: String,
-    val amount: Double,
-    val paidByUserName: String, // ¡Ahora mandamos el nombre!
-    val paidById: Long,
-    val splits: List<SplitDto>  // Lista de deudores
+    val userName: String,
+    val email: String,
+    val role: String,
+    // ERROR ANTERIOR: val trips: List<Trips> -> Trips es la tabla SQL
+    // SOLUCIÓN: Usar TripModel
+    val trips: List<TripModel>
 )

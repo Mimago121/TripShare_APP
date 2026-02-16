@@ -4,7 +4,7 @@ import { NavbarComponent } from './pages/navbar/navbar';
 import { FooterComponent } from './pages/footer/footer';
 import { CommonModule } from '@angular/common';
 import { LoginComponent } from './pages/login/login';
-import { ApiService, PingResponse, TripDto } from './core/api.service';
+
 
 
 @Component({
@@ -16,18 +16,7 @@ import { ApiService, PingResponse, TripDto } from './core/api.service';
 })
 export class AppComponent {
   public router = inject(Router);
-  private api = inject(ApiService); //lo de la prueba de ktor
-
-  result: PingResponse | null = null; //esto tmb
-
-  trips: TripDto[] = [];
-
-  cargarViajes() {
-    this.api.getTrips().subscribe({
-      next: (res) => (this.trips = res),
-      error: (err) => console.error('ERROR TRIPS:', err),
-    });
-  }
+  
 
   shouldShowMenu(): boolean {
     const currentUrl = this.router.url;
@@ -40,10 +29,6 @@ export class AppComponent {
     return !hiddenRoutes.includes(currentUrl);
   }
 
-  probarConexion() {
-    this.api.ping().subscribe({
-      next: (res) => (this.result = res),
-      error: (err) => console.error('ERROR KTOR:', err),
-    });
-  }
+  
+  
 }

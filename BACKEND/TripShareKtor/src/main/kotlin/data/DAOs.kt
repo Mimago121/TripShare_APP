@@ -1,9 +1,9 @@
-package data // O el paquete que uses, ej: com.tuproyecto.domain
+package data
 
-import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentDateTime
@@ -19,27 +19,29 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 object Users : LongIdTable("users", "user_id") {
     val email = varchar("email", 255).uniqueIndex()
     val userName = varchar("user_name", 120)
-    val avatarUrl = varchar("avatar_url", 500).nullable()
+    // Usamos text para avatar por si es base64 largo
+    val avatarUrl = text("avatar_url").nullable()
     val bio = text("bio").nullable()
-    val provider = varchar("provider", 20).default("local") // Default por seguridad
+    val provider = varchar("provider", 20).default("local")
     val providerUid = varchar("provider_uid", 255).nullable()
     val passwordHash = varchar("password_hash", 255).nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+    // NUEVO: Rol (admin/user)
+    val role = varchar("role", 20).default("user")
 }
 
 object FriendRequests : LongIdTable("friend_requests", "request_id") {
-    val fromUser = reference("from_user_id", Users)
-    val toUser = reference("to_user_id", Users)
+    val fromUser = reference("from_user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val toUser = reference("to_user_id", Users, onDelete = ReferenceOption.CASCADE)
     val status = varchar("status", 20).default("pending")
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-// 👇 TABLA DE MENSAJES (Con el arreglo del timestamp string) 👇
 object Messages : LongIdTable("messages", "message_id") {
-    val fromUser = reference("from_user_id", Users)
-    val toUser = reference("to_user_id", Users)
+    val fromUser = reference("from_user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val toUser = reference("to_user_id", Users, onDelete = ReferenceOption.CASCADE)
     val content = text("content")
-    val timestamp = varchar("timestamp", 100) // String para evitar errores de parseo
+    val timestamp = varchar("timestamp", 100)
     val isRead = bool("is_read").default(false)
 }
 
@@ -51,11 +53,12 @@ object Trips : LongIdTable("trips", "trip_id") {
     val endDate = date("end_date")
     val createdBy = reference("created_by_user_id", Users)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+    // NUEVO: Imagen de portada (Text por si es muy larga)
     val imageUrl = text("image_url").nullable()
 }
 
 object Activities : LongIdTable("activities", "activity_id") {
-    val tripId = reference("trip_id", Trips)
+    val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val createdBy = reference("created_by_user_id", Users)
     val title = varchar("title", 160)
     val description = text("description").nullable()
@@ -66,7 +69,7 @@ object Activities : LongIdTable("activities", "activity_id") {
 }
 
 object Expenses : LongIdTable("expenses", "expense_id") {
-    val tripId = reference("trip_id", Trips)
+    val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val paidBy = reference("paid_by_user_id", Users)
     val description = varchar("description", 255)
     val amount = decimal("amount", 10, 2)
@@ -74,49 +77,52 @@ object Expenses : LongIdTable("expenses", "expense_id") {
 }
 
 object Memories : LongIdTable("memories", "memory_id") {
-    val tripId = reference("trip_id", Trips)
+    val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val userId = reference("user_id", Users)
     val type = varchar("type", 10) // 'photo' o 'note'
     val description = text("description").nullable()
-    val mediaUrl = varchar("media_url", 500).nullable()
+    // IMPORTANTE: Text para soportar Base64 (LONGTEXT en SQL)
+    val mediaUrl = text("media_url").nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-// 👇👇👇 CORREGIDO: Usamos Table (no LongIdTable) para la tabla intermedia 👇👇👇
+// Tabla intermedia (Sin ID propio, usa clave compuesta)
 object TripMembers : Table("trip_members") {
     val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
-    val role = varchar("role", 20).default("member") // "owner", "member"
-    // 👇 NUEVA COLUMNA 👇
-    val status = varchar("status", 20).default("pending") // "pending", "accepted", "rejected"
+    val role = varchar("role", 20).default("member")
+    val status = varchar("status", 20).default("pending")
+    val joinedAt = timestamp("joined_at").defaultExpression(CurrentTimestamp())
 
     override val primaryKey = PrimaryKey(tripId, userId)
 }
 
-object TripMessages : LongIdTable("trip_messages") { // Nombre exacto de la tabla SQL
-    val tripId = reference("trip_id", Trips)
-    val userId = reference("user_id", Users)
+object TripMessages : LongIdTable("trip_messages", "id") {
+    val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
     val content = text("content")
-    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+    val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
 object ExpenseSplits : Table("expense_splits") {
-    // Claves foráneas
-    val expenseId = reference("expense_id", Expenses) // Vincula con la tabla Expenses
-    val userId = reference("user_id", Users)       // Vincula con la tabla Users
-
-    // La cantidad que le toca pagar a este usuario (ej: 20.50)
+    val expenseId = reference("expense_id", Expenses, onDelete = ReferenceOption.CASCADE)
+    val userId = reference("user_id", Users)
     val shareAmount = decimal("share_amount", 10, 2)
     val isPaid = bool("is_paid").default(false)
-    // Clave primaria compuesta (Un usuario solo puede estar una vez en el mismo gasto)
+
     override val primaryKey = PrimaryKey(expenseId, userId)
 }
+
+object VisitedPlaces : LongIdTable("visited_places", "id") {
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val name = varchar("name", 255)
+    val latitude = double("latitude")
+    val longitude = double("longitude")
+}
+
 // ===========================
 // ENTIDADES (DAO)
 // ===========================
-// Estas clases sirven para manejar los datos como objetos.
-// TripMembers NO TIENE ENTIDAD DAO porque es una tabla de enlace,
-// se usa directamente con Joins en el Repository.
 
 class UserEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<UserEntity>(Users)
@@ -127,6 +133,7 @@ class UserEntity(id: EntityID<Long>) : LongEntity(id) {
     var provider by Users.provider
     var createdAt by Users.createdAt
     var passwordHash by Users.passwordHash
+    var role by Users.role // <--- Añadido al DAO
 }
 
 class TripEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -138,6 +145,7 @@ class TripEntity(id: EntityID<Long>) : LongEntity(id) {
     var endDate by Trips.endDate
     var createdBy by UserEntity referencedOn Trips.createdBy
     var createdAt by Trips.createdAt
+    var imageUrl by Trips.imageUrl // <--- Añadido al DAO
 }
 
 class ActivityEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -152,7 +160,7 @@ class ActivityEntity(id: EntityID<Long>) : LongEntity(id) {
 class ExpenseEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<ExpenseEntity>(Expenses)
     var tripId by Expenses.tripId
-    var paidBy by Expenses.paidBy
+    var paidBy by Expenses.paidBy // Devuelve UserEntity
     var description by Expenses.description
     var amount by Expenses.amount
     var createdAt by Expenses.createdAt
@@ -166,13 +174,6 @@ class MemoryEntity(id: EntityID<Long>) : LongEntity(id) {
     var description by Memories.description
     var mediaUrl by Memories.mediaUrl
     var createdAt by Memories.createdAt
-}
-
-object VisitedPlaces : LongIdTable("visited_places") {
-    val userId = reference("user_id", Users)
-    val name = varchar("name", 255)
-    val latitude = double("latitude")
-    val longitude = double("longitude")
 }
 
 class VisitedPlaceEntity(id: EntityID<Long>) : LongEntity(id) {

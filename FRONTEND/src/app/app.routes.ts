@@ -6,7 +6,6 @@ import { MemoriesComponent } from './pages/memories/memories';
 import { FriendsComponent } from './pages/friends/friends';
 import { ChatComponent } from './pages/chat/chat';
 import { AdminDashboardComponent } from './pages/admin/admin-dashboard/admin-dashboard';
-import { adminGuard } from './guards/admin.guard';
 import { TripDetailComponent } from './pages/trip-detail/trip-detail';
 import { HomeComponent } from './pages/home/home'; 
 import { RegisterComponent } from './pages/register/register';
@@ -25,11 +24,7 @@ export const routes: Routes = [
   { path: 'trip-detail/:id', component: TripDetailComponent },
   { path: 'friends', component: FriendsComponent },
   { path: 'trips', component: TripsComponent },
-  {
-    path: 'admin',
-    component: AdminDashboardComponent,
-    canActivate: [adminGuard],
-  },
+
   // IMPORTANTE: El comodín '**' SIEMPRE debe ser la última ruta
   { path: '**', redirectTo: 'login' }
 ];

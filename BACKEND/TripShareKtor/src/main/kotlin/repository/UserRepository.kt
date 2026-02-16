@@ -28,6 +28,7 @@ class UserRepository {
                 it[this.email] = email
                 it[passwordHash] = pass
                 it[provider] = "local"
+                it[role] = "user" // Por defecto es usuario normal
             }
             true
         } catch (e: Exception) { false }
@@ -174,9 +175,7 @@ class UserRepository {
             }
             .map { it[TripMembers.tripId].value }
 
-        // 2. Seleccionamos los viajes:
-        //    - Los que yo he creado (soy el dueño)
-        //    - O los que he aceptado (están en la lista anterior)
+        // 2. Seleccionamos los viajes
         Trips.select {
             (Trips.createdBy eq userId) or (Trips.id inList acceptedTripIds)
         }.map { row ->
@@ -185,12 +184,14 @@ class UserRepository {
                 name = row[Trips.name],
                 destination = row[Trips.destination],
                 origin = row[Trips.origin],
-                startDate = row[Trips.startDate].toString(), // Asegúrate de que el formato sea ISO
+                startDate = row[Trips.startDate].toString(),
                 endDate = row[Trips.endDate].toString(),
-                createdByUserId = row[Trips.createdBy].value
+                createdByUserId = row[Trips.createdBy].value,
+                imageUrl = row[Trips.imageUrl] // <--- AÑADIDO: Mapeamos la imagen
             )
         }
     }
+
     suspend fun getTripById(tripId: Long): TripModel? = dbQuery {
         TripEntity.findById(tripId)?.toModel()
     }
@@ -201,7 +202,7 @@ class UserRepository {
         // 1. LIMPIEZA: Si la URL está vacía o son espacios, la convertimos a NULL
         val finalImageUrl = request.imageUrl?.ifBlank { null }
 
-        // 2. INSERTAR Y OBTENER ID (Usamos insertAndGetId para evitar errores)
+        // 2. INSERTAR Y OBTENER ID
         val newTripId = Trips.insertAndGetId {
             it[name] = request.name
             it[destination] = request.destination
@@ -209,7 +210,6 @@ class UserRepository {
             it[startDate] = LocalDate.parse(request.startDate)
             it[endDate] = LocalDate.parse(request.endDate)
             it[createdBy] = request.createdByUserId
-            // Guardamos NULL si no hay foto
             it[imageUrl] = finalImageUrl
         }
 
@@ -229,8 +229,8 @@ class UserRepository {
             origin = request.origin,
             startDate = request.startDate,
             endDate = request.endDate,
-            createdByUserId = request.createdByUserId, // Asegúrate de que este nombre coincide con tu DTO
-            imageUrl = finalImageUrl // Devolvemos null o la url
+            createdByUserId = request.createdByUserId,
+            imageUrl = finalImageUrl
         )
     }
 
@@ -247,8 +247,8 @@ class UserRepository {
                     userName = it[Users.userName],
                     email = it[Users.email],
                     avatarUrl = it[Users.avatarUrl],
-                    role = it[TripMembers.role],    // Extraemos el rol
-                    status = it[TripMembers.status] // Extraemos el estado
+                    role = it[TripMembers.role],
+                    status = it[TripMembers.status]
                 )
             }
     }
@@ -259,7 +259,7 @@ class UserRepository {
 
         val userIdToAdd = userRow[Users.id].value
 
-        // Verificamos si ya existe (sea pending o accepted)
+        // Verificamos si ya existe
         val alreadyExists = TripMembers.select {
             (TripMembers.tripId eq tripId) and (TripMembers.userId eq userIdToAdd)
         }.count() > 0
@@ -269,13 +269,13 @@ class UserRepository {
                 it[this.tripId] = tripId
                 it[this.userId] = userIdToAdd
                 it[this.role] = "member"
-                it[this.status] = "pending" // <--- CAMBIO CLAVE: Entra como pendiente
+                it[this.status] = "pending"
             }
             true
         } else {
             false
         }
-    } // <--- ¡AQUÍ FALTABA ESTA LLAVE DE CIERRE!
+    }
 
     // Obtener invitaciones pendientes para un usuario
     suspend fun getTripInvitations(userId: Long): List<TripResponse> = dbQuery {
@@ -289,7 +289,8 @@ class UserRepository {
                     origin = it[Trips.origin],
                     startDate = it[Trips.startDate].toString(),
                     endDate = it[Trips.endDate].toString(),
-                    createdByUserId = it[Trips.createdBy].value
+                    createdByUserId = it[Trips.createdBy].value,
+                    imageUrl = it[Trips.imageUrl] // Añadido
                 )
             }
     }
@@ -297,16 +298,13 @@ class UserRepository {
     // Responder a una invitación (Aceptar o Rechazar)
     suspend fun respondToTripInvitation(tripId: Long, userId: Long, accept: Boolean): Boolean = dbQuery {
         if (accept) {
-            // Si acepta, cambiamos estado a 'accepted'
             TripMembers.update({ (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) }) {
                 it[status] = "accepted"
             } > 0
         } else {
-            // Si rechaza, borramos la entrada de la tabla
             TripMembers.deleteWhere { (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) } > 0
         }
     }
-    // (He eliminado el bloque duplicado de getAcceptedFriends que tenías aquí mal pegado)
 
     // ==========================================
     // ACTIVIDADES, GASTOS Y MEMORIAS
@@ -375,7 +373,7 @@ class UserRepository {
                 it[this.paidBy] = paidByUserId
                 it[this.description] = description
                 it[this.amount] = java.math.BigDecimal.valueOf(amount)
-            }.value // .value saca el ID Long
+            }.value
         }
     }
 
@@ -392,7 +390,9 @@ class UserRepository {
     }
 
 
-    // MAPPERS AUXILIARES
+    // ==========================================
+    // MAPPERS AUXILIARES (CON ROLE E IMAGEN)
+    // ==========================================
     private fun ResultRow.toUserModel() = UserModel(
         id = this[Users.id].value,
         email = this[Users.email],
@@ -400,7 +400,8 @@ class UserRepository {
         avatarUrl = this[Users.avatarUrl],
         bio = this[Users.bio],
         provider = this[Users.provider],
-        createdAt = this[Users.createdAt].toString()
+        createdAt = this[Users.createdAt].toString(),
+        role = this[Users.role] // <--- AÑADIDO ROL
     )
 
     private fun UserEntity.toModel() = UserModel(
@@ -410,17 +411,30 @@ class UserRepository {
         avatarUrl = avatarUrl,
         bio = bio,
         provider = provider,
-        createdAt = createdAt.toString()
+        createdAt = createdAt.toString(),
+        role = role // <--- AÑADIDO ROL
     )
 
     private fun TripEntity.toModel() = TripModel(
-        id = id.value, name = name, destination = destination, origin = origin,
-        startDate = startDate.toString(), endDate = endDate.toString(), createdByUserId = createdBy.id.value
+        id = id.value,
+        name = name,
+        destination = destination,
+        origin = origin,
+        startDate = startDate.toString(),
+        endDate = endDate.toString(),
+        createdByUserId = createdBy.id.value,
+        imageUrl = imageUrl // <--- AÑADIDA IMAGEN
     )
 
     private fun TripEntity.toResponse() = TripResponse(
-        id = id.value, name = name, destination = destination, origin = origin,
-        startDate = startDate.toString(), endDate = endDate.toString(), createdByUserId = createdBy.id.value
+        id = id.value,
+        name = name,
+        destination = destination,
+        origin = origin,
+        startDate = startDate.toString(),
+        endDate = endDate.toString(),
+        createdByUserId = createdBy.id.value,
+        imageUrl = imageUrl // <--- AÑADIDA IMAGEN
     )
 
     // --- SITIOS VISITADOS (Pines del Mapa) ---
@@ -438,6 +452,41 @@ class UserRepository {
     suspend fun getVisitedPlaces(userId: Long): List<VisitedPlaceResponse> = dbQuery {
         VisitedPlaceEntity.find { VisitedPlaces.userId eq userId }.map {
             VisitedPlaceResponse(it.id.value, it.userId.value, it.name, it.latitude, it.longitude)
+        }
+    }
+
+    // ==========================================
+    // ADMIN: OBTENER TODO (Corregido)
+    // ==========================================
+    fun getAllUsersWithTrips(): List<UserAdminView> {
+        return transaction {
+            Users.selectAll().map { userRow ->
+                val userId = userRow[Users.id].value
+
+                // Buscamos sus viajes
+                val userTrips = (Trips innerJoin TripMembers)
+                    .select { TripMembers.userId eq userId }
+                    .map { tripRow -> // <--- AQUÍ USAMOS 'tripRow' NO 'row'
+                        TripModel(
+                            id = tripRow[Trips.id].value,
+                            name = tripRow[Trips.name],
+                            destination = tripRow[Trips.destination],
+                            origin = tripRow[Trips.origin],
+                            startDate = tripRow[Trips.startDate].toString(),
+                            endDate = tripRow[Trips.endDate].toString(),
+                            createdByUserId = tripRow[Trips.createdBy].value,
+                            imageUrl = tripRow[Trips.imageUrl] // <--- Incluimos la imagen
+                        )
+                    }
+
+                UserAdminView(
+                    id = userId,
+                    userName = userRow[Users.userName],
+                    email = userRow[Users.email],
+                    role = userRow[Users.role],
+                    trips = userTrips
+                )
+            }
         }
     }
 }
