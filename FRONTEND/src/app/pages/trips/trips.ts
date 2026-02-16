@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms'; // <--- IMPORTANTE
+import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { TripService, Trip } from '../../services/trip.service';
@@ -20,12 +20,15 @@ export class TripsComponent implements OnInit {
 
   // Variables para el Modal de Crear
   showCreateModal: boolean = false;
+  
+  // OBJETO PARA EL NUEVO VIAJE
   newTrip = {
     name: '',
     destination: '',
     origin: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    imageUrl: '' // <--- NUEVO: Campo para la URL de la foto
   };
 
   constructor(private tripService: TripService, private router: Router) {}
@@ -63,12 +66,20 @@ export class TripsComponent implements OnInit {
       console.error("No se puede navegar: El ID del viaje es undefined");
     }
   }
+
   // --- MÉTODOS DE CREACIÓN ---
 
   openCreateModal() {
     this.showCreateModal = true;
-    // Reseteamos el formulario
-    this.newTrip = { name: '', destination: '', origin: '', startDate: '', endDate: '' };
+    // Reseteamos el formulario (IMPORTANTE: incluir imageUrl vacío)
+    this.newTrip = { 
+        name: '', 
+        destination: '', 
+        origin: '', 
+        startDate: '', 
+        endDate: '',
+        imageUrl: '' // <--- NUEVO: Reseteamos también la imagen
+    };
   }
 
   closeCreateModal() {
@@ -82,16 +93,20 @@ export class TripsComponent implements OnInit {
     }
 
     // Preparamos el objeto para el Backend
+    // Al usar ...this.newTrip, ya se incluye el campo imageUrl automáticamente
     const tripPayload = {
       ...this.newTrip,
-      createdByUserId: this.currentUser.id // ¡Importante!
+      createdByUserId: this.currentUser.id
     };
 
     this.tripService.createTrip(tripPayload).subscribe({
       next: (createdTrip) => {
+        // Mensaje de éxito
         alert(`¡Viaje a ${createdTrip.destination} creado!`);
+        
         this.closeCreateModal();
-        // Añadimos el nuevo viaje a la lista visualmente (o recargamos)
+        
+        // Añadimos el nuevo viaje a la lista visualmente
         this.trips.push(createdTrip); 
       },
       error: (err) => {

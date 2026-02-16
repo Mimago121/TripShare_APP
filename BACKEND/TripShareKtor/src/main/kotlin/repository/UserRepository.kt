@@ -197,28 +197,40 @@ class UserRepository {
 
 
     suspend fun createTrip(request: CreateTripRequest): TripModel = dbQuery {
-        // 1. Crear el viaje
-        val insertStatement = Trips.insert {
+
+        // 1. LIMPIEZA: Si la URL está vacía o son espacios, la convertimos a NULL
+        val finalImageUrl = request.imageUrl?.ifBlank { null }
+
+        // 2. INSERTAR Y OBTENER ID (Usamos insertAndGetId para evitar errores)
+        val newTripId = Trips.insertAndGetId {
             it[name] = request.name
             it[destination] = request.destination
+            it[origin] = request.origin
             it[startDate] = LocalDate.parse(request.startDate)
             it[endDate] = LocalDate.parse(request.endDate)
             it[createdBy] = request.createdByUserId
-            it[origin] = request.origin
+            // Guardamos NULL si no hay foto
+            it[imageUrl] = finalImageUrl
         }
-        val newTripId = insertStatement[Trips.id]
 
-        // 2. Añadirte a ti mismo como OWNER y ya ACEPTADO
+        // 3. AÑADIRTE COMO MIEMBRO (OWNER)
         TripMembers.insert {
             it[tripId] = newTripId
             it[userId] = request.createdByUserId
             it[role] = "owner"
-            it[status] = "accepted" // <--- ¡ESTA LÍNEA ES LA CLAVE!
+            it[status] = "accepted"
         }
 
+        // 4. DEVOLVER EL MODELO
         TripModel(
-            newTripId.value, request.name, request.destination, request.origin,
-            request.startDate, request.endDate, request.createdByUserId
+            id = newTripId.value,
+            name = request.name,
+            destination = request.destination,
+            origin = request.origin,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            createdByUserId = request.createdByUserId, // Asegúrate de que este nombre coincide con tu DTO
+            imageUrl = finalImageUrl // Devolvemos null o la url
         )
     }
 

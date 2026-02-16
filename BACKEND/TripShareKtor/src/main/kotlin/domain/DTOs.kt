@@ -78,7 +78,7 @@ data class TripResponse(
 @Serializable
 data class TripModel( // A veces usas este nombre
     val id: Long, val name: String, val destination: String, val origin: String?,
-    val startDate: String, val endDate: String, val createdByUserId: Long
+    val startDate: String, val endDate: String, val createdByUserId: Long, val imageUrl: String? = null
 )
 
 // ===========================
@@ -130,7 +130,8 @@ data class CreateTripRequest(
     val origin: String?,       // Puede ser null
     val startDate: String,     // Formato "YYYY-MM-DD"
     val endDate: String,       // Formato "YYYY-MM-DD"
-    val createdByUserId: Long
+    val createdByUserId: Long,
+    val imageUrl: String? = null
 )
 
 @Serializable
@@ -188,7 +189,8 @@ data class TripMessageResponse(
     val user_id: Long,
     val user_name: String,
     val content: String,
-    val created_at: String
+    val created_at: String,
+    val imageUrl: String? = null
 )
 
 @Serializable

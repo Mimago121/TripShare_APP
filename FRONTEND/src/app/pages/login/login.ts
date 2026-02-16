@@ -42,7 +42,7 @@ onSubmit() {
       localStorage.setItem('user', JSON.stringify(res));
       
       // 2. Navegamos (esto hará que el componente se desconecte correctamente)
-      this.router.navigate(['/home']);
+      this.router.navigate(['/trips']);
     },
     error: (err) => {
       this.isLoading = false;

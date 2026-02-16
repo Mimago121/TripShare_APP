@@ -13,6 +13,7 @@ export interface Trip {
   startDate: string;
   endDate: string;
   createdByUserId: number;
+  imageUrl?: string; // <--- NUEVO: Campo para la URL de la foto
 }
 
 export interface Activity { id: number; title: string; startDatetime: string; endDatetime: string; }

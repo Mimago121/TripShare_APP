@@ -51,6 +51,7 @@ object Trips : LongIdTable("trips", "trip_id") {
     val endDate = date("end_date")
     val createdBy = reference("created_by_user_id", Users)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
+    val imageUrl = text("image_url").nullable()
 }
 
 object Activities : LongIdTable("activities", "activity_id") {

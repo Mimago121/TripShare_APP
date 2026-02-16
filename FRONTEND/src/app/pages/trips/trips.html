@@ -19,26 +19,38 @@
 
   <div class="trips-grid" *ngIf="!isLoading">
     
-    <div *ngFor="let trip of trips" class="trip-card">
-      <div class="trip-card-img" (click)="goToDetail(trip.id)">
-        <img [src]="'https://source.unsplash.com/featured/?'+trip.destination" alt="Destino">
+    <div *ngFor="let trip of trips" class="trip-card" (click)="goToDetail(trip.id)">
+      
+      <div class="trip-card-img">
+        
+        <img *ngIf="trip.imageUrl" 
+             [src]="trip.imageUrl" 
+             alt="{{ trip.name }}"
+             (error)="trip.imageUrl == null"> <div *ngIf="!trip.imageUrl" class="no-image-placeholder">
+          <span class="placeholder-icon">🗺️</span>
+        </div>
+
+        <span class="card-badge-dest">📍 {{ trip.destination }}</span>
       </div>
       
       <div class="trip-card-body">
         <h3>{{ trip.name }}</h3>
-        <div class="trip-info">
-          <span>📍 {{ trip.destination }}</span>
-          <span>📅 {{ trip.startDate | date:'mediumDate' }}</span>
+        
+        <div class="trip-dates">
+          <span class="date-icon">📅</span>
+          <span>{{ trip.startDate | date:'d MMM' }} - {{ trip.endDate | date:'d MMM y' }}</span>
         </div>
       </div>
 
       <div class="trip-card-footer">
-        <button class="btn-outline-small full-width" (click)="goToDetail(trip.id)">Ver detalles</button>
+        <button class="btn-outline-small full-width">Ver detalles</button>
       </div>
     </div>
 
     <div *ngIf="trips.length === 0 && !isLoading" class="empty-state">
-      <p>Aún no has creado ningún viaje. ¡Empieza tu primera aventura!</p>
+      <div class="empty-icon">🌍</div>
+      <h3>¡Tu pasaporte está vacío!</h3>
+      <p>Aún no has creado ningún viaje. ¡Empieza tu primera aventura ahora!</p>
     </div>
 
   </div>
@@ -53,6 +65,7 @@
     </div>
     
     <div class="modal-body">
+      
       <div class="form-group">
         <label>Nombre del Viaje *</label>
         <input type="text" [(ngModel)]="newTrip.name" class="custom-input" placeholder="Ej: Verano en Grecia">
@@ -73,6 +86,16 @@
           <input type="date" [(ngModel)]="newTrip.endDate" class="custom-input">
         </div>
       </div>
+
+      <div class="form-group">
+        <label>Foto de Portada (URL Opcional)</label>
+        <input type="text" 
+               [(ngModel)]="newTrip.imageUrl" 
+               class="custom-input" 
+               placeholder="Pega aquí un enlace de imagen (http...)">
+        <small style="color: #666; font-size: 0.8rem;">Si lo dejas vacío, usaremos un diseño por defecto.</small>
+      </div>
+
     </div>
 
     <div class="modal-actions">

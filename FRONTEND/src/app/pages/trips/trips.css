@@ -288,3 +288,32 @@
 .btn-confirm:hover {
   opacity: 0.9;
 }
+/* Cuando no hay foto, mostramos este cuadro gris */
+.no-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%); /* Un gris azulado suave */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+/* Ajuste para que la imagen o el placeholder llenen el hueco */
+.trip-card-img {
+  height: 180px; /* Altura fija para la portada */
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f0f0f0;
+}
+
+.trip-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Para que la foto no se deforme */
+}

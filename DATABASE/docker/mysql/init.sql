@@ -92,6 +92,7 @@ CREATE TABLE trips (
   end_date           DATE NOT NULL,
   created_by_user_id BIGINT UNSIGNED NOT NULL,
   created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  image_url TEXT,
 
   PRIMARY KEY (trip_id),
   CONSTRAINT fk_trips_created_by FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE RESTRICT
@@ -199,19 +200,19 @@ INSERT INTO friend_requests (from_user_id, to_user_id, status) VALUES
 -- --- 3. VIAJES (2 por usuario) ---
 
 -- Viajes de SERGI (ID 1)
-INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id) VALUES
-  ('Japón Tecnológico', 'Tokio', 'Barcelona', '2026-03-15', '2026-03-30', 1), -- ID 1
-  ('Ruta 66 en Moto', 'Chicago', 'Los Ángeles', '2026-08-01', '2026-08-20', 1); -- ID 2
+INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id, image_url) VALUES
+  ('Japón Tecnológico', 'Tokio', 'Barcelona', '2026-03-15', '2026-03-30', 1, ''), -- ID 1
+  ('Ruta 66 en Moto', 'Chicago', 'Los Ángeles', '2026-08-01', '2026-08-20', 1, ''); -- ID 2
 
 -- Viajes de MIRIAM (ID 2)
-INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id) VALUES
-  ('Escapada a París', 'París', 'Madrid', '2026-02-14', '2026-02-18', 2),    -- ID 3
-  ('Relax en Bali', 'Bali', 'Singapur', '2026-06-10', '2026-06-25', 2);       -- ID 4
+INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id, image_url) VALUES
+  ('Escapada a París', 'París', 'Madrid', '2026-02-14', '2026-02-18', 2, ''),    -- ID 3
+  ('Relax en Bali', 'Bali', 'Singapur', '2026-06-10', '2026-06-25', 2, '');       -- ID 4
 
 -- Viajes de IKER (ID 3)
-INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id) VALUES
-  ('Snowboard Alpes', 'Chamonix', 'Bilbao', '2026-01-10', '2026-01-17', 3),   -- ID 5
-  ('Surf Trip Canarias', 'Lanzarote', 'Santander', '2026-09-05', '2026-09-12', 3); -- ID 6
+INSERT INTO trips (name, destination, origin, start_date, end_date, created_by_user_id, image_url) VALUES
+  ('Snowboard Alpes', 'Chamonix', 'Bilbao', '2026-01-10', '2026-01-17', 3, ''),   -- ID 5
+  ('Surf Trip Canarias', 'Lanzarote', 'Santander', '2026-09-05', '2026-09-12', 3, ''); -- ID 6
 
 -- --- 4. MIEMBROS DE VIAJES (Mezclando gente) ---
 
