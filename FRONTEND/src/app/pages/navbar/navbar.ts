@@ -181,6 +181,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isLoggedIn = false;
     this.isAdmin = false;
     // Navegamos al login y forzamos recarga para limpiar estados de servicios
-    this.router.navigate(['/login']).then(() => window.location.reload());
+    this.router.navigate(['/home']).then(() => window.location.reload());
   }
 }
