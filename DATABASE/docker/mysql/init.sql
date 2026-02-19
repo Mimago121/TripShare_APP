@@ -1,8 +1,7 @@
 -- =========================================================
 -- 1) DATABASE SETUP (CONFIGURACIÓN INICIAL)
 -- =========================================================
--- TIP DE DEFENSA: Usamos utf8mb4 en lugar de utf8 normal porque mb4 
--- (4 bytes) permite guardar Emojis reales en la base de datos (ej: 🌍).
+
 DROP DATABASE IF EXISTS trip_share_db;
 CREATE DATABASE trip_share_db
   DEFAULT CHARACTER SET utf8mb4
@@ -13,9 +12,7 @@ USE trip_share_db;
 -- =========================================================
 -- 2) CLEANUP (DROP TABLES - ORDEN INVERSO)
 -- =========================================================
--- TIP DE DEFENSA: Al borrar, siempre empezamos por las "tablas hijas" 
--- (las que tienen Foreign Keys) y terminamos por las "tablas padre" (Users)
--- para no romper la integridad referencial.
+
 DROP TABLE IF EXISTS expense_splits;
 DROP TABLE IF EXISTS expenses;
 DROP TABLE IF EXISTS memories;
@@ -145,8 +142,6 @@ CREATE TABLE expenses (
   trip_id          BIGINT UNSIGNED NOT NULL,
   paid_by_user_id  BIGINT UNSIGNED NOT NULL,
   description      VARCHAR(255) NOT NULL,
-  -- TIP DE DEFENSA: DECIMAL(10,2) permite guardar números hasta 99,999,999.99
-  -- Nunca se usan FLOAT o DOUBLE para dinero porque pierden céntimos en cálculos.
   amount           DECIMAL(10,2) NOT NULL, 
   created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
