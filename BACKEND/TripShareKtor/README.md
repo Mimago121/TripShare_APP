@@ -5,74 +5,149 @@
 ![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
 ![Exposed](https://img.shields.io/badge/JetBrains_Exposed-Black?style=for-the-badge&logo=jetbrains)
 
-Backend RESTful de **TripShare**, una plataforma colaborativa para planificar viajes, gestionar gastos, chatear y compartir recuerdos entre amigos. Desarrollado 100% en Kotlin utilizando el framework **Ktor** y **JetBrains Exposed** como ORM.
 
-## 🏗️ Arquitectura y Principios de Diseño
+Este documento describe en detalle el subproyecto **backend** de la aplicación TripShare. El backend está construido utilizando **Kotlin** y el framework **Ktor**, con una arquitectura modular y orientada a servicios que facilita el mantenimiento, las pruebas y la extensión.
 
-Este proyecto ha sido refactorizado y diseñado siguiendo los principios **SOLID** (específicamente el Principio de Responsabilidad Única) y aplicando conceptos de **Clean Architecture** y **Domain-Driven Design (DDD)**.
+---
 
-El código está estrictamente modularizado para garantizar la escalabilidad, la separación de responsabilidades (Separation of Concerns) y la mantenibilidad:
+## 📌 Objetivo
 
-```text
-📁 src/main/kotlin/
- ├── 📁 database/   # Configuración de HikariCP y conexión asíncrona a MySQL.
- ├── 📁 dto/        # Data Transfer Objects. Contratos estrictos (Requests/Responses) para aislar la capa de red del dominio.
- ├── 📁 entities/   # Objetos DAO (Data Access Objects) de Exposed para mapeo ORM.
- ├── 📁 plugins/    # Orquestación de Ktor, Inyección de Dependencias manual y configuración del servidor.
- ├── 📁 repository/ # Lógica de negocio y consultas transaccionales (Patrón Repository).
- ├── 📁 routes/     # Endpoints HTTP limpios. Reciben peticiones, delegan en repositorios y devuelven respuestas.
- └── 📁 tables/     # Definición del esquema relacional (DSL de Exposed).
+Servir como la capa de negocio y datos para la aplicación móvil/web. El servidor expone una API RESTful consumida por el frontend, gestionando autenticación, autorización, persistencia de datos y lógica de dominio.
 
-✨ Características Principales (Módulos de Dominio)
-La API está dividida en 8 repositorios independientes, cada uno gestionando un dominio específico:
+El diseño actual permite:
 
-🔐 Autenticación (AuthRepository): Registro y validación de usuarios con control de errores por índices únicos.
+- Manejar múltiples entidades como usuarios, viajes, actividades, gastos, chats, memorias, amigos y mapas.
+- Escalar horizontalmente mediante contenedores o despliegues en la nube.
+- Integrarse con diferentes clientes y adaptarse a cambios en los requisitos.
 
-👤 Usuarios y Panel Admin (UserRepository): Gestión de perfiles y consultas avanzadas con cruce de tablas (JOINs) para el Dashboard de Administración.
+---
 
-🤝 Red Social (FriendRepository): Gestión bidireccional de amistades (envío, aceptación y rechazo de solicitudes).
+## 🗂️ Estructura del proyecto
 
-✈️ Viajes (TripRepository): CRUD de viajes grupales, roles de miembros (owner/member) e invitaciones mediante validación de email.
+La carpeta raíz del backend es `TripShareKtor`; a continuación se muestra su estructura principal y la finalidad de cada componente:
 
-💬 Chat y Notificaciones (ChatRepository): Mensajería en tiempo real entre usuarios y chat grupal por viaje. Implementa agregaciones SQL (GROUP BY, COUNT) para optimizar el cálculo de notificaciones no leídas.
+```
+TripShareKtor/
+├── build.gradle.kts          # Configuración del sistema de compilación y dependencias
+├── settings.gradle.kts       # Definición del proyecto raíz para Gradle
+├── gradle/                   # Wrapper de Gradle (garantiza versión consistente)
+├── src/main/kotlin/          # Código fuente principal
+│   ├── Application.kt        # Entrada de la aplicación; inicializa módulos y el servidor
+│   ├── database/             # Factories y utilidades para conexión de BD
+│   ├── dto/                  # Data Transfer Objects usados en endpoints
+│   ├── entities/             # Clases de dominio que mapean a la BD
+│   ├── plugins/              # Configuraciones de Ktor: HTTP, Routing, Serialization, CORS, etc.
+│   ├── repository/           # Repositorios que encapsulan el acceso a datos
+│   ├── routes/               # Agrupaciones de rutas por responsabilidad (Auth, Users, Trips, etc.)
+│   └── tables/               # Definición de tablas mediante Exposed
+└── build/                    # Directorio generado con los artefactos tras compilación
+```
 
-💶 Gastos Compartidos (ExpenseRepository): Registro de pagos y división automática de deudas. Utiliza tipos DECIMAL (mediante BigDecimal) para garantizar precisión financiera total sin errores de coma flotante.
+Las carpetas `.gradle/` y `gradle/` contienen información de caché y el wrapper que permiten compilar el proyecto sin instalaciones adicionales.
 
-📅 Itinerario (ActivitiesRepository): Gestión de la agenda del viaje mediante parseo estricto de fechas (ISO 8601 a LocalDateTime).
+---
 
-📍 Mapas (MapRepository): Geoposicionamiento de lugares visitados utilizando coordenadas precisas.
+## 📦 Dependencias principales
 
-📸 Recuerdos (MemoriesRepository): Almacenamiento ágil de notas e imágenes (mediante codificación Base64 en campos LONGTEXT).
+Las bibliotecas y plugins más relevantes declarados en `build.gradle.kts` son:
 
-🛠️ Stack Tecnológico
-Lenguaje: Kotlin (Corrutinas para asincronía).
+- **Ktor Server Core** y módulos HTTP, Auth, Sessions, WebSockets, etc.
+- **Exposed** (core, DAO, JDBC) como ORM para interacción con MySQL.
+- **HikariCP** para el pool de conexiones.
+- **Kotlinx Serialization** para JSON.
+- **Logback** para logging.
+- **JUnit 5** y **Ktor Server Test Host** para pruebas.
 
-Framework Web: Ktor Server.
+Las versiones exactas pueden consultarse y actualizarse en el archivo mencionado. Se recomienda usar las versiones estables más recientes compatibles.
 
-Base de Datos: MySQL.
+---
 
-ORM / Query Builder: JetBrains Exposed (Hibridación inteligente entre el API DAO para lectura y el API DSL para inserciones de alto rendimiento).
+## 🚀 Entorno de desarrollo y ejecución
 
-Serialización: kotlinx.serialization para el manejo de JSON seguro.
+### Requisitos previos
 
-💡 Puntos Técnicos Destacados
-Seguridad contra bloqueos (Non-blocking): Todas las transacciones a base de datos están envueltas en la función dbQuery que ejecuta las consultas en un Dispatcher.IO, evitando bloquear el hilo principal del servidor Ktor.
+- Java Development Kit (JDK) 11 o superior.
+- Git y acceso a un terminal/consola.
+- Docker (opcional pero recomendado para la base de datos).
 
-Integridad Relacional Fuerte: Uso exhaustivo de restricciones de clave foránea (ON DELETE CASCADE y ON DELETE RESTRICT) gestionadas desde código Kotlin.
+### Compilación y ejecución
 
-Prevención N+1: Uso de Eager Loading y JOINs nativos para evitar saturar la base de datos con consultas repetitivas (ej: cargar perfiles de usuario junto con notificaciones de chat).
+Dentro del directorio `BACKEND/TripShareKtor`, ejecuta:
 
-Capa DTO Aislada: Las entidades de base de datos nunca viajan al frontend. Se traducen en la capa Repository a DTOs seguros ocultando información sensible (como passwordHash).
+```bash
+./gradlew clean build          # Compila y ejecuta pruebas
+./gradlew run                  # Inicia el servidor localmente
+```
 
-🚀 Instalación y Ejecución
-Clonar el repositorio.
+En Windows se utiliza `gradlew.bat` en lugar de `./gradlew`.
 
-Configurar una base de datos MySQL local o remota.
+El servidor quedará escuchando por defecto en `http://localhost:8080`. El puerto y otras propiedades pueden configurarse mediante variables de entorno o el archivo `application.conf`.
 
-Ejecutar el script SQL de inicialización proporcionado (database_setup.sql) para crear el esquema y poblar los datos semilla (Seed Data).
+### Base de datos con Docker
 
-Ajustar las credenciales en DatabaseFactory.kt (o mediante variables de entorno).
+Se proporciona un `docker-compose.yml` en la carpeta `DATABASE` para orquestar un contenedor MySQL con los esquemas iniciales. Para usarlo:
 
-Ejecutar la función main en Application.kt o compilar mediante Gradle: ./gradlew run.
+```bash
+cd ../DATABASE
+docker-compose up -d
+```
 
-El servidor iniciará en http://localhost:8080.
+Los scripts de inicialización están en `DATABASE/docker/mysql/init.sql`.
+
+Se recomienda utilizar un entorno de Docker separado para pruebas de integración; ajustes adicionales se encuentran en dicha configuración.
+
+---
+
+## 🧩 Componentes clave y flujo de petición
+
+1. **Application.kt**: punto de arranque que configura la base de datos, registra plugins y monta las rutas.
+2. **Plugins**: cada archivo en `plugins/` configura una parte de Ktor (por ejemplo, `Serialization.kt` habilita JSON). El archivo `Routing.kt` agrega los routers definidos en `routes/`.
+3. **Routes**: cada archivo en `routes/` define un conjunto de endpoints relacionados (e.g., `AuthRoutes.kt` expone rutas de login/registro, `TripRoutes.kt` gestiona viajes).
+4. **DTOs y Entities**: las DTOs representan datos entrantes/salientes en la API; las entidades mapean a tablas mediante Exposed.
+5. **Repositorios**: encapsulan la lógica de acceso a datos, interactuando con las tablas de Exposed y devolviendo objetos de dominio.
+
+Este flujo asegura separación clara de responsabilidades y facilita la cobertura de pruebas.
+
+---
+
+## 🛠 Cómo contribuir
+
+Para colaborar en este subproyecto, sigue estas pautas:
+
+1. **Clona el repositorio** y crea una rama basada en `main`.
+2. **Implementa cambios** en el paquete correspondiente:
+   - Nuevos endpoints → agrega archivos bajo `routes/` y registra la ruta en `plugins/Routing.kt`.
+   - Nuevos modelos de datos → define entidades en `entities/` y tablas en `tables/`.
+   - Acceso a datos → crea/ajusta repositorios en `repository/`.
+   - Lógica de negocio adicional puede residir en servicios auxiliares si es necesario.
+3. **Pruebas**: cada cambio significativo debe contar con pruebas unitarias o de integración. Usa la infraestructura de JUnit y Ktor Test Host.
+4. **Documentación**: actualiza este README y añade comentarios claros en el código. Describe la intención de los cambios en las descripciones de tus commits.
+5. **Revisión**: abre un Pull Request contra la rama `main`. Incluye detalles, capturas de peticiones/respuestas si aplicable y resultados de los tests.
+
+---
+
+## 📌 Estilo y convenciones
+
+- Sigue las guías de estilo oficiales de Kotlin.
+- Nombres de clases en **PascalCase**, funciones y variables en **camelCase**.
+- Mantén las dependencias actualizadas y elimina las redundantes.
+- Documenta las rutas con comentarios sobre parámetros, códigos de estado y ejemplo de solicitudes/respuestas.
+
+---
+
+## 📁 Recursos adicionales
+
+- `TripShareKtor/src/main/resources/application.conf`: configuración del servidor.
+- `DATABASE/docker/mysql/init.sql`: script de inicialización de la base de datos.
+- `build.gradle.kts`: detalles de dependencias y plugins.
+- `settings.gradle.kts`: configuración del proyecto.
+
+---
+
+## ✨ Agradecimientos
+
+Gracias por interesarte en el desarrollo del backend de TripShare. Este proyecto está diseñado para ofrecer una experiencia de desarrollo fluida y una plataforma sólida para la evolución del producto.
+
+¡Esperamos tus contribuciones y sugerencias!
+
+_Teammates de TripShare_
