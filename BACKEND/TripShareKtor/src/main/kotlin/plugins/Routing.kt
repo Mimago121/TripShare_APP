@@ -1,7 +1,7 @@
-package com.tuproyecto.plugins
+package com.tuproyecto.plugins // Asegúrate de que el paquete es el correcto
 
 import data.*
-import domain.* // Aquí deben estar tus DTOs (CreateMessageRequest, TripMessageResponse, etc.)
+import domain.*
 import repository.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -12,7 +12,20 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureRouting() {
-    val repository = UserRepository()
+
+    // ==========================================
+    // INYECCIÓN DE DEPENDENCIAS
+    // Aquí instanciamos todos tus nuevos repositorios separados
+    // ==========================================
+    val authRepo = AuthRepository()
+    val userRepo = UserRepository()
+    val tripRepo = TripRepository()
+    val activitiesRepo = ActivitiesRepository()
+    val expenseRepo = ExpenseRepository()
+    val memoriesRepo = MemoriesRepository()
+    val friendRepo = FriendRepository()
+    val chatRepo = ChatRepository()
+    val mapRepo = MapRepository() // Si le llamaste de otra forma, cámbialo aquí
 
     routing {
         // --- RUTA RAÍZ ---
@@ -26,8 +39,7 @@ fun Application.configureRouting() {
         route("/admin") {
             get("/dashboard") {
                 try {
-                    // Llamamos a la función potente que creamos antes
-                    val data = repository.getAllUsersWithTrips()
+                    val data = userRepo.getAllUsersWithTrips()
                     call.respond(data)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -35,13 +47,14 @@ fun Application.configureRouting() {
                 }
             }
         }
+
         // ===========================
         // AUTENTICACIÓN
         // ===========================
         post("/login") {
             try {
                 val request = call.receive<LoginRequest>()
-                val user = repository.validateUser(request.email, request.pass)
+                val user = authRepo.validateUser(request.email, request.pass)
                 if (user != null) call.respond(HttpStatusCode.OK, user)
                 else call.respond(HttpStatusCode.Unauthorized, "Credenciales incorrectas")
             } catch (e: Exception) {
@@ -52,7 +65,7 @@ fun Application.configureRouting() {
         post("/register") {
             try {
                 val request = call.receive<RegisterRequest>()
-                val success = repository.createUser(request.userName, request.email, request.pass)
+                val success = authRepo.createUser(request.userName, request.email, request.pass)
                 if (success) call.respond(HttpStatusCode.Created, mapOf("status" to "success"))
                 else call.respond(HttpStatusCode.Conflict, "El email ya existe")
             } catch (e: Exception) {
@@ -65,19 +78,19 @@ fun Application.configureRouting() {
         // ===========================
         route("/users") {
             get {
-                call.respond(repository.getAllUsers())
+                call.respond(userRepo.getAllUsers())
             }
 
             get("/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                val user = repository.getUserById(id)
+                val user = userRepo.getUserById(id)
                 if (user != null) call.respond(user) else call.respond(HttpStatusCode.NotFound)
             }
 
             put("/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
                 val request = call.receive<UpdateUserRequest>()
-                if (repository.updateUser(id, request.userName, request.bio, request.avatarUrl)) {
+                if (userRepo.updateUser(id, request.userName, request.bio, request.avatarUrl)) {
                     call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
                 } else call.respond(HttpStatusCode.NotFound)
             }
@@ -89,10 +102,8 @@ fun Application.configureRouting() {
         route("/trips") {
 
             // ==========================================
-            //  CHAT GRUPAL (Usando tus DTOs)
+            //  CHAT GRUPAL
             // ==========================================
-
-            // GET: Obtener mensajes
             get("/{id}/messages") {
                 val id = call.parameters["id"]?.toLongOrNull()
                 if (id == null) return@get call.respond(HttpStatusCode.BadRequest, "ID inválido")
@@ -104,7 +115,6 @@ fun Application.configureRouting() {
                             .select { TripMessages.tripId eq id }
                             .orderBy(TripMessages.createdAt to SortOrder.ASC)
                             .map { row ->
-                                // AQUÍ USAMOS TU DTO 'TripMessageResponse'
                                 TripMessageResponse(
                                     id = row[TripMessages.id].value,
                                     trip_id = row[TripMessages.tripId].value,
@@ -122,15 +132,12 @@ fun Application.configureRouting() {
                 }
             }
 
-            // POST: Enviar mensaje
             post("/{id}/messages") {
                 val id = call.parameters["id"]?.toLongOrNull()
                 if (id == null) return@post call.respond(HttpStatusCode.BadRequest)
 
                 try {
-                    // AQUÍ USAMOS TU DTO 'CreateMessageRequest'
                     val req = call.receive<CreateMessageRequest>()
-
                     if (req.content.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, "Mensaje vacío")
 
                     transaction {
@@ -140,7 +147,7 @@ fun Application.configureRouting() {
                             it[content] = req.content
                         }
                     }
-                    call.respond(HttpStatusCode.Created, mapOf("status" to "Mensaje enviado")) // <-- Esto es un JSON {"status": "..."}
+                    call.respond(HttpStatusCode.Created, mapOf("status" to "Mensaje enviado"))
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.BadRequest, "Datos inválidos o JSON mal formado")
@@ -151,12 +158,12 @@ fun Application.configureRouting() {
             //  RESTO DE GESTIÓN DE VIAJES
             // ==========================================
 
-            get { call.respond(repository.getAllTrips()) }
+            get { call.respond(tripRepo.getAllTrips()) }
 
             post {
                 try {
                     val request = call.receive<CreateTripRequest>()
-                    val newTrip = repository.createTrip(request)
+                    val newTrip = tripRepo.createTrip(request)
                     call.respond(HttpStatusCode.Created, newTrip)
                 } catch (e: Exception) {
                     println("Error creando viaje: ${e.message}")
@@ -166,25 +173,25 @@ fun Application.configureRouting() {
 
             get("/user/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getTripsByUserId(userId))
+                call.respond(tripRepo.getTripsByUserId(userId))
             }
 
             get("/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                val trip = repository.getTripById(id)
+                val trip = tripRepo.getTripById(id)
                 if (trip != null) call.respond(trip) else call.respond(HttpStatusCode.NotFound)
             }
 
             // --- INVITACIONES ---
             get("/invitations/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getTripInvitations(userId))
+                call.respond(tripRepo.getTripInvitations(userId))
             }
 
             put("/invitations/respond") {
                 try {
                     val req = call.receive<InvitationResponseRequest>()
-                    val success = repository.respondToTripInvitation(req.tripId, req.userId, req.accept)
+                    val success = tripRepo.respondToTripInvitation(req.tripId, req.userId, req.accept)
                     if (success) call.respond(HttpStatusCode.OK, mapOf("status" to "success"))
                     else call.respond(HttpStatusCode.NotFound)
                 } catch (e: Exception) {
@@ -196,7 +203,7 @@ fun Application.configureRouting() {
                 val tripId = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val params = call.receive<Map<String, String>>()
                 val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                if (repository.addMemberByEmail(tripId, email)) call.respond(HttpStatusCode.OK)
+                if (tripRepo.addMemberByEmail(tripId, email)) call.respond(HttpStatusCode.OK)
                 else call.respond(HttpStatusCode.Conflict)
             }
 
@@ -204,20 +211,18 @@ fun Application.configureRouting() {
 
             get("/{id}/activities") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getActivitiesByTrip(id))
+                call.respond(activitiesRepo.getActivitiesByTrip(id))
             }
             post("/{id}/activities") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val params = call.receive<CreateActivityRequest>()
-                val res = repository.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
+                val res = activitiesRepo.addActivity(id, params.createdByUserId, params.title, params.startDatetime, params.endDatetime)
                 if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
 
             // ==========================================
-            //  GASTOS (EXPENSES) - BLOQUE COMPLETO
+            //  GASTOS (EXPENSES)
             // ==========================================
-
-            // 1. GET: OBTENER GASTOS
             get("/{id}/expenses") {
                 val id = call.parameters["id"]?.toLongOrNull()
                 if (id == null) return@get call.respond(HttpStatusCode.BadRequest)
@@ -225,7 +230,6 @@ fun Application.configureRouting() {
                 try {
                     val expensesList = transaction {
                         (Expenses innerJoin Users)
-                            // CORRECCIÓN AQUÍ: Usamos paidByUserId, no paidBy
                             .slice(Expenses.id, Expenses.description, Expenses.amount, Expenses.paidBy, Users.userName)
                             .select { Expenses.tripId eq id }
                             .map { row ->
@@ -248,7 +252,7 @@ fun Application.configureRouting() {
                                     description = row[Expenses.description],
                                     amount = row[Expenses.amount].toDouble(),
                                     paidByUserName = row[Users.userName],
-                                    paidById = row[Expenses.paidBy].value, // CORRECCIÓN AQUÍ TAMBIÉN
+                                    paidById = row[Expenses.paidBy].value,
                                     splits = splitsList
                                 )
                             }
@@ -260,7 +264,6 @@ fun Application.configureRouting() {
                 }
             }
 
-            // 2. POST: CREAR GASTO Y DIVIDIRLO (Lo habías borrado)
             post("/{id}/expenses") {
                 val tripIdParam = call.parameters["id"]?.toLongOrNull()
                 if (tripIdParam == null) return@post call.respond(HttpStatusCode.BadRequest)
@@ -268,12 +271,11 @@ fun Application.configureRouting() {
                 try {
                     val params = call.receive<CreateExpenseRequest>()
 
-                    // Guardamos el Gasto
-                    val newExpenseId = repository.addExpense(tripIdParam, params.paidByUserId, params.description, params.amount)
+                    // Usamos el expenseRepo
+                    val newExpenseId = expenseRepo.addExpense(tripIdParam, params.paidByUserId, params.description, params.amount)
 
                     if (newExpenseId != null) {
                         transaction {
-                            // Buscamos miembros
                             val memberIds = TripMembers
                                 .slice(TripMembers.userId)
                                 .select { TripMembers.tripId eq tripIdParam }
@@ -282,11 +284,9 @@ fun Application.configureRouting() {
                             val totalMembers = memberIds.size
 
                             if (totalMembers > 0) {
-                                // Calculamos división
                                 val shareDouble = params.amount / totalMembers
                                 val share = java.math.BigDecimal.valueOf(shareDouble)
 
-                                // Guardamos deudas
                                 memberIds.forEach { memberId ->
                                     if (memberId.value != params.paidByUserId) {
                                         ExpenseSplits.insert {
@@ -309,7 +309,6 @@ fun Application.configureRouting() {
                 }
             }
 
-            // 3. PUT: MARCAR COMO PAGADO
             put("/expenses/pay") {
                 try {
                     val params = call.receive<Map<String, String>>()
@@ -333,18 +332,18 @@ fun Application.configureRouting() {
 
             get("/{id}/memories") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getMemoriesByTrip(id))
+                call.respond(memoriesRepo.getMemoriesByTrip(id))
             }
             post("/{id}/memories") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val params = call.receive<CreateMemoryRequest>()
-                val res = repository.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
+                val res = memoriesRepo.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
                 if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
 
             get("/{id}/members") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getTripMembers(id))
+                call.respond(tripRepo.getTripMembers(id))
             }
         }
 
@@ -354,30 +353,30 @@ fun Application.configureRouting() {
         route("/friends") {
             post("/request") {
                 val params = call.receive<CreateRequestParams>()
-                if (repository.sendFriendRequest(params.fromId, params.toId)) call.respond(HttpStatusCode.Created)
+                if (friendRepo.sendFriendRequest(params.fromId, params.toId)) call.respond(HttpStatusCode.Created)
                 else call.respond(HttpStatusCode.Conflict)
             }
 
             get("/pending/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getPendingRequestsForUser(userId))
+                call.respond(friendRepo.getPendingRequestsForUser(userId))
             }
 
             put("/accept/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
-                if (repository.acceptFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                if (friendRepo.acceptFriendRequest(id)) call.respond(HttpStatusCode.OK)
                 else call.respond(HttpStatusCode.NotFound)
             }
 
             delete("/reject/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
-                if (repository.rejectFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                if (friendRepo.rejectFriendRequest(id)) call.respond(HttpStatusCode.OK)
                 else call.respond(HttpStatusCode.NotFound)
             }
 
             get("/accepted/{userId}") {
                 val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getAcceptedFriends(userId))
+                call.respond(friendRepo.getAcceptedFriends(userId))
             }
         }
 
@@ -389,7 +388,7 @@ fun Application.configureRouting() {
                 val toId = params["toId"]?.toLongOrNull()
                 val content = params["content"]
                 if (fromId != null && toId != null && content != null) {
-                    repository.saveMessage(fromId, toId, content)
+                    chatRepo.saveMessage(fromId, toId, content)
                     call.respond(HttpStatusCode.OK)
                 } else call.respond(HttpStatusCode.BadRequest)
             }
@@ -397,12 +396,12 @@ fun Application.configureRouting() {
             get("/{myId}/{friendId}") {
                 val myId = call.parameters["myId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
                 val friendId = call.parameters["friendId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getConversation(myId, friendId))
+                call.respond(chatRepo.getConversation(myId, friendId))
             }
 
             get("/notifications/{myId}") {
                 val myId = call.parameters["myId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getUnreadChatNotifications(myId))
+                call.respond(chatRepo.getUnreadChatNotifications(myId))
             }
         }
 
@@ -412,13 +411,13 @@ fun Application.configureRouting() {
         route("/places") {
             post {
                 val req = call.receive<CreatePlaceRequest>()
-                val newPlace = repository.addVisitedPlace(req)
+                val newPlace = mapRepo.addVisitedPlace(req)
                 call.respond(HttpStatusCode.Created, newPlace)
             }
 
             get("/user/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-                call.respond(repository.getVisitedPlaces(id))
+                call.respond(mapRepo.getVisitedPlaces(id))
             }
         }
 
