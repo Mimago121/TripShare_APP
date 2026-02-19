@@ -205,7 +205,7 @@ INSERT INTO users (email, user_name, avatar_url, provider, password_hash, role) 
   ('sergi@gmail.com',  'Sergi',  'https://ui-avatars.com/api/?name=Sergi&background=0D8ABC&color=fff', 'local', '1234', 'user'),  -- ID 1
   ('miriam@gmail.com', 'Miriam', 'https://ui-avatars.com/api/?name=Miriam&background=e91e63&color=fff', 'local', '1234', 'user'),  -- ID 2
   ('iker@gmail.com',   'Iker',   'https://ui-avatars.com/api/?name=Iker&background=4caf50&color=fff', 'local', '1234', 'user'),  -- ID 3
-  ('johan@gmail.com',  'Laura',  'https://ui-avatars.com/api/?name=johan&background=ff9800&color=fff', 'local', '1234', 'user'),  -- ID 4
+  ('johan@gmail.com',  'Johan',  'https://ui-avatars.com/api/?name=johan&background=ff9800&color=fff', 'local', '1234', 'user'),  -- ID 4
   ('admin@tripshare.com', 'admin', 'https://ui-avatars.com/api/?name=Admin&background=000&color=fff', 'local', '1234', 'admin'); -- ID 5 (EL ADMIN)
 
 -- --- 2. AMISTADES ---
