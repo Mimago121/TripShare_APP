@@ -1,32 +1,26 @@
-package data
+package tables
 
-import org.jetbrains.exposed.dao.LongEntity
-import org.jetbrains.exposed.dao.LongEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.javatime.CurrentDateTime
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-// ===========================
-// TABLAS (SQL)
-// ===========================
+// ==========================================
+// ESQUEMA DE BASE DE DATOS (TABLAS SQL)
+// ==========================================
 
 object Users : LongIdTable("users", "user_id") {
     val email = varchar("email", 255).uniqueIndex()
     val userName = varchar("user_name", 120)
-    // Usamos text para avatar por si es base64 largo
     val avatarUrl = text("avatar_url").nullable()
     val bio = text("bio").nullable()
     val provider = varchar("provider", 20).default("local")
     val providerUid = varchar("provider_uid", 255).nullable()
     val passwordHash = varchar("password_hash", 255).nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
-    // NUEVO: Rol (admin/user)
     val role = varchar("role", 20).default("user")
 }
 
@@ -53,7 +47,6 @@ object Trips : LongIdTable("trips", "trip_id") {
     val endDate = date("end_date")
     val createdBy = reference("created_by_user_id", Users)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
-    // NUEVO: Imagen de portada (Text por si es muy larga)
     val imageUrl = text("image_url").nullable()
 }
 
@@ -79,14 +72,12 @@ object Expenses : LongIdTable("expenses", "expense_id") {
 object Memories : LongIdTable("memories", "memory_id") {
     val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val userId = reference("user_id", Users)
-    val type = varchar("type", 10) // 'photo' o 'note'
+    val type = varchar("type", 10)
     val description = text("description").nullable()
-    // IMPORTANTE: Text para soportar Base64 (LONGTEXT en SQL)
     val mediaUrl = text("media_url").nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp())
 }
 
-// Tabla intermedia (Sin ID propio, usa clave compuesta)
 object TripMembers : Table("trip_members") {
     val tripId = reference("trip_id", Trips, onDelete = ReferenceOption.CASCADE)
     val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
@@ -118,68 +109,4 @@ object VisitedPlaces : LongIdTable("visited_places", "id") {
     val name = varchar("name", 255)
     val latitude = double("latitude")
     val longitude = double("longitude")
-}
-
-// ===========================
-// ENTIDADES (DAO)
-// ===========================
-
-class UserEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<UserEntity>(Users)
-    var email by Users.email
-    var userName by Users.userName
-    var avatarUrl by Users.avatarUrl
-    var bio by Users.bio
-    var provider by Users.provider
-    var createdAt by Users.createdAt
-    var passwordHash by Users.passwordHash
-    var role by Users.role // <--- Añadido al DAO
-}
-
-class TripEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<TripEntity>(Trips)
-    var name by Trips.name
-    var destination by Trips.destination
-    var origin by Trips.origin
-    var startDate by Trips.startDate
-    var endDate by Trips.endDate
-    var createdBy by UserEntity referencedOn Trips.createdBy
-    var createdAt by Trips.createdAt
-    var imageUrl by Trips.imageUrl // <--- Añadido al DAO
-}
-
-class ActivityEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<ActivityEntity>(Activities)
-    var tripId by Activities.tripId
-    var title by Activities.title
-    var startDatetime by Activities.startDatetime
-    var endDatetime by Activities.endDatetime
-    var createdBy by UserEntity referencedOn Activities.createdBy
-}
-
-class ExpenseEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<ExpenseEntity>(Expenses)
-    var tripId by Expenses.tripId
-    var paidBy by Expenses.paidBy // Devuelve UserEntity
-    var description by Expenses.description
-    var amount by Expenses.amount
-    var createdAt by Expenses.createdAt
-}
-
-class MemoryEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<MemoryEntity>(Memories)
-    var tripId by Memories.tripId
-    var userId by Memories.userId
-    var type by Memories.type
-    var description by Memories.description
-    var mediaUrl by Memories.mediaUrl
-    var createdAt by Memories.createdAt
-}
-
-class VisitedPlaceEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<VisitedPlaceEntity>(VisitedPlaces)
-    var userId by VisitedPlaces.userId
-    var name by VisitedPlaces.name
-    var latitude by VisitedPlaces.latitude
-    var longitude by VisitedPlaces.longitude
 }

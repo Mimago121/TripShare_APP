@@ -1,21 +1,21 @@
 package repository
 
-import data.* // Importamos las tablas
-import domain.* // Importamos los DTOs
+import tables.* // Importamos el esquema de la BD (Tablas)
+import dto.* // Importamos los objetos de transferencia (DTOs)
+import entities.* // Importamos el DAO
 import database.DatabaseFactory.dbQuery
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.time.LocalDate
-import java.time.LocalDateTime
+
 
 class UserRepository {
 
     // ==========================================
-    // 1. USUARIOS
+    // 1. GESTIÓN DE USUARIOS
     // ==========================================
 
+
+    // Actualiza la información pública del perfil de un usuario.
 
     suspend fun updateUser(id: Long, name: String, bio: String, avatarUrl: String): Boolean = dbQuery {
         Users.update({ Users.id eq id }) {
@@ -25,14 +25,26 @@ class UserRepository {
         } > 0
     }
 
+
+    // Obtiene una lista con absolutamente todos los usuarios registrados.
+
     suspend fun getAllUsers(): List<UserModel> = dbQuery {
         UserEntity.all().map { it.toModel() }
     }
+
+
+    // Busca un usuario específico mediante su ID.
 
     suspend fun getUserById(id: Long): UserModel? = dbQuery {
         UserEntity.findById(id)?.toModel()
     }
 
+
+    // ==========================================
+    // 2. FUNCIONES MAPPER (TRADUCTORES)
+    // ==========================================
+
+    // Traduce de Entidad de Base de Datos (`UserEntity`) a DTO Interno (`UserModel`).
 
     private fun UserEntity.toModel() = UserModel(
         id = id.value,
@@ -42,18 +54,28 @@ class UserRepository {
         bio = bio,
         provider = provider,
         createdAt = createdAt.toString(),
-        role = role // <--- AÑADIDO ROL
+        role = role
     )
+
+
+    // ==========================================
+    // 3. CONSULTAS AVANZADAS (PANEL ADMIN)
+    // ==========================================
+
+
+    // Genera un informe completo para el Panel de Administrador.
 
     fun getAllUsersWithTrips(): List<UserAdminView> {
         return transaction {
+            // 1. Recorremos todas las filas de la tabla Usuarios
             Users.selectAll().map { userRow ->
                 val userId = userRow[Users.id].value
 
-                // Buscamos sus viajes
+                // 2. Buscamos los viajes de ESTE usuario cruzando 2 tablas (Join)
                 val userTrips = (Trips innerJoin TripMembers)
                     .select { TripMembers.userId eq userId }
-                    .map { tripRow -> // <--- AQUÍ USAMOS 'tripRow' NO 'row'
+                    .map { tripRow ->
+                        // Convertimos la fila del viaje en un objeto TripModel
                         TripModel(
                             id = tripRow[Trips.id].value,
                             name = tripRow[Trips.name],
@@ -62,10 +84,11 @@ class UserRepository {
                             startDate = tripRow[Trips.startDate].toString(),
                             endDate = tripRow[Trips.endDate].toString(),
                             createdByUserId = tripRow[Trips.createdBy].value,
-                            imageUrl = tripRow[Trips.imageUrl] // <--- Incluimos la imagen
+                            imageUrl = tripRow[Trips.imageUrl]
                         )
                     }
 
+                // 3. Empaquetamos al usuario junto con su lista de viajes
                 UserAdminView(
                     id = userId,
                     userName = userRow[Users.userName],

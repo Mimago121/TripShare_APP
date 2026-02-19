@@ -1,10 +1,11 @@
-package domain
+package dto
 
 import kotlinx.serialization.Serializable
 
-// ===========================
-// CHAT (IMPORTANTE: String)
-// ===========================
+// ==========================================
+// 1. CHAT Y NOTIFICACIONES
+// ==========================================
+
 @Serializable
 data class MessageDto(
     val id: Long,
@@ -12,7 +13,7 @@ data class MessageDto(
     val toId: Long,
     val content: String,
     val timestamp: String,
-    val isMine: Boolean
+    val isMine: Boolean // Campo calculado dinámicamente en el backend
 )
 
 @Serializable
@@ -26,13 +27,14 @@ data class SendMessageRequest(
 data class ChatNotificationDto(
     val fromUserId: Long,
     val fromUserName: String,
-    val fromUserAvatar: String?,
+    val fromUserAvatar: String?, // El '?' significa que puede ser nulo en el JSON
     val count: Long
 )
 
-// ===========================
-// USUARIOS
-// ===========================
+// ==========================================
+// 2. USUARIOS Y AUTENTICACIÓN
+// ==========================================
+
 @Serializable
 data class UserModel(
     val id: Long,
@@ -42,21 +44,25 @@ data class UserModel(
     val bio: String?,
     val provider: String,
     val createdAt: String,
-    val role: String // <--- Asegúrate que esto existe
+    val role: String
 )
 
+// DTO exclusivo para recibir los datos de inicio de sesión
 @Serializable
 data class LoginRequest(val email: String, val pass: String)
 
+// DTO exclusivo para recibir los datos de registro
 @Serializable
 data class RegisterRequest(val userName: String, val email: String, val pass: String)
 
+// DTO exclusivo para actualizar el perfil
 @Serializable
 data class UpdateUserRequest(val userName: String, val bio: String, val avatarUrl: String)
 
-// ===========================
-// AMIGOS
-// ===========================
+// ==========================================
+// 3. AMIGOS Y RED SOCIAL
+// ==========================================
+
 @Serializable
 data class FriendRequestDto(
     val id: Long,
@@ -67,9 +73,10 @@ data class FriendRequestDto(
 @Serializable
 data class CreateRequestParams(val fromId: Long, val toId: Long)
 
-// ===========================
-// VIAJES (TRIPS)
-// ===========================
+// ==========================================
+// 4. VIAJES (TRIPS)
+// ==========================================
+
 @Serializable
 data class TripResponse(
     val id: Long,
@@ -79,7 +86,7 @@ data class TripResponse(
     val startDate: String,
     val endDate: String,
     val createdByUserId: Long,
-    val imageUrl: String? // <--- AÑADIDO: Faltaba aquí para getAllTrips
+    val imageUrl: String?
 )
 
 @Serializable
@@ -102,7 +109,7 @@ data class CreateTripRequest(
     val startDate: String,
     val endDate: String,
     val createdByUserId: Long,
-    val budget: Double? = 0.0, // <--- AÑADIDO: Faltaba el presupuesto
+    val budget: Double? = 0.0,
     val imageUrl: String? = null
 )
 
@@ -123,9 +130,10 @@ data class TripMemberResponse(
     val status: String
 )
 
-// ===========================
-// ACTIVIDADES, GASTOS, ETC
-// ===========================
+// ==========================================
+// 5. ACTIVIDADES, GASTOS Y RECUERDOS
+// ==========================================
+
 @Serializable
 data class ActivityResponse(
     val id: Long, val tripId: Long, val title: String,
@@ -183,9 +191,10 @@ data class CreateMemoryRequest(
     val mediaUrl: String?
 )
 
-// ===========================
-// MAPAS & MENSAJES VIAJE
-// ===========================
+// ==========================================
+// 6. MAPAS & MENSAJES DE VIAJE GRUPAL
+// ==========================================
+
 @Serializable
 data class VisitedPlaceResponse(
     val id: Long,
@@ -217,19 +226,18 @@ data class TripMessageResponse(
     val user_name: String,
     val content: String,
     val created_at: String,
-    val imageUrl: String? = null // Opcional, por si mandas foto
+    val imageUrl: String? = null
 )
 
-// ===========================
-// ADMIN (CORREGIDO)
-// ===========================
+// ==========================================
+// 7. PANEL DE ADMINISTRADOR
+// ==========================================
+
 @Serializable
 data class UserAdminView(
     val id: Long,
     val userName: String,
     val email: String,
     val role: String,
-    // ERROR ANTERIOR: val trips: List<Trips> -> Trips es la tabla SQL
-    // SOLUCIÓN: Usar TripModel
-    val trips: List<TripModel>
+    val trips: List<TripModel> // Usamos modelos de dominio limpios
 )

@@ -1,28 +1,51 @@
-package com.tripshare.repository
+package repository
 
-import data.Memories
-import data.MemoryEntity
+import tables.* // Importamos el esquema de la BD (Tablas)
+import entities.* // Importamos el DAO
 import database.DatabaseFactory.dbQuery
-import domain.MemoryModel
+import dto.MemoryModel
 import org.jetbrains.exposed.sql.insert
 import java.time.LocalDateTime
 
 class MemoriesRepository {
+
+    // ==========================================
+    // 1. OBTENER RECUERDOS
+    // ==========================================
+
+
+    // Obtiene todos los recuerdos (fotos o notas) asociados a un viaje específico.
+
     suspend fun getMemoriesByTrip(tripId: Long): List<MemoryModel> = dbQuery {
         MemoryEntity.find { Memories.tripId eq tripId }.map { entity ->
             MemoryModel(
                 id = entity.id.value,
                 tripId = entity.tripId.value,
                 userId = entity.userId.value,
-                type = entity.type,
+                type = entity.type, // Puede ser 'photo' o 'note'
                 description = entity.description,
-                mediaUrl = entity.mediaUrl,
+                mediaUrl = entity.mediaUrl, // Aquí viaja la imagen en Base64 o URL
                 createdAt = entity.createdAt.toString()
             )
         }
     }
 
-    suspend fun addMemory(tripId: Long, userId: Long, type: String, description: String?, url: String?): MemoryModel? = dbQuery {
+    // ==========================================
+    // 2. CREAR RECUERDOS
+    // ==========================================
+
+
+    // Sube un nuevo recuerdo al viaje (una foto o un texto).
+
+    suspend fun addMemory(
+        tripId: Long,
+        userId: Long,
+        type: String,
+        description: String?,
+        url: String?
+    ): MemoryModel? = dbQuery {
+
+        // 1. Ejecutamos el INSERT y guardamos la respuesta de la BD en una variable
         val insert = Memories.insert {
             it[this.tripId] = tripId
             it[this.userId] = userId
@@ -30,7 +53,20 @@ class MemoriesRepository {
             it[this.description] = description
             it[this.mediaUrl] = url
         }
+
+        // 2. Extraemos el ID exacto que MySQL le acaba de asignar a esta fila
         val id = insert[Memories.id]
-        MemoryModel(id.value, tripId, userId, type, description, url, LocalDateTime.now().toString())
+
+        // 3. Montamos el DTO de respuesta combinando los datos que nos enviaron
+        // junto con el nuevo ID y la hora actual del servidor.
+        MemoryModel(
+            id = id.value,
+            tripId = tripId,
+            userId = userId,
+            type = type,
+            description = description,
+            mediaUrl = url,
+            createdAt = LocalDateTime.now().toString()
+        )
     }
 }

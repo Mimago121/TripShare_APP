@@ -1,50 +1,38 @@
-package com.tripshare.repository
+package repository
 
-import data.TripEntity
-import data.TripMembers
-import data.TripMembers.role
-import data.TripMembers.status
-import data.TripMembers.tripId
-import data.TripMembers.userId
-import data.Trips
-import data.Trips.createdBy
-import data.Trips.destination
-import data.Trips.endDate
-import data.Trips.imageUrl
-import data.Trips.name
-import data.Trips.origin
-import data.Trips.startDate
-import data.Users
+import tables.* // Importamos el esquema de la BD (Tablas y DAOs)
+import dto.* // Importamos los objetos de transferencia (DTOs)
+import entities.* // Importamos el DAO
 import database.DatabaseFactory.dbQuery
-import domain.CreateTripRequest
-import domain.TripMemberResponse
-import domain.TripModel
-import domain.TripResponse
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.update
 import java.time.LocalDate
 
 class TripRepository {
+
+    // ==========================================
+    // 1. GESTIÓN DE VIAJES
+    // ==========================================
+
+
+    // Obtiene todos los viajes creados en la plataforma.
 
     suspend fun getAllTrips(): List<TripResponse> = dbQuery {
         TripEntity.all().map { it.toResponse() }
     }
 
+
+    // Obtiene los viajes donde un usuario específico participa (como creador o invitado).
+
     suspend fun getTripsByUserId(userId: Long): List<TripModel> = dbQuery {
-        // 1. Buscamos los IDs de los viajes donde el usuario YA ha aceptado ser miembro
+        // 1. IDs de viajes donde el usuario es miembro y ha aceptado
         val acceptedTripIds = TripMembers
             .select {
                 (TripMembers.userId eq userId) and (TripMembers.status eq "accepted")
             }
             .map { it[TripMembers.tripId].value }
 
-        // 2. Seleccionamos los viajes
+        // 2. Traemos los viajes: los que creó él O los que ha aceptado
         Trips.select {
             (Trips.createdBy eq userId) or (Trips.id inList acceptedTripIds)
         }.map { row ->
@@ -56,22 +44,26 @@ class TripRepository {
                 startDate = row[Trips.startDate].toString(),
                 endDate = row[Trips.endDate].toString(),
                 createdByUserId = row[Trips.createdBy].value,
-                imageUrl = row[Trips.imageUrl] // <--- AÑADIDO: Mapeamos la imagen
+                imageUrl = row[Trips.imageUrl] // Mapeamos la imagen (puede ser null)
             )
         }
     }
+
+
+    // Busca un viaje específico por su ID.
 
     suspend fun getTripById(tripId: Long): TripModel? = dbQuery {
         TripEntity.findById(tripId)?.toModel()
     }
 
 
-    suspend fun createTrip(request: CreateTripRequest): TripModel = dbQuery {
+    // Crea un nuevo viaje y asigna automáticamente al creador como 'Administrador' (owner).
 
-        // 1. LIMPIEZA: Si la URL está vacía o son espacios, la convertimos a NULL
+    suspend fun createTrip(request: CreateTripRequest): TripModel = dbQuery {
+        // 1. Limpieza de datos (evitar URLs con espacios en blanco)
         val finalImageUrl = request.imageUrl?.ifBlank { null }
 
-        // 2. INSERTAR Y OBTENER ID
+        // 2. Insertamos el viaje en la BD y recuperamos su ID
         val newTripId = Trips.insertAndGetId {
             it[name] = request.name
             it[destination] = request.destination
@@ -82,7 +74,7 @@ class TripRepository {
             it[imageUrl] = finalImageUrl
         }
 
-        // 3. AÑADIRTE COMO MIEMBRO (OWNER)
+        // 3. Añadimos al creador en la tabla intermedia con rol 'owner'
         TripMembers.insert {
             it[tripId] = newTripId
             it[userId] = request.createdByUserId
@@ -90,7 +82,7 @@ class TripRepository {
             it[status] = "accepted"
         }
 
-        // 4. DEVOLVER EL MODELO
+        // 4. Devolvemos el objeto completo para que Angular lo pinte
         TripModel(
             id = newTripId.value,
             name = request.name,
@@ -103,9 +95,12 @@ class TripRepository {
         )
     }
 
-    // ===========================
-    // GESTIÓN DE MIEMBROS
-    // ===========================
+    // ==========================================
+    // 2. GESTIÓN DE MIEMBROS E INVITACIONES
+    // ==========================================
+
+
+    // Obtiene la lista completa de personas que participan en un viaje específico.
 
     suspend fun getTripMembers(tripId: Long): List<TripMemberResponse> = dbQuery {
         (Users innerJoin TripMembers)
@@ -122,13 +117,16 @@ class TripRepository {
             }
     }
 
+
+    // Invita a un usuario a un viaje utilizando su correo electrónico.
+
     suspend fun addMemberByEmail(tripId: Long, email: String): Boolean = dbQuery {
         val userRow = Users.select { Users.email eq email }.singleOrNull()
-        if (userRow == null) return@dbQuery false
+        if (userRow == null) return@dbQuery false // El usuario no existe
 
         val userIdToAdd = userRow[Users.id].value
 
-        // Verificamos si ya existe
+        // Verificamos si ya existe una relación previa (sea pending o accepted)
         val alreadyExists = TripMembers.select {
             (TripMembers.tripId eq tripId) and (TripMembers.userId eq userIdToAdd)
         }.count() > 0
@@ -138,7 +136,7 @@ class TripRepository {
                 it[this.tripId] = tripId
                 it[this.userId] = userIdToAdd
                 it[this.role] = "member"
-                it[this.status] = "pending"
+                it[this.status] = "pending" // Queda pendiente de que el usuario acepte
             }
             true
         } else {
@@ -146,7 +144,9 @@ class TripRepository {
         }
     }
 
-    // Obtener invitaciones pendientes para un usuario
+
+    // Obtiene los viajes a los que un usuario ha sido invitado pero aún no ha respondido.
+
     suspend fun getTripInvitations(userId: Long): List<TripResponse> = dbQuery {
         (Trips innerJoin TripMembers)
             .select { (TripMembers.userId eq userId) and (TripMembers.status eq "pending") and (TripMembers.role neq "owner")}
@@ -159,22 +159,32 @@ class TripRepository {
                     startDate = it[Trips.startDate].toString(),
                     endDate = it[Trips.endDate].toString(),
                     createdByUserId = it[Trips.createdBy].value,
-                    imageUrl = it[Trips.imageUrl] // Añadido
+                    imageUrl = it[Trips.imageUrl]
                 )
             }
     }
 
-    // Responder a una invitación (Aceptar o Rechazar)
+
+    // Procesa la respuesta de un usuario a una invitación de viaje.
+
     suspend fun respondToTripInvitation(tripId: Long, userId: Long, accept: Boolean): Boolean = dbQuery {
         if (accept) {
+            // Actualiza a aceptado
             TripMembers.update({ (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) }) {
                 it[status] = "accepted"
             } > 0
         } else {
+            // Elimina la invitación
             TripMembers.deleteWhere { (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) } > 0
         }
     }
 
+    // ==========================================
+    // 3. FUNCIONES MAPPER (TRADUCTORES)
+    // ==========================================
+
+
+    // Traduce de Entidad de Base de Datos (`TripEntity`) a DTO Interno (`TripModel`).
 
     private fun TripEntity.toModel() = TripModel(
         id = id.value,
@@ -184,8 +194,11 @@ class TripRepository {
         startDate = startDate.toString(),
         endDate = endDate.toString(),
         createdByUserId = createdBy.id.value,
-        imageUrl = imageUrl // <--- AÑADIDA IMAGEN
+        imageUrl = imageUrl
     )
+
+
+    // Traduce de Entidad de Base de Datos (`TripEntity`) a DTO de Respuesta (`TripResponse`).
 
     private fun TripEntity.toResponse() = TripResponse(
         id = id.value,
@@ -195,6 +208,6 @@ class TripRepository {
         startDate = startDate.toString(),
         endDate = endDate.toString(),
         createdByUserId = createdBy.id.value,
-        imageUrl = imageUrl // <--- AÑADIDA IMAGEN
+        imageUrl = imageUrl
     )
 }

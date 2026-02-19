@@ -1,14 +1,8 @@
-package com.tripshare.repository
+package repository
 
-import data.Messages
-import data.Messages.fromUser
-import data.Messages.isRead
-import data.Messages.timestamp
-import data.Messages.toUser
-import data.Users
+import tables.* // Importamos el esquema de la BD (Tablas)
+import dto.* // Importamos los objetos de transferencia (DTOs)
 import database.DatabaseFactory.dbQuery
-import domain.ChatNotificationDto
-import domain.MessageDto
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -21,6 +15,13 @@ import java.time.LocalDateTime
 
 class ChatRepository {
 
+    // ==========================================
+    // 1. GESTIÓN DE MENSAJES
+    // ==========================================
+
+
+    // Guarda un nuevo mensaje en la base de datos.
+
     suspend fun saveMessage(fromId: Long, toId: Long, content: String): Boolean = dbQuery {
         Messages.insert {
             it[fromUser] = fromId
@@ -30,6 +31,24 @@ class ChatRepository {
         }
         true
     }
+
+
+    // Marca todos los mensajes no leídos de una conversación como leídos.
+
+    suspend fun markMessagesAsRead(myId: Long, friendId: Long): Boolean = dbQuery {
+        Messages.update({
+            (Messages.toUser eq myId) and (Messages.fromUser eq friendId) and (Messages.isRead eq false)
+        }) {
+            it[isRead] = true
+        } > 0
+    }
+
+    // ==========================================
+    // 2. CONSULTAS DE CHAT
+    // ==========================================
+
+
+    // Obtiene el historial completo de un chat privado entre dos usuarios.
 
     suspend fun getConversation(myId: Long, friendId: Long): List<MessageDto> = dbQuery {
         Messages.select {
@@ -44,10 +63,17 @@ class ChatRepository {
                     toId = it[Messages.toUser].value,
                     content = it[Messages.content],
                     timestamp = it[Messages.timestamp],
-                    isMine = it[Messages.fromUser].value == myId
+                    isMine = it[Messages.fromUser].value == myId // <-- Cálculo dinámico clave
                 )
             }
     }
+
+    // ==========================================
+    // 3. NOTIFICACIONES
+    // ==========================================
+
+
+    // Obtiene un resumen de los mensajes sin leer agrupados por remitente.
 
     suspend fun getUnreadChatNotifications(myId: Long): List<ChatNotificationDto> = dbQuery {
         Messages.join(Users, JoinType.INNER, Messages.fromUser, Users.id)
@@ -59,16 +85,8 @@ class ChatRepository {
                     fromUserId = it[Messages.fromUser].value,
                     fromUserName = it[Users.userName],
                     fromUserAvatar = it[Users.avatarUrl],
-                    count = it[Messages.id.count()]
+                    count = it[Messages.id.count()] // Total agrupado devuelto por MySQL
                 )
             }
-    }
-
-    suspend fun markMessagesAsRead(myId: Long, friendId: Long): Boolean = dbQuery {
-        Messages.update({
-            (Messages.toUser eq myId) and (Messages.fromUser eq friendId) and (Messages.isRead eq false)
-        }) {
-            it[isRead] = true
-        } > 0
     }
 }
