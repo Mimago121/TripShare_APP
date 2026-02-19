@@ -34,20 +34,6 @@ class UserRepository {
     }
 
 
-
-    suspend fun getPendingRequestsForUser(userId: Long): List<FriendRequestDto> = dbQuery {
-        FriendRequests.join(Users, JoinType.INNER, onColumn = FriendRequests.fromUser, otherColumn = Users.id)
-            .slice(FriendRequests.id, Users.userName, FriendRequests.status)
-            .select { (FriendRequests.toUser eq userId) and (FriendRequests.status eq "pending") }
-            .map {
-                FriendRequestDto(
-                    id = it[FriendRequests.id].value,
-                    fromUserName = it[Users.userName],
-                    status = it[FriendRequests.status]
-                )
-            }
-    }
-
     private fun UserEntity.toModel() = UserModel(
         id = id.value,
         email = email,

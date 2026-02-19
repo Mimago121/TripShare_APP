@@ -7,7 +7,9 @@ import data.FriendRequests.toUser
 import data.UserEntity
 import data.Users
 import database.DatabaseFactory.dbQuery
+import domain.FriendRequestDto
 import domain.UserModel
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -55,6 +57,19 @@ class FriendRepository {
 
         // Devolvemos los modelos completos de usuario
         UserEntity.find { Users.id inList allFriendIds }.map { it.toModel() }
+    }
+
+    suspend fun getPendingRequestsForUser(userId: Long): List<FriendRequestDto> = dbQuery {
+        FriendRequests.join(Users, JoinType.INNER, onColumn = FriendRequests.fromUser, otherColumn = Users.id)
+            .slice(FriendRequests.id, Users.userName, FriendRequests.status)
+            .select { (FriendRequests.toUser eq userId) and (FriendRequests.status eq "pending") }
+            .map {
+                FriendRequestDto(
+                    id = it[FriendRequests.id].value,
+                    fromUserName = it[Users.userName],
+                    status = it[FriendRequests.status]
+                )
+            }
     }
 
     private fun UserEntity.toModel() = UserModel(

@@ -1,5 +1,13 @@
 package com.tuproyecto.plugins // Asegúrate de que el paquete es el correcto
 
+import com.tripshare.repository.ActivitiesRepository
+import com.tripshare.repository.AuthRepository
+import com.tripshare.repository.ChatRepository
+import com.tripshare.repository.ExpenseRepository
+import com.tripshare.repository.FriendRepository
+import com.tripshare.repository.MapRepository
+import com.tripshare.repository.MemoriesRepository
+import com.tripshare.repository.TripRepository
 import data.*
 import domain.*
 import repository.*
