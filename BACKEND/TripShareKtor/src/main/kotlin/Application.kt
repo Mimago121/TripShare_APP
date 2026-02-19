@@ -5,6 +5,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.application.*
 import com.tuproyecto.plugins.*
 import database.DatabaseFactory
+import plugins.configureSecurity
 
 
 fun main() {
@@ -16,5 +17,6 @@ fun Application.module() {
     DatabaseFactory.init()
     configureSerialization()
     configureHTTP()
+    configureSecurity()
     configureRouting()
 }

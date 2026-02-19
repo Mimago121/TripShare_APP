@@ -7,13 +7,17 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
+import io.ktor.server.auth.authenticate
 
 fun Route.friendRouting(friendRepo: FriendRepository) {
     route("/friends") {
-        post("/request") {
-            val params = call.receive<CreateRequestParams>()
-            if (friendRepo.sendFriendRequest(params.fromId, params.toId)) call.respond(HttpStatusCode.Created)
-            else call.respond(HttpStatusCode.Conflict)
+
+        authenticate("auth-session") {
+            post("/request") {
+                val params = call.receive<CreateRequestParams>()
+                if (friendRepo.sendFriendRequest(params.fromId, params.toId)) call.respond(HttpStatusCode.Created)
+                else call.respond(HttpStatusCode.Conflict)
+            }
         }
 
         get("/pending/{userId}") {
@@ -21,16 +25,20 @@ fun Route.friendRouting(friendRepo: FriendRepository) {
             call.respond(friendRepo.getPendingRequestsForUser(userId))
         }
 
-        put("/accept/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
-            if (friendRepo.acceptFriendRequest(id)) call.respond(HttpStatusCode.OK)
-            else call.respond(HttpStatusCode.NotFound)
+        authenticate("auth-session") {
+            put("/accept/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                if (friendRepo.acceptFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                else call.respond(HttpStatusCode.NotFound)
+            }
         }
 
-        delete("/reject/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
-            if (friendRepo.rejectFriendRequest(id)) call.respond(HttpStatusCode.OK)
-            else call.respond(HttpStatusCode.NotFound)
+        authenticate("auth-session") {
+            delete("/reject/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                if (friendRepo.rejectFriendRequest(id)) call.respond(HttpStatusCode.OK)
+                else call.respond(HttpStatusCode.NotFound)
+            }
         }
 
         get("/accepted/{userId}") {

@@ -37,5 +37,8 @@ fun Application.configureRouting() {
         friendRouting(friendRepo)
         chatRouting(chatRepo)
         mapRouting(mapRepo)
+        activityRouting(activitiesRepo)
+        expenseRouting(expenseRepo)
+        memoryRouting(memoriesRepo)
     }
 }

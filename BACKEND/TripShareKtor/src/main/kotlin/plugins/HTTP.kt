@@ -23,5 +23,6 @@ fun Application.configureHTTP() {
 
         // Esta línea permite que Angular lea las cabeceras de respuesta
         exposeHeader(HttpHeaders.Authorization)
+        anyHost()
     }
 }

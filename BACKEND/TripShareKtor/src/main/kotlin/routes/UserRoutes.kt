@@ -7,6 +7,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
+import io.ktor.server.auth.authenticate
 
 fun Route.userRouting(userRepo: UserRepository) {
     route("/users") {
@@ -20,12 +21,14 @@ fun Route.userRouting(userRepo: UserRepository) {
             if (user != null) call.respond(user) else call.respond(HttpStatusCode.NotFound)
         }
 
-        put("/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
-            val request = call.receive<UpdateUserRequest>()
-            if (userRepo.updateUser(id, request.userName, request.bio, request.avatarUrl)) {
-                call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
-            } else call.respond(HttpStatusCode.NotFound)
+        authenticate("auth-session") {
+            put("/{id}") {
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val request = call.receive<UpdateUserRequest>()
+                if (userRepo.updateUser(id, request.userName, request.bio, request.avatarUrl)) {
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "updated"))
+                } else call.respond(HttpStatusCode.NotFound)
+            }
         }
     }
 }

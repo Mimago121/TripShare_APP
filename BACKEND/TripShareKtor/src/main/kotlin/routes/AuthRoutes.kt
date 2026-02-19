@@ -2,20 +2,26 @@ package routes
 
 import dto.LoginRequest
 import dto.RegisterRequest
+import dto.UserSession
 import repository.AuthRepository
 import io.ktor.server.application.*
 import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
+import io.ktor.server.sessions.*
 
 fun Route.authRouting(authRepo: AuthRepository) {
     post("/login") {
         try {
             val request = call.receive<LoginRequest>()
             val user = authRepo.validateUser(request.email, request.pass)
-            if (user != null) call.respond(HttpStatusCode.OK, user)
-            else call.respond(HttpStatusCode.Unauthorized, "Credenciales incorrectas")
+            if (user != null) {
+                call.sessions.set(UserSession(userId = user.id, role = user.role))
+                call.respond(HttpStatusCode.OK, user)
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Credenciales incorrectas")
+            }
         } catch (e: Exception) {
             call.respond(HttpStatusCode.BadRequest, "Error en login: ${e.message}")
         }
@@ -30,5 +36,10 @@ fun Route.authRouting(authRepo: AuthRepository) {
         } catch (e: Exception) {
             call.respond(HttpStatusCode.BadRequest, "Error en registro")
         }
+    }
+
+    post("/logout") {
+        call.sessions.clear<UserSession>()
+        call.respond(HttpStatusCode.OK, mapOf("status" to "Sesión cerrada"))
     }
 }

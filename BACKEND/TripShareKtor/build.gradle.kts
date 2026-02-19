@@ -28,11 +28,11 @@ dependencies {
     implementation("com.mysql:mysql-connector-j:8.0.33")
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("ch.qos.logback:logback-classic:1.4.11")
-
-    // ESTA ES PARA LOS ERRORES DE 'javatime', 'date' y 'datetime'
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
     implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
     implementation("io.ktor:ktor-server-cors:2.3.12")
+    implementation("io.ktor:ktor-server-auth:2.3.12")
+    implementation("io.ktor:ktor-server-sessions:2.3.12")
 
 }
 

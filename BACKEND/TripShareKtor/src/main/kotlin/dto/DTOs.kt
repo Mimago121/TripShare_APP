@@ -1,5 +1,6 @@
 package dto
 
+import io.ktor.server.auth.Principal
 import kotlinx.serialization.Serializable
 
 // ==========================================
@@ -59,6 +60,13 @@ data class RegisterRequest(val userName: String, val email: String, val pass: St
 @Serializable
 data class UpdateUserRequest(val userName: String, val bio: String, val avatarUrl: String)
 
+
+// Usuario autentificado
+@Serializable
+data class UserSession(
+    val userId: Long,
+    val role: String
+) : Principal
 // ==========================================
 // 3. AMIGOS Y RED SOCIAL
 // ==========================================
