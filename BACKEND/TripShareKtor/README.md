@@ -1,153 +1,444 @@
-# 🌍 TripShare API - Backend
+# 6. Documentación de la API
 
-![Kotlin](https://img.shields.io/badge/kotlin-%237F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white)
-![Ktor](https://img.shields.io/badge/ktor-%23087CFA.svg?style=for-the-badge&logo=ktor&logoColor=white)
-![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
-![Exposed](https://img.shields.io/badge/JetBrains_Exposed-Black?style=for-the-badge&logo=jetbrains)
-
-
-Este documento describe en detalle el subproyecto **backend** de la aplicación TripShare. El backend está construido utilizando **Kotlin** y el framework **Ktor**, con una arquitectura modular y orientada a servicios que facilita el mantenimiento, las pruebas y la extensión.
+A continuación se detalla la guía de uso de los endpoints para la integración con la aplicación cliente. La API está protegida mediante **Session Authentication**. Todas las operaciones de escritura (POST, PUT, DELETE) requieren que el cliente envíe una Cookie de sesión válida (`USER_SESSION`), obtenida tras hacer login.
 
 ---
+```json
+## 🔐 Autenticación
 
-## 📌 Objetivo
+### "/login"
 
-Servir como la capa de negocio y datos para la aplicación móvil/web. El servidor expone una API RESTful consumida por el frontend, gestionando autenticación, autorización, persistencia de datos y lógica de dominio.
+**POST** - Valida las credenciales del usuario, inicia sesión y devuelve una Cookie de sesión.
 
-El diseño actual permite:
+#### Parameters
+Ninguno
 
-- Manejar múltiples entidades como usuarios, viajes, actividades, gastos, chats, memorias, amigos y mapas.
-- Escalar horizontalmente mediante contenedores o despliegues en la nube.
-- Integrarse con diferentes clientes y adaptarse a cambios en los requisitos.
+#### Request body
 
----
+{
+  "email": "sergi@gmail.com",
+  "pass": "1234"
+}
 
-## 🗂️ Estructura del proyecto
+Response (200 OK)
 
-La carpeta raíz del backend es `TripShareKtor`; a continuación se muestra su estructura principal y la finalidad de cada componente:
+{
+  "id": 1,
+  "userName": "Sergi",
+  "email": "sergi@gmail.com",
+  "role": "user"
+}
 
+Error Responses
+
+401 Unauthorized: Si la contraseña o el correo son incorrectos. Devuelve "Credenciales incorrectas".
+
+400 Bad Request: Si el JSON enviado está mal formado.
+
+### "/register"
+
+POST - Registra un nuevo usuario en el sistema.
+
+### Parameters
+Nothing
+
+### Request body
+
+{
+  "userName": "Miriam",
+  "email": "miriam@gmail.com",
+  "pass": "1234"
+}
+
+Response (201 Created)
+
+{
+  "status": "success"
+}
+
+Error Responses
+
+409 Conflict: Si el email ya está registrado en la base de datos. Devuelve "El email ya existe".
+
+400 Bad Request: Si faltan campos obligatorios.
+
+### "/logout"
+
+POST - Destruye la sesión activa del usuario.
+
+Parameters
+Requiere Cookie de sesión activa.
+
+Request body
+{}
+
+Response (200 OK)
+
+{
+  "status": "Sesión cerrada"
+}
+
+Error Responses
+401 Unauthorized: Si se intenta hacer logout sin una sesión previa activa.
+````
+```json
+👤 Usuarios
+### "/users/{id}"
+GET - Recupera la información pública de un usuario mediante su ID.
+
+Parameters
+id (Path): ID del usuario.
+
+Request body
+{}
+
+Response (200 OK)
+JSON
+{
+  "id": 1,
+  "userName": "Sergi",
+  "email": "sergi@gmail.com",
+  "bio": "Amante de los viajes",
+  "avatarUrl": "[https://ui-avatars.com/api/?name=Sergi](https://ui-avatars.com/api/?name=Sergi)"
+}
+
+Error Responses
+
+404 Not Found: Si el ID proporcionado no existe en la base de datos.
+
+400 Bad Request: Si el ID no es un número válido.
+
+### "/users/{id}"
+PUT - Actualiza el perfil de un usuario.
+
+Parameters
+id (Path): ID del usuario.
+Requiere Cookie de sesión activa.
+
+Request body
+
+{
+  "userName": "SergiViajero",
+  "bio": "Nueva biografía",
+  "avatarUrl": "[https://example.com/avatar.png](https://example.com/avatar.png)"
+}
+
+Response (200 OK)
+
+{
+  "status": "updated"
+}
+
+Error Responses
+
+401 Unauthorized: Si no se envía la cookie de sesión.
+
+404 Not Found: Si el usuario a actualizar no existe.
 ```
-TripShareKtor/
-├── build.gradle.kts          # Configuración del sistema de compilación y dependencias
-├── settings.gradle.kts       # Definición del proyecto raíz para Gradle
-├── gradle/                   # Wrapper de Gradle (garantiza versión consistente)
-├── src/main/kotlin/          # Código fuente principal
-│   ├── Application.kt        # Entrada de la aplicación; inicializa módulos y el servidor
-│   ├── database/             # Factories y utilidades para conexión de BD
-│   ├── dto/                  # Data Transfer Objects usados en endpoints
-│   ├── entities/             # Clases de dominio que mapean a la BD
-│   ├── plugins/              # Configuraciones de Ktor: HTTP, Routing, Serialization, CORS, etc.
-│   ├── repository/           # Repositorios que encapsulan el acceso a datos
-│   ├── routes/               # Agrupaciones de rutas por responsabilidad (Auth, Users, Trips, etc.)
-│   └── tables/               # Definición de tablas mediante Exposed
-└── build/                    # Directorio generado con los artefactos tras compilación
+```JSON
+✈️ Viajes (Trips)
+
+### "/trips"
+POST - Crea un nuevo viaje.
+
+Parameters
+Requiere Cookie de sesión activa.
+
+Request body
+
+{
+  "name": "Japón Tecnológico",
+  "destination": "Tokio",
+  "origin": "Barcelona",
+  "startDate": "2026-03-15",
+  "endDate": "2026-03-30",
+  "createdByUserId": 1
+}
+
+Response (201 Created)
+
+{
+  "id": 1,
+  "name": "Japón Tecnológico",
+  "destination": "Tokio",
+  "origin": "Barcelona",
+  "startDate": "2026-03-15",
+  "endDate": "2026-03-30",
+  "createdByUserId": 1
+}
+
+Error Responses
+
+401 Unauthorized: Falta de sesión.
+
+400 Bad Request: Error al parsear las fechas o datos incompletos. Devuelve "Error al procesar el viaje".
+
+### "/trips/user/{userId}"
+GET - Obtiene la lista de viajes a los que pertenece un usuario.
+
+Parameters
+userId (Path): ID del usuario.
+
+Request body
+{}
+
+Response (200 OK)
+
+[
+  {
+    "id": 1,
+    "name": "Japón Tecnológico",
+    "destination": "Tokio",
+    "startDate": "2026-03-15",
+    "endDate": "2026-03-30"
+  }
+]
+
+Error Responses
+
+400 Bad Request: Si el userId es nulo o inválido.
 ```
+```JSON
+💶 Gastos Compartidos (Expenses)
 
-Las carpetas `.gradle/` y `gradle/` contienen información de caché y el wrapper que permiten compilar el proyecto sin instalaciones adicionales.
+### "/trips/{id}/expenses"
+GET - Obtiene la lista de gastos de un viaje junto con la división de deudas (splits).
 
----
+Parameters
+id (Path): ID del viaje.
 
-## 📦 Dependencias principales
+Request body
+{}
 
-Las bibliotecas y plugins más relevantes declarados en `build.gradle.kts` son:
+Response (200 OK)
 
-- **Ktor Server Core** y módulos HTTP, Auth, Sessions, WebSockets, etc.
-- **Exposed** (core, DAO, JDBC) como ORM para interacción con MySQL.
-- **HikariCP** para el pool de conexiones.
-- **Kotlinx Serialization** para JSON.
-- **Logback** para logging.
-- **JUnit 5** y **Ktor Server Test Host** para pruebas.
+[
+  {
+    "id": 15,
+    "description": "Cena Sushi Ginza",
+    "amount": 90.0,
+    "paidByUserName": "Sergi",
+    "paidById": 1,
+    "splits": [
+      {
+        "userId": 2,
+        "userName": "Miriam",
+        "amount": 30.0,
+        "isPaid": false
+      },
+      {
+        "userId": 3,
+        "userName": "Iker",
+        "amount": 30.0,
+        "isPaid": false
+      }
+    ]
+  }
+]
 
-Las versiones exactas pueden consultarse y actualizarse en el archivo mencionado. Se recomienda usar las versiones estables más recientes compatibles.
+Error Responses
 
----
+500 Internal Server Error: Fallo transaccional en la base de datos al realizar los JOINs.
 
-## 🚀 Entorno de desarrollo y ejecución
+400 Bad Request: ID de viaje inválido.
 
-### Requisitos previos
+### "/trips/{id}/expenses"
+POST - Registra un nuevo gasto y calcula los splits automáticamente.
 
-- Java Development Kit (JDK) 11 o superior.
-- Git y acceso a un terminal/consola.
-- Docker (opcional pero recomendado para la base de datos).
+Parameters
+id (Path): ID del viaje.
+Requiere Cookie de sesión activa.
 
-### Compilación y ejecución
+Request body
 
-Dentro del directorio `BACKEND/TripShareKtor`, ejecuta:
+{
+  "description": "Cena Sushi Ginza",
+  "amount": 90.0,
+  "paidByUserId": 1
+}
 
-```bash
-./gradlew clean build          # Compila y ejecuta pruebas
-./gradlew run                  # Inicia el servidor localmente
+Response (201 Created)
+
+{
+  "status": "Gasto creado"
+}
+
+Error Responses
+
+401 Unauthorized: Falta de sesión.
+
+400 Bad Request: Si el JSON enviado es incorrecto o hay un error en la base de datos.
+
+500 Internal Server Error: Excepción no controlada en la creación.
+
+### "/trips/expenses/pay"
+PUT - Marca la deuda de un usuario en un gasto como pagada.
+
+Parameters
+Requiere Cookie de sesión activa.
+
+Request body
+
+{
+  "expenseId": 15,
+  "userId": 2
+}
+
+Response (200 OK)
+
+{
+  "status": "success"
+}
+
+Error Responses
+
+401 Unauthorized: Falta de sesión.
+
+400 Bad Request: Falta el ID del gasto o del usuario.
+
+500 Internal Server Error: Error al ejecutar el UPDATE en SQL.
 ```
+```JSON
+📅 Itinerario (Activities)
 
-En Windows se utiliza `gradlew.bat` en lugar de `./gradlew`.
+### "/trips/{id}/activities"
+POST - Añade una actividad al itinerario del viaje.
 
-El servidor quedará escuchando por defecto en `http://localhost:8080`. El puerto y otras propiedades pueden configurarse mediante variables de entorno o el archivo `application.conf`.
+Parameters
+id (Path): ID del viaje.
+Requiere Cookie de sesión activa.
 
-### Base de datos con Docker
+Request body
 
-Se proporciona un `docker-compose.yml` en la carpeta `DATABASE` para orquestar un contenedor MySQL con los esquemas iniciales. Para usarlo:
+{
+  "tripId": 1,
+  "title": "Visita Akihabara",
+  "startDatetime": "2026-03-16T10:00:00",
+  "endDatetime": "2026-03-16T14:00:00",
+  "createdByUserId": 1
+}
 
-```bash
-cd ../DATABASE
-docker-compose up -d
+Response (201 Created)
+
+{
+  "id": 1,
+  "title": "Visita Akihabara"
+}
+
+Error Responses
+
+401 Unauthorized: Falta de sesión.
+
+400 Bad Request: Inconsistencia en las fechas enviadas o viaje inexistente.
 ```
+```JSON
+🤝 Amigos (Friends)
 
-Los scripts de inicialización están en `DATABASE/docker/mysql/init.sql`.
+### "/friends/request"
+POST - Envía una solicitud de amistad.
 
-Se recomienda utilizar un entorno de Docker separado para pruebas de integración; ajustes adicionales se encuentran en dicha configuración.
+Parameters
+Requiere Cookie de sesión activa.
 
----
+Request body
 
-## 🧩 Componentes clave y flujo de petición
+{
+  "fromId": 1,
+  "toId": 2
+}
 
-1. **Application.kt**: punto de arranque que configura la base de datos, registra plugins y monta las rutas.
-2. **Plugins**: cada archivo en `plugins/` configura una parte de Ktor (por ejemplo, `Serialization.kt` habilita JSON). El archivo `Routing.kt` agrega los routers definidos en `routes/`.
-3. **Routes**: cada archivo en `routes/` define un conjunto de endpoints relacionados (e.g., `AuthRoutes.kt` expone rutas de login/registro, `TripRoutes.kt` gestiona viajes).
-4. **DTOs y Entities**: las DTOs representan datos entrantes/salientes en la API; las entidades mapean a tablas mediante Exposed.
-5. **Repositorios**: encapsulan la lógica de acceso a datos, interactuando con las tablas de Exposed y devolviendo objetos de dominio.
+Response (201 Created)
 
-Este flujo asegura separación clara de responsabilidades y facilita la cobertura de pruebas.
+{
+  "status": "success"
+}
 
----
+Error Responses
+401 Unauthorized: Falta de sesión activa.
 
-## 🛠 Cómo contribuir
+409 Conflict: Si la solicitud de amistad ya existe previamente (evita duplicados).
 
-Para colaborar en este subproyecto, sigue estas pautas:
+### "/friends/accepted/{userId}"
+GET - Devuelve la lista de amigos aceptados de un usuario.
 
-1. **Clona el repositorio** y crea una rama basada en `main`.
-2. **Implementa cambios** en el paquete correspondiente:
-   - Nuevos endpoints → agrega archivos bajo `routes/` y registra la ruta en `plugins/Routing.kt`.
-   - Nuevos modelos de datos → define entidades en `entities/` y tablas en `tables/`.
-   - Acceso a datos → crea/ajusta repositorios en `repository/`.
-   - Lógica de negocio adicional puede residir en servicios auxiliares si es necesario.
-3. **Pruebas**: cada cambio significativo debe contar con pruebas unitarias o de integración. Usa la infraestructura de JUnit y Ktor Test Host.
-4. **Documentación**: actualiza este README y añade comentarios claros en el código. Describe la intención de los cambios en las descripciones de tus commits.
-5. **Revisión**: abre un Pull Request contra la rama `main`. Incluye detalles, capturas de peticiones/respuestas si aplicable y resultados de los tests.
+Parameters
+userId (Path): ID del usuario.
 
----
+Request body
+{}
 
-## 📌 Estilo y convenciones
+Response (200 OK)
 
-- Sigue las guías de estilo oficiales de Kotlin.
-- Nombres de clases en **PascalCase**, funciones y variables en **camelCase**.
-- Mantén las dependencias actualizadas y elimina las redundantes.
-- Documenta las rutas con comentarios sobre parámetros, códigos de estado y ejemplo de solicitudes/respuestas.
+[
+  {
+    "id": 2,
+    "userName": "Miriam",
+    "avatarUrl": "https://..."
+  }
+]
 
----
+Error Responses
+400 Bad Request: ID de usuario inválido.
+```
+```JSON
+📍 Mapas (Places)
+### "/places"
+POST - Guarda una nueva ubicación visitada en el mapa del usuario.
 
-## 📁 Recursos adicionales
+Parameters
+Requiere Cookie de sesión activa.
 
-- `TripShareKtor/src/main/resources/application.conf`: configuración del servidor.
-- `DATABASE/docker/mysql/init.sql`: script de inicialización de la base de datos.
-- `build.gradle.kts`: detalles de dependencias y plugins.
-- `settings.gradle.kts`: configuración del proyecto.
+Request body
 
----
+{
+  "userId": 1,
+  "name": "Sagrada Familia",
+  "latitude": 41.4036,
+  "longitude": 2.1744
+}
 
-## ✨ Agradecimientos
+Response (201 Created)
 
-Gracias por interesarte en el desarrollo del backend de TripShare. Este proyecto está diseñado para ofrecer una experiencia de desarrollo fluida y una plataforma sólida para la evolución del producto.
+{
+  "id": 1,
+  "name": "Sagrada Familia",
+  "latitude": 41.4036,
+  "longitude": 2.1744
+}
 
-¡Esperamos tus contribuciones y sugerencias!
+Error Responses
+401 Unauthorized: Petición rechazada por falta de sesión.
+```
+```JSON
+👑 Administración
 
-_Teammates de TripShare_
+### "/admin/dashboard"
+GET - Devuelve un árbol consolidado de usuarios y sus respectivos viajes para el panel de administración.
+
+Parameters
+Nothing
+
+Request body
+{}
+
+Response (200 OK)
+
+[
+  {
+    "id": 1,
+    "userName": "Sergi",
+    "email": "sergi@gmail.com",
+    "role": "user",
+    "trips": [
+      {
+        "id": 1,
+        "name": "Japón Tecnológico",
+        "destination": "Tokio"
+      }
+    ]
+  }
+]
+
+Error Responses
+
+500 Internal Server Error: Fallo de agregación SQL o cruce de tablas masivo fallido. Devuelve "Error cargando admin dashboard".
