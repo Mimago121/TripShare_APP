@@ -33,7 +33,6 @@ dependencies {
     implementation("io.ktor:ktor-server-cors:2.3.12")
     implementation("io.ktor:ktor-server-auth:2.3.12")
     implementation("io.ktor:ktor-server-sessions:2.3.12")
-
 }
 
 java {
