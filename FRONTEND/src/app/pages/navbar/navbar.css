@@ -6,8 +6,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 2rem;
-  height: 70px; /* Altura fija */
-  background-color: var(--card-bg); /* Fondo dinámico */
+  height: 70px;
+  background-color: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   position: relative;
   z-index: 1000;
@@ -21,7 +21,7 @@
 .navbar-brand a {
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--primary); /* Color principal */
+  color: var(--primary);
   text-decoration: none;
   letter-spacing: -0.5px;
   transition: transform 0.2s;
@@ -54,7 +54,6 @@
   color: var(--primary);
 }
 
-/* Clase activa de Angular routerLinkActive */
 .navbar-links a.active {
   color: var(--primary);
 }
@@ -79,7 +78,6 @@
   gap: 20px;
 }
 
-/* Botones de iconos (Tema y Campana) */
 .icon-btn {
   background: transparent;
   border: none;
@@ -96,16 +94,15 @@
 }
 
 .icon-btn:hover {
-  background-color: rgba(128, 128, 128, 0.1); /* Hover suave */
+  background-color: rgba(128, 128, 128, 0.1);
   transform: translateY(-2px);
 }
 
-/* Globo Rojo de Notificaciones */
 .badge {
   position: absolute;
   top: 0px;
   right: -2px;
-  background-color: #ff4757; /* Rojo vibrante */
+  background-color: #ff4757;
   color: white;
   font-size: 0.7rem;
   font-weight: 700;
@@ -116,10 +113,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--card-bg); /* Borde para separarlo del icono */
+  border: 2px solid var(--card-bg);
 }
 
-/* Perfil de Usuario */
 .user-profile {
   display: flex;
   align-items: center;
@@ -154,18 +150,18 @@
 /* 5. MENÚS DESPLEGABLES (DROPDOWNS) */
 /* ============================== */
 .nav-item {
-  position: relative; /* Necesario para posicionar el dropdown */
+  position: relative;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 140%; /* Un poco separado del navbar */
+  top: 140%;
   right: 0;
   width: 320px;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Sombra difusa elegante */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -174,7 +170,6 @@
   animation: slideDown 0.2s ease-out;
 }
 
-/* Animación de entrada */
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -189,7 +184,6 @@
   margin-bottom: 5px;
 }
 
-/* Empty State */
 .empty-state {
   text-align: center;
   padding: 20px;
@@ -245,7 +239,6 @@
   color: var(--text-secondary);
 }
 
-/* Botones de Aceptar/Rechazar */
 .req-actions {
   margin-left: auto;
   display: flex;
@@ -269,7 +262,7 @@
 /* 7. MENU PERFIL                 */
 /* ============================== */
 .profile-menu {
-  width: 200px; /* Más estrecho que notificaciones */
+  width: 200px;
 }
 
 .profile-menu a {
@@ -299,7 +292,7 @@
   background: none;
   border: none;
   padding: 10px;
-  color: #ff4757; /* Rojo para salir */
+  color: #ff4757;
   font-weight: 600;
   cursor: pointer;
   border-radius: 6px;
@@ -334,21 +327,21 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 900; /* Debajo de los dropdowns pero encima del resto */
+  z-index: 900;
   background: transparent;
   cursor: default;
+}
 
-/* Añade esto a tu CSS */
 .chat-item {
   cursor: pointer;
 }
 
 .chat-item:hover {
-  background-color: rgba(var(--primary-rgb), 0.1); /* O un color suave */
-  transform: translateX(5px); /* Efecto de movimiento */
+  background-color: rgba(var(--primary-rgb), 0.1);
+  transform: translateX(5px);
 }
 .trip-item {
-  border-left: 3px solid #6366f1; /* Un borde azul/indigo para diferenciarlo del chat */
+  border-left: 3px solid #6366f1;
   background: rgba(99, 102, 241, 0.05);
   margin-bottom: 5px;
 }
@@ -365,4 +358,100 @@
 .navbar-links span.admin-badge {
   vertical-align: middle;
 }
+
+/* =========================================
+   LA VENTANA DE CIERRE DE SESIÓN (MODAL)
+========================================= */
+.logout-modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.logout-modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 380px;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  text-align: center;
+  color: #1e293b;
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  display: inline-block;
+  animation: wave 1s infinite alternate;
+}
+
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 25px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-modal-cancel {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.btn-modal-cancel:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.btn-modal-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-modal-danger:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(15deg); }
 }

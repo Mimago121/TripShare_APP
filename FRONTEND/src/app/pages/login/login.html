@@ -1,44 +1,53 @@
-<div class="ms-login-container">
-  <div class="ms-card fade-in">
+<div class="login-layout fade-in">
+  
+  <div class="login-card">
     
-    <div class="card-header">
-      <div class="logo-circle">✈️</div> <h2>Iniciar sesión</h2>
-      <p>Ir a TripShare</p>
+    <div class="back-nav">
+      <button class="btn-back-arrow" routerLink="/home" title="Volver al inicio">
+        <span class="arrow-icon">←</span> Volver
+      </button>
     </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="card-header">
+      <div class="logo-circle">✈️</div> 
+      <h2 class="brand-title">Trip<span class="highlight">Share</span></h2>
+      <p class="subtitle">¡Bienvenido de nuevo viajero!</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
       
-      <div class="input-group" [class.has-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-        <input type="email" formControlName="email" placeholder="Correo electrónico">
+      <div class="input-wrapper" [class.has-error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" formControlName="email" placeholder="ejemplo@correo.com">
         <div class="error-text" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
           Escribe una dirección de correo válida.
         </div>
       </div>
 
-      <div class="input-group" [class.has-error]="loginForm.get('pass')?.invalid && loginForm.get('pass')?.touched">
-        <input type="password" formControlName="pass" placeholder="Contraseña">
+      <div class="input-wrapper" [class.has-error]="loginForm.get('pass')?.invalid && loginForm.get('pass')?.touched">
+        <label for="pass">Contraseña</label>
+        <input type="password" id="pass" formControlName="pass" placeholder="••••••••">
         <div class="error-text" *ngIf="loginForm.get('pass')?.invalid && loginForm.get('pass')?.touched">
           La contraseña es obligatoria.
         </div>
       </div>
 
-      
-
-      <div class="actions">
-        <button type="button" class="btn-back" routerLink="/register">Crear cuenta</button>
-        
-        <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading">
-          <span *ngIf="!isLoading">Siguiente</span>
-          <span *ngIf="isLoading">Cargando...</span>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary-large" [disabled]="loginForm.invalid || isLoading">
+          <span *ngIf="!isLoading">Iniciar sesión</span>
+          <span *ngIf="isLoading" class="loading-spinner">Cargando...</span>
         </button>
+      </div>
+      
+      <div class="register-prompt">
+        ¿Aún no tienes cuenta? <a routerLink="/register" class="register-link">Regístrate gratis</a>
       </div>
 
     </form>
     
-    <div *ngIf="errorMessage" class="server-error">
-      {{ errorMessage }}
+    <div *ngIf="errorMessage" class="server-error-box fade-in">
+      ⚠️ {{ errorMessage }}
     </div>
+
   </div>
-  
-  
 </div>

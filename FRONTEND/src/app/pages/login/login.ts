@@ -9,7 +9,7 @@ import { RouterModule } from '@angular/router';
   selector: 'app-login',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, RouterModule],
-  templateUrl: './login.html',
+  templateUrl: './login.html', // Asegúrate de que el nombre coincide con tu archivo
   styleUrls: ['./login.css']
 })
 export class LoginComponent {
@@ -24,38 +24,35 @@ export class LoginComponent {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      // Cambiado a 'pass' para coincidir con tu LoginRequest de Kotlin
       pass: ['', [Validators.required]] 
     });
   }
 
-onSubmit() {
-  if (this.loginForm.invalid) return;
+  onSubmit() {
+    if (this.loginForm.invalid) return;
 
-  this.isLoading = true;
-  const { email, pass } = this.loginForm.value;
+    this.isLoading = true;
+    const { email, pass } = this.loginForm.value;
 
-  this.auth.login(email!, pass!).subscribe({
-    next: (res: any) => {
-      // 1. Guardamos los datos del usuario (que ahora incluyen el campo 'role')
-      localStorage.setItem('user', JSON.stringify(res));
-      
-      // 2. Lógica de redirección inteligente
-      if (res.role === 'admin') {
-        console.log('Eres admin, directo al panel de control 👮');
-        this.router.navigate(['/admin']);
-      } else {
-        console.log('Eres usuario normal, a tus viajes ✈️');
-        this.router.navigate(['/trips']);
+    this.auth.login(email!, pass!).subscribe({
+      next: (res: any) => {
+        // Guardamos los datos del usuario (que ahora incluyen el campo 'role')
+        localStorage.setItem('user', JSON.stringify(res));
+        
+        // Lógica de redirección inteligente
+        if (res.role === 'admin') {
+          console.log('Eres admin, directo al panel de control 👮');
+          this.router.navigate(['/admin']);
+        } else {
+          console.log('Eres usuario normal, a tus viajes ✈️');
+          this.router.navigate(['/trips']);
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = 'Credenciales inválidas';
+        console.error('Error en login:', err);
       }
-    },
-    error: (err) => {
-      this.isLoading = false;
-      this.errorMessage = 'Credenciales inválidas';
-      console.error('Error en login:', err);
-    }
-  });
-}
+    });
   }
-
-  
+}
