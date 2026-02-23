@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core'; // <-- AÑADIDO HostListener
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { TripService, Trip } from '../../services/trip.service';
+import { AuthService } from '../../services/auth.service'; // <-- AÑADIDO AuthService
 
 @Component({
   selector: 'app-trips',
@@ -17,40 +18,69 @@ export class TripsComponent implements OnInit {
   trips: Trip[] = [];
   currentUser: any = null;
   isLoading: boolean = true;
-
-  // Variables para el Modal de Crear
   showCreateModal: boolean = false;
   
-  // OBJETO PARA EL NUEVO VIAJE
   newTrip = {
     name: '',
     destination: '',
     origin: '',
     startDate: '',
     endDate: '',
-    imageUrl: '' // <--- NUEVO: Campo para la URL de la foto
+    imageUrl: '' 
   };
 
-  constructor(private tripService: TripService, private router: Router) {}
+  constructor(
+    private tripService: TripService,
+    private authService: AuthService, // <-- INYECTADO
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-  if (typeof localStorage !== 'undefined') {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      this.currentUser = JSON.parse(userStr);
-      
-      // 👇 PROTECCIÓN: Si es admin, no puede estar aquí
-      if (this.currentUser.role === 'admin') {
-        this.router.navigate(['/admin']);
-        return;
-      }
+    // TRUCO: Metemos un estado falso en el historial del navegador para "atrapar" la flecha de atrás
+    history.pushState(null, '', window.location.href);
 
-      this.loadTrips();
-    } else {
-      this.router.navigate(['/login']);
+    if (typeof localStorage !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        this.currentUser = JSON.parse(userStr);
+        
+        // PROTECCIÓN: Si es admin, no puede estar aquí
+        if (this.currentUser.role === 'admin') {
+          this.router.navigate(['/admin']);
+          return;
+        }
+
+        this.loadTrips();
+      } else {
+        this.router.navigate(['/login']);
+      }
     }
   }
-}
+
+  // =========================================================
+  // ESTO DETECTA CUANDO PULSAS LA FLECHA DE ATRÁS DEL NAVEGADOR
+  // =========================================================
+  @HostListener('window:popstate', ['$event'])
+  onPopState(event: any) {
+    const confirmacion = confirm('¿Seguro que quieres abandonar la aplicación y cerrar sesión? ✈️');
+
+    if (confirmacion) {
+      // Si dice que SÍ, cerramos sesión de verdad
+      this.authService.logout().subscribe({
+        next: () => {
+          localStorage.removeItem('user');
+          this.router.navigate(['/login']);
+        },
+        error: () => {
+          localStorage.removeItem('user');
+          this.router.navigate(['/login']);
+        }
+      });
+    } else {
+      // Si dice que NO, volvemos a bloquear la flecha para que se quede en la página
+      history.pushState(null, '', window.location.href);
+    }
+  }
 
   loadTrips() {
     if (!this.currentUser) return;
@@ -74,18 +104,15 @@ export class TripsComponent implements OnInit {
     }
   }
 
-  // --- MÉTODOS DE CREACIÓN ---
-
   openCreateModal() {
     this.showCreateModal = true;
-    // Reseteamos el formulario (IMPORTANTE: incluir imageUrl vacío)
     this.newTrip = { 
         name: '', 
         destination: '', 
         origin: '', 
         startDate: '', 
         endDate: '',
-        imageUrl: '' // <--- NUEVO: Reseteamos también la imagen
+        imageUrl: '' 
     };
   }
 
@@ -99,8 +126,6 @@ export class TripsComponent implements OnInit {
       return;
     }
 
-    // Preparamos el objeto para el Backend
-    // Al usar ...this.newTrip, ya se incluye el campo imageUrl automáticamente
     const tripPayload = {
       ...this.newTrip,
       createdByUserId: this.currentUser.id
@@ -108,12 +133,8 @@ export class TripsComponent implements OnInit {
 
     this.tripService.createTrip(tripPayload).subscribe({
       next: (createdTrip) => {
-        // Mensaje de éxito
         alert(`¡Viaje a ${createdTrip.destination} creado!`);
-        
         this.closeCreateModal();
-        
-        // Añadimos el nuevo viaje a la lista visualmente
         this.trips.push(createdTrip); 
       },
       error: (err) => {

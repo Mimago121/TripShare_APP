@@ -31,10 +31,55 @@
 
         <div class="dropdown-menu notifications-menu" *ngIf="isNotificationsOpen">
           <div class="dropdown-header">Notificaciones</div>
+          
           <div class="empty-state" *ngIf="totalNotificationsCount === 0">
             <p>No tienes notificaciones nuevas</p>
           </div>
+
+          <div class="notifications-list" *ngIf="totalNotificationsCount > 0" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
+            
+            <ng-container *ngIf="pendingRequests.length > 0">
+              <span class="section-title">Solicitudes de amistad</span>
+              <div class="notif-item" *ngFor="let req of pendingRequests">
+                <img [src]="req.avatarUrl || req.senderAvatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="avatar-mini">
+                <div class="req-info">
+                  <strong>{{ req.fromUserName || req.senderName || req.userName || req.name || req.requesterName || 'Usuario' }}</strong>
+                  <span>quiere ser tu amigo</span>
+                </div>
+                <div class="req-actions">
+                  <button class="btn-accept" (click)="acceptRequest(req.id)" title="Aceptar">✅</button>
+                  <button class="btn-reject" (click)="rejectRequest(req.id)" title="Rechazar">❌</button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="tripInvitations.length > 0">
+              <span class="section-title">Invitaciones a Viajes</span>
+              <div class="notif-item trip-item" *ngFor="let trip of tripInvitations">
+                <div class="notif-info" style="flex: 1;">
+                  <strong>{{ trip.name }}</strong>
+                  <span>📍 {{ trip.destination }}</span>
+                </div>
+                <div class="req-actions">
+                  <button class="btn-accept" (click)="respondToTrip(trip.id, true)" title="Aceptar">✅</button>
+                  <button class="btn-reject" (click)="respondToTrip(trip.id, false)" title="Rechazar">❌</button>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="chatNotifications.length > 0">
+              <span class="section-title">Mensajes nuevos</span>
+              <div class="notif-item chat-item" *ngFor="let chat of chatNotifications" (click)="openChatFromNotification(chat)">
+                <div class="notif-info">
+                  <strong>{{ chat.fromUserName || 'Usuario' }}</strong>
+                  <span>Te ha enviado un mensaje 💬</span>
+                </div>
+              </div>
+            </ng-container>
+
           </div>
+
+        </div>
       </div>
 
       <div class="nav-item dropdown">
@@ -54,7 +99,7 @@
           </ng-container>
 
           <div class="divider"></div>
-          <button class="logout-btn" (click)="logout()">🚪 Cerrar Sesión</button>
+          <button class="logout-btn" (click)="openLogoutModal()">🚪 Cerrar Sesión</button>
         </div>
       </div>
 
@@ -68,3 +113,15 @@
 
   <div class="overlay" *ngIf="isDropdownOpen || isNotificationsOpen" (click)="closeAllMenus()"></div>
 </nav>
+
+<div class="logout-modal-overlay fade-in" *ngIf="showLogoutModal" (click)="closeLogoutModal()">
+  <div class="logout-modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-icon">👋</div>
+    <h2 class="modal-title">¿Cerrar sesión?</h2>
+    <p class="modal-subtitle">Estás a punto de salir de TripShare.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" (click)="closeLogoutModal()">Cancelar</button>
+      <button class="btn-modal-danger" (click)="confirmLogout()">Sí, salir</button>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import { ThemeService } from '../../services/theme.service';
 import { UserService } from '../../services/user.service';
 import { ChatService, ChatNotification } from '../../services/chat.service';
 import { TripService, Trip } from '../../services/trip.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,23 +15,20 @@ import { TripService, Trip } from '../../services/trip.service';
   styleUrls: ['./navbar.css']
 })
 export class NavbarComponent implements OnInit, OnDestroy {
-  // --- ESTADO DE SESIÓN Y ROLES ---
   isLoggedIn: boolean = false;
   isAdmin: boolean = false;
   currentUserId: number = 0;
   userName: string = '';
   userAvatar: string = '';
 
-  // --- ESTADO DE UI ---
   isDropdownOpen: boolean = false;
   isNotificationsOpen: boolean = false;
+  showLogoutModal: boolean = false; 
 
-  // --- NOTIFICACIONES ---
   pendingRequests: any[] = [];
   chatNotifications: ChatNotification[] = [];
   tripInvitations: Trip[] = [];
 
-  // --- CONTROL DE INTERVALO ---
   private intervalId: any;
 
   constructor(
@@ -38,18 +36,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
     public themeService: ThemeService,
     private userService: UserService,
     private chatService: ChatService,
-    private tripService: TripService
+    private tripService: TripService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
     this.checkLoginStatus();
 
-    // Solo activamos la carga de notificaciones si el usuario está logueado y NO es admin
-    // (Normalmente el admin no gestiona sus propias invitaciones/amistades en el panel global)
     if (this.isLoggedIn && !this.isAdmin) {
       this.refreshAllNotifications();
       
-      // Actualización en tiempo real cada 3 segundos
       this.intervalId = setInterval(() => {
         this.refreshAllNotifications();
       }, 3000);
@@ -71,8 +67,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
         this.currentUserId = user.id;
         this.userName = user.userName || 'Usuario';
         this.userAvatar = user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        
-        // DETECCIÓN DE ADMIN
         this.isAdmin = user.role === 'admin';
       }
     }
@@ -84,8 +78,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.loadChatNotifications();
     this.loadTripInvitations();
   }
-
-  // --- CARGA DE DATOS ---
 
   loadFriendRequests() {
     this.userService.getMyNotifications(this.currentUserId).subscribe({
@@ -112,8 +104,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (this.isAdmin) return 0;
     return this.pendingRequests.length + this.chatNotifications.length + this.tripInvitations.length;
   }
-
-  // --- ACCIONES DE NOTIFICACIONES ---
 
   acceptRequest(reqId: number) {
     this.userService.acceptFriendRequest(reqId).subscribe({
@@ -152,17 +142,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/friends'], { queryParams: { chatWith: notification.fromUserId } });
   }
 
-  // --- CONTROL DE MENÚS ---
-
   toggleDropdown() {
     this.isDropdownOpen = !this.isDropdownOpen;
     if (this.isDropdownOpen) this.isNotificationsOpen = false;
   }
 
   toggleNotifications() {
-    // Si es admin, no tiene panel de notificaciones de usuario
     if (this.isAdmin) return;
-    
     this.isNotificationsOpen = !this.isNotificationsOpen;
     if (this.isNotificationsOpen) this.isDropdownOpen = false;
   }
@@ -172,15 +158,36 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isNotificationsOpen = false;
   }
 
-  logout() {
+  openLogoutModal() {
     this.closeAllMenus();
+    this.showLogoutModal = true;
+  }
+
+  closeLogoutModal() {
+    this.showLogoutModal = false;
+  }
+
+  confirmLogout() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
-    localStorage.removeItem('user');
-    this.isLoggedIn = false;
-    this.isAdmin = false;
-    // Navegamos al login y forzamos recarga para limpiar estados de servicios
-    this.router.navigate(['/home']).then(() => window.location.reload());
+    
+    this.authService.logout().subscribe({
+      next: () => {
+        this.showLogoutModal = false;
+        localStorage.removeItem('user');
+        this.isLoggedIn = false;
+        this.isAdmin = false;
+        this.router.navigate(['/home']).then(() => window.location.reload());
+      },
+      error: (err) => {
+        console.error('Error al cerrar sesión', err);
+        this.showLogoutModal = false;
+        localStorage.removeItem('user');
+        this.isLoggedIn = false;
+        this.isAdmin = false;
+        this.router.navigate(['/home']).then(() => window.location.reload());
+      }
+    });
   }
 }
