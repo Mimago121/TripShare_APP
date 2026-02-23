@@ -1,11 +1,11 @@
-import { Component, OnInit, HostListener } from '@angular/core'; // <-- AÑADIDO HostListener
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
 import { TripService, Trip } from '../../services/trip.service';
-import { AuthService } from '../../services/auth.service'; // <-- AÑADIDO AuthService
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-trips',
@@ -31,12 +31,11 @@ export class TripsComponent implements OnInit {
 
   constructor(
     private tripService: TripService,
-    private authService: AuthService, // <-- INYECTADO
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    // TRUCO: Metemos un estado falso en el historial del navegador para "atrapar" la flecha de atrás
     history.pushState(null, '', window.location.href);
 
     if (typeof localStorage !== 'undefined') {
@@ -44,7 +43,6 @@ export class TripsComponent implements OnInit {
       if (userStr) {
         this.currentUser = JSON.parse(userStr);
         
-        // PROTECCIÓN: Si es admin, no puede estar aquí
         if (this.currentUser.role === 'admin') {
           this.router.navigate(['/admin']);
           return;
@@ -57,15 +55,11 @@ export class TripsComponent implements OnInit {
     }
   }
 
-  // =========================================================
-  // ESTO DETECTA CUANDO PULSAS LA FLECHA DE ATRÁS DEL NAVEGADOR
-  // =========================================================
   @HostListener('window:popstate', ['$event'])
   onPopState(event: any) {
     const confirmacion = confirm('¿Seguro que quieres abandonar la aplicación y cerrar sesión? ✈️');
 
     if (confirmacion) {
-      // Si dice que SÍ, cerramos sesión de verdad
       this.authService.logout().subscribe({
         next: () => {
           localStorage.removeItem('user');
@@ -77,7 +71,6 @@ export class TripsComponent implements OnInit {
         }
       });
     } else {
-      // Si dice que NO, volvemos a bloquear la flecha para que se quede en la página
       history.pushState(null, '', window.location.href);
     }
   }
@@ -106,18 +99,47 @@ export class TripsComponent implements OnInit {
 
   openCreateModal() {
     this.showCreateModal = true;
+    
+    // 1. Calcular la fecha de hoy
+    const today = new Date();
+    const startDateString = today.toISOString().split('T')[0];
+    
+    // 2. Calcular la fecha de hoy + 3 días
+    const futureDate = new Date(today);
+    futureDate.setDate(today.getDate() + 3);
+    const endDateString = futureDate.toISOString().split('T')[0];
+
+    // 3. Rellenar formulario por defecto
     this.newTrip = { 
         name: '', 
         destination: '', 
         origin: '', 
-        startDate: '', 
-        endDate: '',
-        imageUrl: '' 
+        startDate: startDateString, 
+        endDate: endDateString,
+        imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' 
     };
   }
 
   closeCreateModal() {
     this.showCreateModal = false;
+  }
+
+  // ==========================================
+  // LÓGICA INTELIGENTE DE FECHAS
+  // ==========================================
+  onStartDateChange() {
+    if (this.newTrip.startDate) {
+      const start = new Date(this.newTrip.startDate);
+      const end = new Date(this.newTrip.endDate);
+
+      // Si no hay fecha fin, o la fecha fin se ha quedado por detrás (o igual) a la de inicio
+      if (!this.newTrip.endDate || end <= start) {
+        // Le sumamos 1 día automático a la fecha de inicio
+        const nextDay = new Date(start);
+        nextDay.setDate(start.getDate() + 1);
+        this.newTrip.endDate = nextDay.toISOString().split('T')[0];
+      }
+    }
   }
 
   saveNewTrip() {
