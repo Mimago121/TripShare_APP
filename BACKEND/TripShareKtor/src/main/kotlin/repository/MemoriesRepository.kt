@@ -16,15 +16,15 @@ class MemoriesRepository {
 
     // Obtiene todos los recuerdos (fotos o notas) asociados a un viaje específico.
 
-    suspend fun getMemoriesByTrip(tripId: Long): List<MemoryModel> = dbQuery {
-        MemoryEntity.find { Memories.tripId eq tripId }.map { entity ->
+    suspend fun getMemoriesByTrip(userId: Long): List<MemoryModel> = dbQuery {
+        MemoryEntity.find { Memories.userId eq userId }.map { entity ->
             MemoryModel(
                 id = entity.id.value,
                 tripId = entity.tripId.value,
                 userId = entity.userId.value,
-                type = entity.type, // Puede ser 'photo' o 'note'
+                type = entity.type,
                 description = entity.description,
-                mediaUrl = entity.mediaUrl, // Aquí viaja la imagen en Base64 o URL
+                mediaUrl = entity.mediaUrl,
                 createdAt = entity.createdAt.toString()
             )
         }

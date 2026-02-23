@@ -19,10 +19,11 @@ export class ProfileComponent implements OnInit {
 
   user: any = {};
   isEditModalOpen: boolean = false;
-  activeTab: string = 'trips';
+  activeTab: string = 'trips'; // Pestañas: 'trips', 'photos', 'map'
   
   stats = { countries: 0, trips: 0, followers: 145 };
   myTrips: any[] = [];
+  myPhotos: any[] = []; // <--- Aquí guardaremos las fotos del usuario
 
   // Configuración del Mapa
   worldMapOptions: google.maps.MapOptions = {
@@ -40,7 +41,7 @@ export class ProfileComponent implements OnInit {
     private geocoder: MapGeocoder
   ) {}
 
-  ngOnInit(): void {
+ ngOnInit(): void {
     const userData = localStorage.getItem('user');
     if (userData) {
       this.user = JSON.parse(userData);
@@ -48,21 +49,34 @@ export class ProfileComponent implements OnInit {
       // 1. Cargar Viajes
       this.loadUserTrips(this.user.id);
 
-      // 2. Cargar Pines Manuales (ESTA ES LA LÍNEA QUE TE FALTA SEGURO)
-      this.loadVisitedPlaces(this.user.id); // <--- ¡IMPORTANTE!
+      // 2. Cargar Pines Manuales
+      this.loadVisitedPlaces(this.user.id);
+
+      // 3. Cargar Fotos del Usuario
+      this.loadUserPhotos(this.user.id);
     }
   }
 
-  // --- Función para cargar los pines guardados ---
+  // --- NUEVA LÓGICA DE FOTOS ---
+  loadUserPhotos(userId: number) {
+    this.tripService.getUserMemories(userId).subscribe({
+      next: (memories) => {
+        // Filtramos para mostrar SOLO las memorias que son tipo 'photo'
+        this.myPhotos = memories.filter((m: any) => m.type === 'photo');
+      },
+      error: (err) => console.error("Error cargando fotos del perfil:", err)
+    });
+  }
+
+  // --- MAPAS Y PINES ---
   loadVisitedPlaces(userId: number) {
     this.tripService.getVisitedPlaces(userId).subscribe({
       next: (places) => {
-        // Añadimos los pines guardados al mapa
         places.forEach(p => {
           this.tripMarkers.push({
             position: { lat: p.latitude, lng: p.longitude },
             title: p.name,
-            icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Icono azul para diferenciar
+            icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' 
           });
         });
       },
@@ -70,7 +84,6 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // Carga tus viajes normales (rojos)
   loadUserTrips(userId: number) {
     this.tripService.getTripsByUserId(userId).subscribe({
       next: (trips) => {
@@ -95,14 +108,13 @@ export class ProfileComponent implements OnInit {
           this.tripMarkers.push({
             position: { lat: loc.lat(), lng: loc.lng() },
             title: trip.name,
-            icon: null // Rojo por defecto
+            icon: null 
           });
         }
       });
     });
   }
 
-  // Función para añadir nuevos (y guardarlos)
   addPlace() {
     if (!this.newPlaceName.trim()) return;
 
@@ -112,18 +124,15 @@ export class ProfileComponent implements OnInit {
         const lat = loc.lat();
         const lng = loc.lng();
 
-        // Objeto a guardar
         const newPin = {
-            userId: this.user.id, // Asegúrate de que user.id no sea null
+            userId: this.user.id, 
             name: this.newPlaceName,
             latitude: lat,
             longitude: lng
         };
 
-        // Guardar en Backend
         this.tripService.addVisitedPlace(newPin).subscribe({
             next: () => {
-                // Pintar en el mapa tras guardar
                 this.tripMarkers.push({
                   position: { lat, lng },
                   title: this.newPlaceName,
@@ -138,7 +147,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // ... Resto de métodos (openEditModal, etc.)
+  // --- UI Y MODALES ---
   openEditModal() { this.isEditModalOpen = true; }
   closeEditModal() { this.isEditModalOpen = false; }
   saveProfile() {

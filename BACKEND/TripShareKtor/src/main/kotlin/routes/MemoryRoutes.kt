@@ -10,8 +10,9 @@ import io.ktor.server.routing.*
 import io.ktor.http.*
 
 fun Route.memoryRouting(memoriesRepo: MemoriesRepository) {
-    route("/trips/{id}/memories") {
 
+    // 1. RUTAS PARA LOS VIAJES (Las que ya tenías)
+    route("/trips/{id}/memories") {
         get {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             call.respond(memoriesRepo.getMemoriesByTrip(id))
@@ -24,6 +25,15 @@ fun Route.memoryRouting(memoriesRepo: MemoriesRepository) {
                 val res = memoriesRepo.addMemory(id, params.userId, params.type, params.description, params.mediaUrl)
                 if (res != null) call.respond(HttpStatusCode.Created, res) else call.respond(HttpStatusCode.BadRequest)
             }
+        }
+    }
+
+    // 2. NUEVA RUTA PARA EL PERFIL DE USUARIO
+    route("/users/{id}/memories") {
+        get {
+            val userId = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+            // Llamamos a la nueva función del repositorio
+            call.respond(memoriesRepo.getMemoriesByTrip(userId))
         }
     }
 }

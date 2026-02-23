@@ -76,7 +76,27 @@
       </div>
     </section>
 
- <section class="profile-body fade-in" *ngIf="activeTab === 'map'">
+    <section class="profile-body fade-in" *ngIf="activeTab === 'photos'">
+      <div class="profile-section" style="background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        
+        <div class="empty-state" *ngIf="myPhotos.length === 0" style="text-align: center; padding: 40px; color: #666;">
+          Aún no has subido ninguna foto a tus viajes.
+        </div>
+
+        <div class="memories-grid" *ngIf="myPhotos.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+          <div class="memory-card" *ngFor="let photo of myPhotos" style="border-radius: 12px; overflow: hidden; background: #f8f9fa; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <img [src]="photo.mediaUrl" alt="Recuerdo de viaje" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+            
+            <div class="memory-caption" *ngIf="photo.description" style="padding: 12px; font-size: 14px; color: #333; text-align: center;">
+              {{ photo.description }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="profile-body fade-in" *ngIf="activeTab === 'map'">
       <div class="world-map-container">
         <div class="map-header">
             <div>

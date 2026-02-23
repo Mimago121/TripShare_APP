@@ -81,8 +81,16 @@ export class TripService {
     return this.http.get<Expense[]>(`${this.baseUrl}/${tripId}/expenses`);
   }
 
-  getMemories(tripId: number): Observable<Memory[]> {
-    return this.http.get<Memory[]>(`${this.baseUrl}/${tripId}/memories`);
+ getMemories(tripId: number): Observable<any[]> {
+    // Añadimos ?t=... con la fecha actual para que el navegador sepa que es una petición nueva y no use la caché
+    const uniqueUrl = `${this.baseUrl}/${tripId}/memories?t=${new Date().getTime()}`;
+    return this.http.get<any[]>(uniqueUrl);
+  }
+
+  // Añade esto en tu TripService
+  getUserMemories(userId: number): Observable<any[]> {
+    // Si tu baseUrl es http://localhost:8080/trips, asegúrate de apuntar a la raíz
+    return this.http.get<any[]>(`http://localhost:8080/users/${userId}/memories`);
   }
 
   // ==========================================
