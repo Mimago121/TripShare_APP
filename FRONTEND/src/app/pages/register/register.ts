@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 export class RegisterComponent {
   registerForm: FormGroup;
   errorMessage: string = '';
+  successMessage: string = ''; // Variable para el mensaje verde
   isLoading = false;
 
   constructor(
@@ -31,19 +32,30 @@ export class RegisterComponent {
   onRegister() {
     if (this.registerForm.valid) {
       this.isLoading = true;
+      this.errorMessage = '';   
+      this.successMessage = ''; 
+
       const { userName, email, pass } = this.registerForm.value;
 
       this.auth.register(userName!, email!, pass!).subscribe({
         next: (res) => {
           this.isLoading = false;
-          alert('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.');
-          this.router.navigate(['/login']);
+          // 1. Mostramos mensaje de éxito en la UI (nada de alerts)
+          this.successMessage = '¡Cuenta creada con éxito! Redirigiendo...';
+          
+          // 2. Esperamos 1.5 segundos y redirigimos al login automáticamente
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 1500);
         },
         error: (err) => {
           this.isLoading = false;
-          this.errorMessage = 'Error al crear la cuenta. Puede que el email ya exista.';
+          // Mensaje de error en la UI
+          this.errorMessage = 'Error al crear la cuenta. El email ya podría estar en uso.';
         }
       });
+    } else {
+      this.registerForm.markAllAsTouched();
     }
   }
 }

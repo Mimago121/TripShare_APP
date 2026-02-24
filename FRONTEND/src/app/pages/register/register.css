@@ -195,16 +195,32 @@
   text-decoration: underline;
 }
 
-.server-error-box {
+/* ========================================= */
+/* MENSAJES DEL SERVIDOR (Éxito y Error)     */
+/* ========================================= */
+
+.server-message-box {
   margin-top: 20px;
   padding: 12px;
-  background-color: #fef2f2;
-  border: 1px solid #f87171;
   border-radius: 8px;
-  color: #b91c1c;
   font-size: 14px;
   text-align: center;
   font-weight: 500;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Estilo para Errores (Rojo) */
+.server-message-box.error {
+  background-color: #fef2f2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+}
+
+/* Estilo para Éxito (Verde) */
+.server-message-box.success {
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #15803d;
 }
 
 .fade-in {

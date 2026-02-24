@@ -53,8 +53,12 @@
 
     </form>
     
-    <div *ngIf="errorMessage" class="server-error-box fade-in">
+    <div *ngIf="errorMessage" class="server-message-box error fade-in">
       ⚠️ {{ errorMessage }}
+    </div>
+
+    <div *ngIf="successMessage" class="server-message-box success fade-in">
+      ✅ {{ successMessage }}
     </div>
 
   </div>

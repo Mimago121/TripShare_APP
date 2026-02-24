@@ -14,16 +14,12 @@ class TripRepository {
     // 1. GESTIÓN DE VIAJES
     // ==========================================
 
-
     // Obtiene todos los viajes creados en la plataforma.
-
     suspend fun getAllTrips(): List<TripResponse> = dbQuery {
         TripEntity.all().map { it.toResponse() }
     }
 
-
     // Obtiene los viajes donde un usuario específico participa (como creador o invitado).
-
     suspend fun getTripsByUserId(userId: Long): List<TripModel> = dbQuery {
         // 1. IDs de viajes donde el usuario es miembro y ha aceptado
         val acceptedTripIds = TripMembers
@@ -44,21 +40,17 @@ class TripRepository {
                 startDate = row[Trips.startDate].toString(),
                 endDate = row[Trips.endDate].toString(),
                 createdByUserId = row[Trips.createdBy].value,
-                imageUrl = row[Trips.imageUrl] // Mapeamos la imagen (puede ser null)
+                imageUrl = row[Trips.imageUrl]
             )
         }
     }
 
-
     // Busca un viaje específico por su ID.
-
     suspend fun getTripById(tripId: Long): TripModel? = dbQuery {
         TripEntity.findById(tripId)?.toModel()
     }
 
-
     // Crea un nuevo viaje y asigna automáticamente al creador como 'Administrador' (owner).
-
     suspend fun createTrip(request: CreateTripRequest): TripModel = dbQuery {
         // 1. Limpieza de datos (evitar URLs con espacios en blanco)
         val finalImageUrl = request.imageUrl?.ifBlank { null }
@@ -99,9 +91,7 @@ class TripRepository {
     // 2. GESTIÓN DE MIEMBROS E INVITACIONES
     // ==========================================
 
-
     // Obtiene la lista completa de personas que participan en un viaje específico.
-
     suspend fun getTripMembers(tripId: Long): List<TripMemberResponse> = dbQuery {
         (Users innerJoin TripMembers)
             .select { TripMembers.tripId eq tripId }
@@ -117,9 +107,7 @@ class TripRepository {
             }
     }
 
-
     // Invita a un usuario a un viaje utilizando su correo electrónico.
-
     suspend fun addMemberByEmail(tripId: Long, email: String): Boolean = dbQuery {
         val userRow = Users.select { Users.email eq email }.singleOrNull()
         if (userRow == null) return@dbQuery false // El usuario no existe
@@ -144,9 +132,7 @@ class TripRepository {
         }
     }
 
-
     // Obtiene los viajes a los que un usuario ha sido invitado pero aún no ha respondido.
-
     suspend fun getTripInvitations(userId: Long): List<TripResponse> = dbQuery {
         (Trips innerJoin TripMembers)
             .select { (TripMembers.userId eq userId) and (TripMembers.status eq "pending") and (TripMembers.role neq "owner")}
@@ -164,33 +150,48 @@ class TripRepository {
             }
     }
 
-
     // Procesa la respuesta de un usuario a una invitación de viaje.
-
     suspend fun respondToTripInvitation(tripId: Long, userId: Long, accept: Boolean): Boolean = dbQuery {
         if (accept) {
-            // Actualiza a aceptado
             TripMembers.update({ (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) }) {
                 it[status] = "accepted"
             } > 0
         } else {
-            // Elimina la invitación
             TripMembers.deleteWhere { (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId) } > 0
         }
     }
 
     suspend fun removeMemberFromTrip(tripId: Long, userId: Long): Boolean = dbQuery {
-        // Asumiendo que tu tabla intermedia se llama TripUsers
         TripMembers.deleteWhere {
             (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId)
         } > 0
     }
+
+    // ----------------------------------------------------
+    // CORRECCIÓN AQUÍ ABAJO (updateTrip)
+    // ----------------------------------------------------
+
+    // Actualizar viaje (ADMIN)
+    suspend fun updateTrip(tripId: Long, data: TripDto): Boolean = dbQuery {
+        Trips.update({ Trips.id eq tripId }) {
+            it[name] = data.name
+            it[destination] = data.destination // <--- FALTABA ESTO
+            it[origin] = data.origin           // <--- ESTABA INCOMPLETO
+
+            // Parseamos las fechas
+            it[startDate] = java.time.LocalDate.parse(data.startDate)
+            it[endDate] = java.time.LocalDate.parse(data.endDate)
+        } > 0
+    }
+
+    // Borrar viaje (ADMIN)
+    suspend fun deleteTrip(tripId: Long): Boolean = dbQuery {
+        Trips.deleteWhere { Trips.id eq tripId } > 0
+    }
+
     // ==========================================
     // 3. FUNCIONES MAPPER (TRADUCTORES)
     // ==========================================
-
-
-    // Traduce de Entidad de Base de Datos (`TripEntity`) a DTO Interno (`TripModel`).
 
     private fun TripEntity.toModel() = TripModel(
         id = id.value,
@@ -202,9 +203,6 @@ class TripRepository {
         createdByUserId = createdBy.id.value,
         imageUrl = imageUrl
     )
-
-
-    // Traduce de Entidad de Base de Datos (`TripEntity`) a DTO de Respuesta (`TripResponse`).
 
     private fun TripEntity.toResponse() = TripResponse(
         id = id.value,

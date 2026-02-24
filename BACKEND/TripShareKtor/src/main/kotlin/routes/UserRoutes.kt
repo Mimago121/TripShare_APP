@@ -30,5 +30,6 @@ fun Route.userRouting(userRepo: UserRepository) {
                 } else call.respond(HttpStatusCode.NotFound)
             }
         }
+
     }
 }

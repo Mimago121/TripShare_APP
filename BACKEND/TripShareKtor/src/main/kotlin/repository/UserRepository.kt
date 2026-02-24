@@ -5,6 +5,7 @@ import dto.* // Importamos los objetos de transferencia (DTOs)
 import entities.* // Importamos el DAO
 import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
@@ -98,5 +99,36 @@ class UserRepository {
                 )
             }
         }
+    }
+
+    // Actualizar datos del usuario (ADMIN)
+    suspend fun updateUserAdmin(userId: Long, data: UserModel): Boolean = dbQuery {
+        Users.update({ Users.id eq userId }) {
+            it[userName] = data.userName
+            it[email] = data.email
+            it[role] = data.role
+        } > 0
+    }
+
+    suspend fun deleteUser(userId: Long): Boolean = dbQuery {
+        // 1. Borrar sus solicitudes de amistad (enviadas o recibidas)
+        FriendRequests.deleteWhere {
+            (fromUser eq userId) or (toUser eq userId)
+        }
+
+        // 2. Borrar su participación en viajes (Tabla intermedia)
+        TripMembers.deleteWhere {
+            TripMembers.userId eq userId
+        }
+
+        // 3. (Opcional) Borrar mensajes de chat si tienes tabla de mensajes
+        // Messages.deleteWhere { fromId eq userId } ...
+
+        // 4. (Opcional) Si el usuario es Creador de viajes, ¿borramos los viajes?
+        // Si decides borrarlos:
+        // Trips.deleteWhere { createdBy eq userId }
+
+        // 5. FINALMENTE, borramos al usuario
+        Users.deleteWhere { Users.id eq userId } > 0
     }
 }

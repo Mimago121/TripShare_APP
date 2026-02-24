@@ -3,8 +3,12 @@
 <div class="admin-container">
   
   <div class="admin-header">
-    <h1> Panel de Control</h1>
-    <p>Bienvenido, Administrador. Aquí tienes el control total.</p>
+    <h1>Panel de Control</h1>
+    <p>Gestión total de usuarios y viajes.</p>
+    
+    <div class="admin-search">
+      <input type="text" [(ngModel)]="searchTerm" (input)="filterUsers()" placeholder="🔍 Buscar usuario por nombre o email...">
+    </div>
   </div>
 
   <div class="stats-grid" *ngIf="!isLoading">
@@ -16,6 +20,10 @@
       <h3>{{ stats.totalTrips }}</h3>
       <span>Viajes Totales</span>
     </div>
+    <div class="stat-card">
+      <h3>{{ stats.uniqueDestinations }}</h3>
+      <span>Destinos</span>
+    </div>
   </div>
 
   <div *ngIf="isLoading" class="loading-state">
@@ -24,14 +32,21 @@
 
   <div class="users-grid" *ngIf="!isLoading">
     
-    <div class="user-card" *ngFor="let user of usersData">
+    <div class="user-card" *ngFor="let user of filteredUsers">
       <div class="card-header" [class.is-admin]="user.role === 'admin'">
-        <div class="avatar-circle">
-          {{ user.userName.charAt(0).toUpperCase() }}
+        <div class="header-left">
+          <div class="avatar-circle">
+            {{ user.userName.charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-details">
+            <h4>{{ user.userName }} <span *ngIf="user.role === 'admin'" class="badge-admin">ADMIN</span></h4>
+            <small>{{ user.email }}</small>
+          </div>
         </div>
-        <div class="user-details">
-          <h4>{{ user.userName }} <span *ngIf="user.role === 'admin'" class="badge-admin">ADMIN</span></h4>
-          <small>{{ user.email }}</small>
+        
+        <div class="header-actions">
+          <button class="btn-icon-edit" (click)="openEditUser(user)" title="Editar Usuario">✏️</button>
+          <button class="btn-icon-delete" (click)="confirmDeleteUser(user)" title="Eliminar Usuario">🗑️</button>
         </div>
       </div>
 
@@ -42,17 +57,92 @@
           <div *ngIf="user.trips.length === 0" class="empty-trips">Sin viajes aún.</div>
           
           <div class="mini-trip" *ngFor="let trip of user.trips">
-          <img [src]="trip.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=200&auto=format&fit=crop'" 
-     class="trip-thumb"
-     (error)="$any($event.target).src = 'https://ui-avatars.com/api/?name=' + trip.destination + '&background=random'">
-            <div class="trip-text">
-              <strong>{{ trip.destination }}</strong>
-              <span>{{ trip.startDate | date:'dd/MM/yy' }}</span>
+            <div class="mini-trip-content">
+              <img [src]="trip.imageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=200&auto=format&fit=crop'" 
+                   class="trip-thumb"
+                   (error)="$any($event.target).src = 'https://ui-avatars.com/api/?name=' + trip.destination + '&background=random'">
+              <div class="trip-text">
+                <strong>{{ trip.destination }}</strong>
+                <span>{{ trip.startDate | date:'dd/MM/yy' }}</span>
+              </div>
+            </div>
+            
+            <div class="mini-trip-actions">
+              <button class="btn-mini-edit" (click)="openEditTrip(trip)" title="Editar Viaje">✏️</button>
+              <button class="btn-mini-delete" (click)="confirmDeleteTrip(trip)" title="Borrar Viaje">✕</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal-content">
+    <button class="close-btn" (click)="closeModal()">✕</button>
+
+    <ng-container *ngIf="modalType === 'edit-user'">
+      <h2>Editar Usuario</h2>
+      <div class="form-group">
+        <label>Nombre de Usuario</label>
+        <input type="text" [(ngModel)]="selectedUser.userName" class="admin-input">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="selectedUser.email" class="admin-input">
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select [(ngModel)]="selectedUser.role" class="admin-input">
+          <option value="user">Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <button class="btn-save-admin" (click)="saveUser()">Guardar Cambios</button>
+    </ng-container>
+
+    <ng-container *ngIf="modalType === 'edit-trip'">
+      <h2>Editar Viaje</h2>
+      <div class="form-group">
+        <label>Nombre del Viaje</label>
+        <input type="text" [(ngModel)]="selectedTrip.name" class="admin-input">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <input type="text" [(ngModel)]="selectedTrip.destination" class="admin-input">
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Inicio</label>
+          <input type="date" [(ngModel)]="selectedTrip.startDate" class="admin-input">
+        </div>
+        <div class="form-group half">
+          <label>Fin</label>
+          <input type="date" [(ngModel)]="selectedTrip.endDate" class="admin-input">
+        </div>
+      </div>
+      <button class="btn-save-admin" (click)="saveTrip()">Actualizar Viaje</button>
+    </ng-container>
+
+    <ng-container *ngIf="modalType === 'delete-confirm'">
+      <h2 style="color: #dc2626;">¿Estás seguro?</h2>
+      
+      <p *ngIf="deleteType === 'user'">
+        Vas a eliminar al usuario <strong>{{ itemToDelete.userName }}</strong> y TODOS sus datos (viajes, amigos, mensajes).
+        <br><br>⚠️ Esta acción es irreversible.
+      </p>
+      
+      <p *ngIf="deleteType === 'trip'">
+        Vas a eliminar el viaje a <strong>{{ itemToDelete.destination }}</strong> de la base de datos.
+      </p>
+      
+      <div class="modal-actions-admin">
+        <button class="btn-cancel-admin" (click)="closeModal()">Cancelar</button>
+        <button class="btn-delete-admin" (click)="executeDelete()">Sí, Eliminar</button>
+      </div>
+    </ng-container>
 
   </div>
 </div>

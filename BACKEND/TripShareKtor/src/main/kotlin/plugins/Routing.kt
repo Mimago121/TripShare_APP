@@ -31,7 +31,7 @@ fun Application.configureRouting() {
 
         // 3. Llamamos a nuestras funciones de extensión inyectando los repositorios
         authRouting(authRepo)
-        adminRouting(userRepo)
+        adminRouting(userRepo, tripRepo)
         userRouting(userRepo)
         tripRouting(tripRepo, activitiesRepo, expenseRepo, memoriesRepo) // Si Trip necesita varios
         friendRouting(friendRepo)

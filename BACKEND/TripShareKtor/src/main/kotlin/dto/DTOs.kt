@@ -121,6 +121,19 @@ data class CreateTripRequest(
     val imageUrl: String? = null
 )
 
+// ... (Tus otros DTOs de viajes) ...
+
+@Serializable
+data class TripDto(
+    val name: String,
+    val destination: String,
+    val origin: String?,
+    val startDate: String,
+    val endDate: String,
+    val imageUrl: String? = null
+)
+
+// ... (Resto del archivo) ...
 @Serializable
 data class InvitationResponseRequest(
     val tripId: Long,
