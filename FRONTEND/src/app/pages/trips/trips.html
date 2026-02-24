@@ -85,7 +85,7 @@
         </div>
         <div class="form-group half">
           <label>Fecha Fin</label>
-          <input type="date" [(ngModel)]="newTrip.endDate" [min]="newTrip.startDate" class="custom-input">
+          <input type="date" [(ngModel)]="newTrip.endDate" [min]="minEndDate" class="custom-input">
         </div>
       </div>
 
@@ -97,7 +97,7 @@
                class="custom-file-input">
                
         <div class="image-preview" *ngIf="newTrip.imageUrl">
-          <img [src]="newTrip.imageUrl" alt="Previsualización de portada">
+          <img [src]="newTrip.imageUrl" alt="Previsualización de portada" (error)="onImageError($event)">
         </div>
         
         <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 5px; display: block;">

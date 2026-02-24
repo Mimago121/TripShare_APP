@@ -22,6 +22,12 @@ export class TripsComponent implements OnInit {
   
   errorMessage: string = '';
   
+  // VARIABLE NUEVA PARA CONTROLAR EL MÍNIMO DEL FIN
+  minEndDate: string = '';
+
+  readonly DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+  readonly BACKUP_IMAGE = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
+  
   newTrip = {
     name: '',
     destination: '',
@@ -111,8 +117,6 @@ export class TripsComponent implements OnInit {
   goToDetail(tripId: number | undefined) {
     if (tripId) {
       this.router.navigate(['/trip-detail', tripId]);
-    } else {
-      console.error("No se puede navegar: El ID del viaje es undefined");
     }
   }
 
@@ -123,18 +127,23 @@ export class TripsComponent implements OnInit {
     const today = new Date();
     const startDateString = today.toISOString().split('T')[0];
     
+    // Calculamos el mínimo para la fecha fin (Hoy + 1 día)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    this.minEndDate = tomorrow.toISOString().split('T')[0];
+
+    // Por defecto ponemos el fin a 3 días vista
     const futureDate = new Date(today);
     futureDate.setDate(today.getDate() + 3);
     const endDateString = futureDate.toISOString().split('T')[0];
 
-    // Iniciamos la imagen vacía para que el usuario suba la suya
     this.newTrip = { 
         name: '', 
         destination: '', 
         origin: '', 
         startDate: startDateString, 
         endDate: endDateString,
-        imageUrl: '' 
+        imageUrl: this.DEFAULT_IMAGE 
     };
   }
 
@@ -143,29 +152,32 @@ export class TripsComponent implements OnInit {
     this.errorMessage = '';
   }
 
+  // --- LÓGICA DE FECHAS ACTUALIZADA ---
   onStartDateChange() {
     if (this.newTrip.startDate) {
       const start = new Date(this.newTrip.startDate);
-      const end = new Date(this.newTrip.endDate);
+      
+      // Calculamos Start + 1 día
+      const nextDay = new Date(start);
+      nextDay.setDate(start.getDate() + 1);
+      
+      // Actualizamos el mínimo permitido para el input HTML
+      this.minEndDate = nextDay.toISOString().split('T')[0];
 
-      if (!this.newTrip.endDate || end <= start) {
-        const nextDay = new Date(start);
-        nextDay.setDate(start.getDate() + 1);
-        this.newTrip.endDate = nextDay.toISOString().split('T')[0];
+      // Si la fecha fin actual es menor que el nuevo mínimo, la empujamos
+      if (this.newTrip.endDate < this.minEndDate) {
+        this.newTrip.endDate = this.minEndDate;
       }
     }
   }
 
-  // --- NUEVA LÓGICA: SELECCIÓN Y COMPRESIÓN DE IMAGEN DESDE EL PC ---
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
     if (file && file.type.match(/image\/*/)) {
-      // Comprimimos la imagen a 800px y 70% de calidad para no saturar la Base de Datos
       this.compressImage(file, 800, 0.7).then(compressedBase64 => {
         this.newTrip.imageUrl = compressedBase64;
       }).catch(err => {
         this.errorMessage = "Hubo un problema al procesar la imagen.";
-        console.error(err);
       });
     } else {
       this.errorMessage = "Por favor, selecciona un archivo de imagen válido.";
@@ -202,12 +214,20 @@ export class TripsComponent implements OnInit {
     });
   }
 
+  onImageError(event: any) {
+    event.target.src = this.BACKUP_IMAGE;
+  }
+
   saveNewTrip() {
     this.errorMessage = ''; 
 
     if (!this.newTrip.name || !this.newTrip.destination || !this.newTrip.startDate) {
       this.errorMessage = "Por favor rellena los campos obligatorios (*).";
       return;
+    }
+
+    if (!this.newTrip.imageUrl || this.newTrip.imageUrl.trim() === '') {
+        this.newTrip.imageUrl = this.DEFAULT_IMAGE;
     }
 
     const tripPayload = {
@@ -222,7 +242,7 @@ export class TripsComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        this.errorMessage = "Hubo un error en el servidor al crear el viaje. Inténtalo de nuevo.";
+        this.errorMessage = "Hubo un error en el servidor al crear el viaje.";
       }
     });
   }
