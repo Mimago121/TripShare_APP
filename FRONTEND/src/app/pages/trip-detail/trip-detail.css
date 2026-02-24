@@ -1,36 +1,55 @@
 /* =========================================
+   ESTILO NUEVO BOTÓN VOLVER (CÁPSULA)
+   ========================================= */
+.btn-back-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.2); /* Fondo translúcido */
+  color: white;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
+}
+
+.btn-back-pill:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.btn-back-pill span {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* =========================================
    CONTENEDOR PRINCIPAL A DOS COLUMNAS
    ========================================= */
 .trip-page-layout {
   display: flex;
   gap: 25px;
   max-width: 1200px;
-  /* Ensanchado para la barra lateral */
   margin: 0 auto;
   padding: 20px;
   min-height: 80vh;
   animation: fadeIn 0.4s ease-out;
   align-items: flex-start;
-  /* Para que la barra lateral no se estire */
 }
 
-/* Columna izquierda (principal) */
 .trip-main-column {
   flex: 1;
   min-width: 0;
-  /* Evita desbordamientos en flexbox */
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
@@ -38,13 +57,8 @@
 }
 
 /* Asegurar fondos según tema */
-:host-context(body.light-theme) {
-  background-color: #f3f4f6 !important;
-}
-
-:host-context(body.dark-theme) {
-  background-color: #111827 !important;
-}
+:host-context(body.light-theme) { background-color: #f3f4f6 !important; }
+:host-context(body.dark-theme) { background-color: #111827 !important; }
 
 /* =========================================
    HERO / CABECERA MODERNA
@@ -64,18 +78,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-}
-
-.back-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: opacity 0.2s;
-}
-
-.back-link:hover {
-  opacity: 0.7;
 }
 
 .trip-hero-modern h1 {
@@ -102,44 +104,6 @@
   font-size: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
   font-weight: 500;
-}
-
-/* =========================================
-   AVATARES ESTILO WHATSAPP (HERO)
-   ========================================= */
-.whatsapp-avatars {
-  display: flex;
-  align-items: center;
-  padding: 5px;
-  border-radius: 25px;
-  cursor: default;
-  /* Ya no es clicable porque están en la sidebar */
-}
-
-.avatar-circle {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-left: -12px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.avatar-circle:first-child {
-  margin-left: 0;
-}
-
-.avatar-plus {
-  background: #374151;
-  font-size: 0.8rem;
-  z-index: 10;
 }
 
 /* =========================================
@@ -201,7 +165,7 @@
 }
 
 /* =========================================
-   NUEVA NAVEGACIÓN (TABS)
+   NAVEGACIÓN (TABS)
    ========================================= */
 .modern-tabs-nav {
   display: flex;
@@ -256,7 +220,7 @@
 }
 
 /* =========================================
-   BARRA LATERAL DERECHA (SIDEBAR MIEMBROS)
+   BARRA LATERAL (SIDEBAR MIEMBROS)
    ========================================= */
 .trip-sidebar {
   width: 320px;
@@ -267,7 +231,6 @@
   border: 1px solid var(--border-color);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
   position: sticky;
-  /* Se queda fija al hacer scroll */
   top: 20px;
 }
 
@@ -330,6 +293,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1; /* Ocupa el espacio hasta el botón de borrar */
 }
 
 .sidebar-m-name {
@@ -353,6 +317,24 @@
   margin-top: 2px;
 }
 
+/* BOTÓN ELIMINAR MIEMBRO */
+.btn-remove-member {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.btn-remove-member:hover {
+  opacity: 1;
+  background-color: #fee2e2;
+  transform: scale(1.1);
+}
+
 .sidebar-divider {
   border: 0;
   height: 1px;
@@ -360,68 +342,161 @@
   margin: 20px 0;
 }
 
+/* =========================================
+   ESTILOS PARA INVITAR (Sidebar y Modal)
+   ========================================= */
+
 .sidebar-invite-section h4 {
   margin: 0 0 10px 0;
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
 
-.sidebar-select {
+.btn-invite-friends-modal {
   width: 100%;
+  padding: 12px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+  font-size: 0.95rem;
+}
+
+.btn-invite-friends-modal:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.or-divider {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 15px 0;
+  position: relative;
+}
+
+.or-divider::before, .or-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: var(--border-color);
+}
+.or-divider::before { left: 0; }
+.or-divider::after { right: 0; }
+
+.invite-email-box {
+  display: flex;
+  gap: 5px;
+}
+
+.sidebar-input {
+  flex: 1;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--bg-color);
   color: var(--text-main);
-  margin-bottom: 10px;
   font-size: 0.85rem;
-}
-
-.sidebar-select:focus {
-  border-color: var(--primary);
   outline: none;
 }
 
-.sidebar-invite-buttons {
-  display: flex;
-  gap: 8px;
+.sidebar-input:focus {
+  border-color: var(--primary);
 }
 
-.btn-invite-sidebar {
-  flex: 1;
-  padding: 10px;
+.btn-email-send {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  width: 40px;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.85rem;
   cursor: pointer;
+  font-size: 1.2rem;
   transition: all 0.2s;
-  border: none;
 }
 
-.btn-invite-sidebar.primary {
+.btn-email-send:hover:not(:disabled) {
   background: var(--primary);
   color: white;
+  border-color: var(--primary);
 }
 
-.btn-invite-sidebar.primary:disabled {
+.btn-email-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-invite-sidebar.secondary {
-  background: transparent;
+/* LISTA DE AMIGOS EN EL MODAL */
+.invite-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-right: 5px;
+}
+
+.invite-friends-list::-webkit-scrollbar { width: 5px; }
+.invite-friends-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+
+.friend-invite-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  transition: background 0.2s;
+}
+
+.friend-invite-row:hover {
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.mini-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.friend-name {
+  flex: 1;
+  font-weight: 600;
   color: var(--text-main);
 }
 
-.btn-invite-sidebar.secondary:hover {
-  border-color: var(--primary);
+.btn-invite-action {
+  background: transparent;
+  border: 1px solid var(--primary);
   color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
 }
 
+.btn-invite-action:hover {
+  background: var(--primary);
+  color: white;
+}
 
 /* =========================================
-   RESPONSIVE: ADAPTACIÓN A MÓVILES
+   RESPONSIVE
    ========================================= */
 @media (max-width: 900px) {
   .trip-page-layout {
@@ -440,9 +515,8 @@
 }
 
 /* =========================================
-   SECCIONES DE CONTENIDO COMUNES (Itinerario, Gastos, Recuerdos, Chat)
+   SECCIONES COMUNES
    ========================================= */
-/* ... ESTA PARTE SE MANTIENE EXACTAMENTE IGUAL QUE EN EL CSS ANTERIOR ... */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -490,62 +564,195 @@
   margin-bottom: 10px;
 }
 
-/* Itinerario */
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.activity-card {
-  display: flex;
-  gap: 20px;
-  padding: 15px;
+/* ITINERARIO */
+.agenda-wrapper {
   background: var(--card-bg);
   border-radius: 16px;
   border: 1px solid var(--border-color);
-  transition: transform 0.2s;
-}
-
-.activity-card:hover {
-  transform: translateX(5px);
-  border-color: var(--primary);
-}
-
-.time-block {
+  overflow: auto;
+  max-height: 700px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
   display: flex;
   flex-direction: column;
+}
+
+.agenda-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
+.agenda-wrapper::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 10px; }
+.agenda-wrapper::-webkit-scrollbar-track { background-color: var(--bg-color); }
+
+.agenda-header {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 10;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.time-col-header {
+  width: 60px;
+  min-width: 60px;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 70px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
   border-right: 1px solid var(--border-color);
-  padding-right: 15px;
-  color: var(--text-main);
 }
 
-.time-block strong {
-  font-size: 1.1rem;
-  color: var(--primary);
-}
-
-.act-details {
+.day-col-header {
+  flex: 1;
+  min-width: 250px;
+  text-align: center;
+  padding: 15px 10px;
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+}
+.day-col-header .day-name { font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
+.day-col-header .day-number { font-size: 1.5rem; color: var(--text-main); font-weight: 800; margin-top: 3px; }
+
+.agenda-body {
+  display: flex;
+  position: relative;
 }
 
-.act-details h4 {
-  margin: 0 0 5px 0;
-  color: var(--text-main);
-  font-size: 1.1rem;
+.time-col {
+  width: 60px;
+  min-width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-color);
 }
 
-.act-end {
-  font-size: 0.85rem;
+.time-slot {
+  height: 60px;
+  position: relative;
+}
+
+.time-label {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  font-size: 0.75rem;
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
-/* Gastos */
+.day-col {
+  flex: 1;
+  min-width: 250px;
+  border-right: 1px solid var(--border-color);
+  position: relative;
+}
+
+.grid-cell {
+  height: 60px;
+  border-bottom: 1px solid var(--border-color);
+  border-bottom-style: dashed;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.grid-cell .hover-plus {
+  opacity: 0;
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+.grid-cell:hover { background: rgba(99, 102, 241, 0.05); }
+.grid-cell:hover .hover-plus { opacity: 1; }
+
+.current-time-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.current-time-indicator .time-dot {
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background-color: #ea4335;
+  border-radius: 50%;
+}
+
+.current-time-indicator .time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background-color: #ea4335;
+}
+
+.agenda-activity {
+  position: absolute;
+  left: 5px;
+  right: 10px;
+  background: var(--primary);
+  border-left: 4px solid #4f46e5;
+  color: white;
+  border-radius: 6px;
+  padding: 5px 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+  z-index: 2;
+}
+
+.agenda-activity:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+  z-index: 6;
+}
+
+.act-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.act-time-small {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.9;
+  margin-bottom: 2px;
+}
+
+.agenda-activity strong {
+  font-size: 0.85rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.act-loc-small {
+  font-size: 0.7rem;
+  margin-top: auto;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================
+   GASTOS: ESTILO MEJORADO (ACTUALIZADO)
+   ========================================= */
 .expense-list {
   display: flex;
   flex-direction: column;
@@ -559,6 +766,13 @@
   background: var(--card-bg);
   border-radius: 16px;
   border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  transition: transform 0.2s;
+}
+
+.expense-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
 }
 
 .exp-header {
@@ -568,38 +782,55 @@
   width: 100%;
 }
 
-.exp-left {
+.exp-main-info {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex: 1; /* Ocupa el espacio disponible */
 }
 
 .exp-icon {
-  font-size: 1.5rem;
-  background: var(--bg-color);
-  padding: 10px;
-  border-radius: 12px;
+  font-size: 1.8rem;
+  background: rgba(99, 102, 241, 0.1); /* Color suave basado en primary */
+  padding: 12px;
+  border-radius: 14px;
 }
 
-.exp-info strong {
+.exp-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Espacio entre título y "Pagado por" */
+}
+
+.exp-title {
   color: var(--text-main);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
 }
 
-.paid-by {
-  color: var(--text-secondary);
+.paid-by-badge {
   font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: var(--bg-color);
+  padding: 2px 8px;
+  border-radius: 10px;
+  width: fit-content;
+  border: 1px solid var(--border-color);
 }
 
-.paid-by span {
+.paid-by-badge span {
   color: var(--primary);
   font-weight: 600;
 }
 
-.exp-amount {
-  font-weight: bold;
+.exp-amount-box {
+  font-weight: 800;
   color: var(--primary);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  background: var(--bg-color);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .exp-splits {
@@ -667,7 +898,7 @@
   font-weight: bold;
 }
 
-/* Recuerdos */
+/* RECUERDOS */
 .memories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -715,7 +946,7 @@
   font-weight: 500;
 }
 
-/* Chat */
+/* CHAT */
 .chat-section {
   height: 65vh;
   min-height: 500px;
@@ -856,7 +1087,7 @@
   transform: scale(1.05);
 }
 
-/* Modales */
+/* MODALES */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -927,6 +1158,12 @@
   box-sizing: border-box;
 }
 
+/* --- ESTILO DE ERROR (INPUT ROJO) --- */
+.input-error {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
@@ -965,251 +1202,6 @@
 }
 
 /* =========================================
-   ITINERARIO Y RUTAS (Añadir a tu CSS actual)
-   ========================================= */
-.activity-card {
-  display: flex; gap: 20px; padding: 15px; background: var(--card-bg); border-radius: 16px;
-  border: 1px solid var(--border-color); transition: transform 0.2s; position: relative;
-}
-.activity-card:hover { transform: translateX(5px); border-color: var(--primary); }
-
-.time-block { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; border-right: 1px solid var(--border-color); padding-right: 15px; color: var(--text-main); }
-.time-block strong { font-size: 1.1rem; color: var(--primary); }
-
-.act-details { display: flex; flex-direction: column; justify-content: center; flex: 1; }
-.act-details h4 { margin: 0 0 5px 0; color: var(--text-main); font-size: 1.15rem; font-weight: 700; }
-.act-end { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
-
-/* Nuevo campo de Ubicación en la tarjeta */
-.act-location {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--bg-color);
-  padding: 4px 8px;
-  border-radius: 6px;
-  width: max-content;
-  margin-top: 4px;
-}
-.act-location .icon { font-size: 0.8rem; }
-
-/* Pequeño indicador numérico (estilo Pin de Google Maps) */
-.route-node-indicator {
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  background: #ea4335; /* Rojo tipo Google Maps */
-  color: white;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  border: 2px solid white;
-}
-
-/* =========================================
-   ITINERARIO: DISEÑO AGENDA (GOOGLE CALENDAR STYLE)
-   ========================================= */
-.agenda-wrapper {
-  background: var(--card-bg);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-  overflow: auto; /* Scroll vertical y horizontal */
-  max-height: 700px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Personalización de la barra de scroll */
-.agenda-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
-.agenda-wrapper::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 10px; }
-.agenda-wrapper::-webkit-scrollbar-track { background-color: var(--bg-color); }
-
-/* --- CABECERA DE DÍAS FIJA ARRIBA --- */
-.agenda-header {
-  display: flex;
-  position: sticky;
-  top: 0;
-  background: var(--card-bg);
-  z-index: 10;
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-}
-
-.time-col-header {
-  width: 60px;
-  min-width: 60px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  border-right: 1px solid var(--border-color);
-}
-
-.day-col-header {
-  flex: 1;
-  min-width: 250px;
-  text-align: center;
-  padding: 15px 10px;
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-}
-.day-col-header .day-name { font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
-.day-col-header .day-number { font-size: 1.5rem; color: var(--text-main); font-weight: 800; margin-top: 3px; }
-
-/* --- CUERPO DE LA AGENDA --- */
-.agenda-body {
-  display: flex;
-  position: relative;
-}
-
-/* Columna izquierda de Horas */
-.time-col {
-  width: 60px;
-  min-width: 60px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--border-color);
-  background: var(--bg-color);
-}
-
-.time-slot {
-  height: 60px; /* 1 PIXEL = 1 MINUTO. ¡MATEMÁTICA PURA! */
-  position: relative;
-}
-
-.time-label {
-  position: absolute;
-  top: -8px; /* Para que el texto quede cortado por la línea como en Calendar */
-  right: 10px;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* Columnas de los días y la cuadrícula */
-.day-col {
-  flex: 1;
-  min-width: 250px;
-  border-right: 1px solid var(--border-color);
-  position: relative;
-}
-
-.grid-cell {
-  height: 60px; /* Exactamente igual que el time-slot */
-  border-bottom: 1px solid var(--border-color); /* Línea de hora */
-  border-bottom-style: dashed;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.grid-cell .hover-plus {
-  opacity: 0;
-  color: var(--primary);
-  font-size: 1.5rem;
-  font-weight: bold;
-  transition: opacity 0.2s;
-}
-.grid-cell:hover { background: rgba(99, 102, 241, 0.05); }
-.grid-cell:hover .hover-plus { opacity: 1; }
-
-/* --- LÍNEA DE HORA ACTUAL (LA LÍNEA ROJA) --- */
-.current-time-indicator {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  z-index: 5;
-  pointer-events: none; /* Para que no moleste al hacer clic detrás */
-}
-
-.current-time-indicator .time-dot {
-  position: absolute;
-  left: -5px;
-  top: -4px;
-  width: 10px;
-  height: 10px;
-  background-color: #ea4335; /* Rojo Google */
-  border-radius: 50%;
-}
-
-.current-time-indicator .time-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background-color: #ea4335;
-}
-
-/* --- BLOQUES DE ACTIVIDAD ABSOLUTOS --- */
-.agenda-activity {
-  position: absolute;
-  left: 5px;
-  right: 10px; /* Deja un poco de margen a la derecha */
-  background: var(--primary);
-  border-left: 4px solid #4f46e5; /* Borde oscuro para dar relieve */
-  color: white;
-  border-radius: 6px;
-  padding: 5px 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: filter 0.2s, transform 0.2s;
-  z-index: 2;
-}
-
-.agenda-activity:hover {
-  filter: brightness(1.1);
-  transform: scale(1.02);
-  z-index: 6; /* Se pone por encima si se solapa */
-}
-
-.act-inner {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.act-time-small {
-  font-size: 0.65rem;
-  font-weight: 700;
-  opacity: 0.9;
-  margin-bottom: 2px;
-}
-
-.agenda-activity strong {
-  font-size: 0.85rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.act-loc-small {
-  font-size: 0.7rem;
-  margin-top: auto; /* Lo empuja abajo si hay espacio */
-  opacity: 0.8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* =========================================
    MENSAJES DE ERROR DEL FORMULARIO (TOAST)
    ========================================= */
 .custom-error-banner {
@@ -1245,4 +1237,24 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  
+}
+/* =========================================
+   ESTILOS PARA BOTÓN DE PELIGRO (BORRAR)
+   ========================================= */
+.btn-danger {
+  background-color: #ef4444; /* Rojo */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.95rem;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626; /* Rojo más oscuro */
 }

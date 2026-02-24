@@ -21,12 +21,15 @@ export class TripDetailComponent implements OnInit {
   memories: any[] = [];
   members: any[] = []; 
   myFriends: Member[] = []; 
+  availableFriends: Member[] = []; 
   
+  // Variable nueva para controlar a quién borramos
+  memberToDelete: Member | null = null;
+
   tripDays: { date: string, dateObj: Date, activities: any[] }[] = [];
   hours: string[] = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
   todayString: string = new Date().toISOString().split('T')[0];
   currentTimePx: string = '0px';
-
   chatMessages: any[] = [];
   newMessageText: string = '';
 
@@ -37,11 +40,10 @@ export class TripDetailComponent implements OnInit {
   totalExpenses: number = 0;
 
   showModal: boolean = false;
-  modalType: string = '';
-  selectedFriendEmail: string = '';
+  modalType: string = ''; // 'activity', 'expense', 'memory', 'invite-friends', 'delete-member'
+  errorMessage: string = ''; 
   
-  // NUEVO: Variable para controlar los mensajes de error del formulario
-  errorMessage: string = '';
+  emailInviteInput: string = '';
 
   newActivity = { title: '', startTime: '10:00', endTime: '', location: '', selectedDate: '' };
   minTripDate: string = '';
@@ -57,7 +59,6 @@ export class TripDetailComponent implements OnInit {
   markerPosition: google.maps.LatLngLiteral | undefined;
   mapCenter: google.maps.LatLngLiteral = { lat: 40.416, lng: -3.703 };
   showMap: boolean = false;
-  
   directionsResult: google.maps.DirectionsResult | undefined;
   activityMarkers: google.maps.LatLngLiteral[] = [];
 
@@ -87,22 +88,19 @@ export class TripDetailComponent implements OnInit {
     this.currentTimePx = `${(now.getHours() * 60) + now.getMinutes()}px`;
   }
 
-  @ViewChild('locationInput') set locationInput(el: ElementRef) {
-    if (el && typeof google !== 'undefined' && google.maps.places) {
-      const autocomplete = new google.maps.places.Autocomplete(el.nativeElement, {
-        fields: ['formatted_address', 'name']
-      });
-      autocomplete.addListener('place_changed', () => {
-        this.ngZone.run(() => {
-          const place = autocomplete.getPlace();
-          this.newActivity.location = place.formatted_address || place.name || '';
-        });
-      });
-    }
+  get isOwner(): boolean {
+    if (!this.trip || !this.currentUserId) return false;
+    return this.trip.createdByUserId === this.currentUserId;
   }
 
-  get displayedMembers() { return this.members.slice(0, 3); }
-  get remainingMembersCount() { return this.members.length > 3 ? this.members.length - 3 : 0; }
+  get displayedMembers() { 
+    return this.members.filter(m => m.status !== 'pending').slice(0, 3); 
+  }
+  
+  get remainingMembersCount() { 
+    const activeCount = this.members.filter(m => m.status !== 'pending').length;
+    return activeCount > 3 ? activeCount - 3 : 0; 
+  }
 
   loadTripData() {
     this.isLoading = true;
@@ -123,7 +121,15 @@ export class TripDetailComponent implements OnInit {
         });
         
         this.tripService.getExpenses(this.tripId).subscribe(e => {
-          this.expenses = e;
+          this.expenses = e.map((expense: any) => {
+            if (expense.splits) {
+              expense.splits = expense.splits.filter((split: any) => {
+                const member = this.members.find(m => m.id === split.userId);
+                return member && member.status !== 'pending';
+              });
+            }
+            return expense;
+          });
           this.calculateTotal();
         });
         
@@ -137,29 +143,73 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
+  private sortMembersList(membersList: any[]): any[] {
+    return membersList.sort((a, b) => {
+        if (a.role === 'owner') return -1;
+        if (b.role === 'owner') return 1;
+        
+        const isAPending = a.status === 'pending';
+        const isBPending = b.status === 'pending';
+
+        if (!isAPending && isBPending) return -1;
+        if (isAPending && !isBPending) return 1;
+
+        return a.userName.localeCompare(b.userName);
+    });
+  }
+
+  // --- NUEVA LÓGICA DE BORRADO ---
+  
+  // 1. Abre el modal (NO borra todavía)
+  openDeleteModal(member: Member) {
+    if (!this.isOwner) return;
+    this.memberToDelete = member;
+    this.errorMessage = '';
+    this.modalType = 'delete-member'; // Tipo especial para este modal
+    this.showModal = true;
+  }
+
+  // 2. Confirma y llama al backend
+  confirmDeleteMember() {
+    if (!this.memberToDelete) return;
+
+    this.tripService.removeMember(this.tripId, this.memberToDelete.id).subscribe({
+      next: () => {
+        // Borrado exitoso
+        this.members = this.members.filter(m => m.id !== this.memberToDelete!.id);
+        this.loadFriends(); 
+        this.closeModal();
+      },
+      error: (err) => {
+        console.error("Error eliminando miembro", err);
+        this.errorMessage = "Hubo un error al eliminar al usuario. Inténtalo de nuevo.";
+      }
+    });
+  }
+
   generateTripDays() {
     if (!this.trip) return;
     const start = new Date(this.trip.startDate);
     const end = new Date(this.trip.endDate);
     this.tripDays = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      this.tripDays.push({
-        date: d.toISOString().split('T')[0],
-        dateObj: new Date(d),
-        activities: []
-      });
+        this.tripDays.push({
+            date: d.toISOString().split('T')[0],
+            dateObj: new Date(d),
+            activities: []
+        });
     }
   }
 
   groupActivitiesByDay() {
     this.tripDays.forEach(day => day.activities = []);
     this.activities.forEach(act => {
-      const actDate = act.startDatetime.split('T')[0];
-      const dayColumn = this.tripDays.find(d => d.date === actDate);
-      if (dayColumn) dayColumn.activities.push(act);
+        const actDate = act.startDatetime.split('T')[0];
+        const dayColumn = this.tripDays.find(d => d.date === actDate);
+        if (dayColumn) dayColumn.activities.push(act);
     });
     this.tripDays.forEach(day => {
-      day.activities.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
+        day.activities.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
     });
   }
 
@@ -167,22 +217,10 @@ export class TripDetailComponent implements OnInit {
     const start = new Date(act.startDatetime);
     let end = act.endDatetime ? new Date(act.endDatetime) : new Date(start.getTime() + 60 * 60000); 
     if (end <= start) end = new Date(start.getTime() + 60 * 60000); 
-
     const topPx = (start.getHours() * 60) + start.getMinutes();
     const durationMins = (end.getTime() - start.getTime()) / 60000;
     const heightPx = Math.max(durationMins, 30); 
-
     return { top: `${topPx}px`, height: `${heightPx}px` };
-  }
-
-  private sortMembersList(membersList: any[]): any[] {
-    return membersList.sort((a, b) => {
-      if (a.role === 'owner' && b.role !== 'owner') return -1;
-      if (a.role !== 'owner' && b.role === 'owner') return 1;
-      if (a.status === 'pending' && b.status !== 'pending') return 1;
-      if (a.status !== 'pending' && b.status === 'pending') return -1;
-      return a.userName.localeCompare(b.userName);
-    });
   }
 
   updateMapRoute() {
@@ -190,10 +228,8 @@ export class TripDetailComponent implements OnInit {
       .filter(act => act.location && act.location.trim() !== '')
       .sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime())
       .map(act => act.location);
-
     this.activityMarkers = [];
     if (locations.length === 0) return;
-
     locations.forEach(loc => {
       this.geocoder.geocode({ address: loc }).subscribe(({ results }) => {
         if (results && results.length) {
@@ -204,28 +240,6 @@ export class TripDetailComponent implements OnInit {
         }
       });
     });
-
-    if (locations.length === 1) {
-      this.directionsResult = undefined;
-      return;
-    }
-
-    const origin = locations[0];
-    const destination = locations[locations.length - 1];
-    const waypoints = locations.slice(1, -1).map(loc => ({ location: loc, stopover: true }));
-
-    const directionsService = new google.maps.DirectionsService();
-    directionsService.route({
-      origin: origin, destination: destination, waypoints: waypoints,
-      optimizeWaypoints: false, travelMode: google.maps.TravelMode.WALKING 
-    }, (result, status) => {
-      if (status === google.maps.DirectionsStatus.OK && result) {
-        this.directionsResult = result;
-      } else {
-        this.directionsResult = undefined;
-      }
-      this.cdr.detectChanges();
-    });
   }
 
   formatDateForInput(dateStr: string, isEnd: boolean = false): string {
@@ -233,6 +247,17 @@ export class TripDetailComponent implements OnInit {
     const date = new Date(dateStr);
     const isoString = date.toISOString().split('T')[0];
     return isEnd ? `${isoString}T23:59` : `${isoString}T00:00`;
+  }
+
+  cargarUbicacion(destino: string) {
+    this.geocoder.geocode({ address: destino }).subscribe(({ results }) => {
+      if (results && results.length) {
+        const location = results[0].geometry.location;
+        this.mapCenter = { lat: location.lat(), lng: location.lng() };
+        this.markerPosition = this.mapCenter;
+        this.showMap = true;
+      }
+    });
   }
 
   loadMemories() {
@@ -250,17 +275,6 @@ export class TripDetailComponent implements OnInit {
       .subscribe(() => { this.newMessageText = ''; this.loadChat(); });
   }
 
-  cargarUbicacion(destino: string) {
-    this.geocoder.geocode({ address: destino }).subscribe(({ results }) => {
-      if (results && results.length) {
-        const location = results[0].geometry.location;
-        this.mapCenter = { lat: location.lat(), lng: location.lng() };
-        this.markerPosition = this.mapCenter;
-        this.showMap = true;
-      }
-    });
-  }
-
   loadFriends() {
     if (this.currentUserId) this.tripService.getMyFriends(this.currentUserId).subscribe(f => this.myFriends = f);
   }
@@ -274,7 +288,7 @@ export class TripDetailComponent implements OnInit {
 
   openModal(type: string, dateStr?: string, hourStr?: string) {
     this.modalType = type;
-    this.errorMessage = ''; // Limpiamos errores previos al abrir
+    this.errorMessage = ''; 
     this.showModal = true;
     
     if (type === 'activity') {
@@ -283,11 +297,33 @@ export class TripDetailComponent implements OnInit {
     }
     if (type === 'expense') this.newExpense = { description: '', amount: 1 };
     if (type === 'memory') this.newMemory = { type: 'photo', description: '', url: '' };
+    
+    if (type === 'invite-friends') {
+      const currentMemberEmails = this.members.map(m => m.email);
+      this.availableFriends = this.myFriends.filter(f => !currentMemberEmails.includes(f.email));
+    }
   }
 
   closeModal() { 
     this.showModal = false; 
-    this.errorMessage = ''; // Limpiamos errores al cerrar
+    this.errorMessage = ''; 
+    this.memberToDelete = null; // Limpiamos selección al cerrar
+  }
+
+  saveActivity() {
+    this.errorMessage = '';
+    if (!this.newActivity.title.trim() && !this.newActivity.location.trim()) { this.errorMessage = "Debes indicar al menos un título o una ubicación."; return; }
+    const startDT = `${this.newActivity.selectedDate}T${this.newActivity.startTime}:00`;
+    const endDT = this.newActivity.endTime ? `${this.newActivity.selectedDate}T${this.newActivity.endTime}:00` : startDT;
+    const data = { tripId: this.tripId, createdByUserId: this.currentUserId, title: this.newActivity.title, startDatetime: startDT, endDatetime: endDT, location: this.newActivity.location };
+    this.tripService.addActivity(this.tripId, data as any).subscribe({ next: () => { this.loadTripData(); this.closeModal(); }, error: () => this.errorMessage = "Error al guardar." });
+  }
+
+  saveExpense() {
+    this.errorMessage = '';
+    if (!this.newExpense.description || !this.newExpense.amount) { this.errorMessage = "Datos incompletos."; return; }
+    const data = { ...this.newExpense, paidByUserId: this.currentUserId };
+    this.tripService.addExpense(this.tripId, data as any).subscribe({ next: () => { this.loadTripData(); this.closeModal(); }, error: () => this.errorMessage = "Error al guardar." });
   }
 
   onFileSelected(event: any) {
@@ -318,122 +354,40 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  saveActivity() {
-    this.errorMessage = ''; // Reseteamos error
-
-    if (!this.newActivity.title.trim() && !this.newActivity.location.trim()) {
-      this.errorMessage = "Debes indicar al menos un título o una ubicación para el plan.";
-      return;
-    }
-
-    const startDT = `${this.newActivity.selectedDate}T${this.newActivity.startTime}:00`;
-    const endDT = this.newActivity.endTime ? `${this.newActivity.selectedDate}T${this.newActivity.endTime}:00` : startDT;
-
-    const data = { 
-      tripId: this.tripId, createdByUserId: this.currentUserId, title: this.newActivity.title,
-      startDatetime: startDT, endDatetime: endDT, location: this.newActivity.location
-    };
-    
-    this.tripService.addActivity(this.tripId, data as any).subscribe(() => {
-      this.loadTripData(); 
-      this.closeModal();
-    });
+  saveMemory() {
+    if (this.newMemory.type === 'photo' && !this.newMemory.url) { this.errorMessage = "Falta la foto."; return; }
+    const payload = { tripId: this.tripId, userId: this.currentUserId, type: this.newMemory.type, description: this.newMemory.description || '', mediaUrl: this.newMemory.url };
+    this.tripService.addMemory(this.tripId, payload as any).subscribe({ next: () => { this.loadMemories(); this.closeModal(); }, error: () => this.errorMessage = "Error al subir." });
   }
 
-  saveExpense() {
-    this.errorMessage = ''; // Reseteamos error
-
-    if (!this.newExpense.description || this.newExpense.description.trim() === '') {
-      this.errorMessage = "El concepto del gasto no puede estar vacío.";
-      return;
-    }
-    if (this.newExpense.amount < 1) {
-      this.errorMessage = "La cantidad mínima para un gasto es de 1 €.";
-      return;
-    }
-
-    const data = { ...this.newExpense, paidByUserId: this.currentUserId };
-    this.tripService.addExpense(this.tripId, data as any).subscribe(() => { 
-      this.loadTripData(); 
-      this.closeModal(); 
-    });
-  }
-
-saveMemory() {
-    this.errorMessage = ''; 
-    
-    // 1. Validamos que haya una foto seleccionada
-    if (this.newMemory.type === 'photo' && !this.newMemory.url) {
-      this.errorMessage = "Debes seleccionar una foto para subir.";
-      return;
-    }
-
-    // 2. Preparamos los datos con el código Base64 gigante de la imagen
-    const payload = { 
-      tripId: this.tripId, 
-      userId: this.currentUserId, 
-      type: this.newMemory.type,
-      description: this.newMemory.description || '', 
-      mediaUrl: this.newMemory.url // <-- Aquí va la foto comprimida
-    };
-
-    // 3. Lo enviamos al servidor real
-    this.tripService.addMemory(this.tripId, payload as any).subscribe({
+  inviteFriend(friend: Member) {
+    this.tripService.inviteMember(this.tripId, friend.email).subscribe({
       next: () => { 
-        // Si todo va bien, recargamos la lista desde la Base de Datos y cerramos
-        this.loadMemories(); 
-        this.closeModal(); 
-      },
-      error: (err) => {
-        console.error("Error del backend:", err);
-        // Si el backend explota, mostramos el banner de error
-        this.errorMessage = "El servidor rechazó la imagen. Asegúrate de que el backend acepta textos largos (LONGTEXT).";
-      }
-    });
-  }
-
-  inviteSelectedFriend() {
-    this.errorMessage = '';
-    if (!this.selectedFriendEmail) return;
-    
-    this.tripService.inviteMember(this.tripId, this.selectedFriendEmail).subscribe({
-      next: () => { 
-        this.selectedFriendEmail = ''; 
-        // Recargamos y ordenamos la lista de miembros
+        this.availableFriends = this.availableFriends.filter(f => f.id !== friend.id);
         this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
       },
-      error: (err) => {
-        console.error(err);
-        alert("Error al invitar al usuario.");
-      }
+      error: (err) => { console.error(err); this.errorMessage = `Error al invitar a ${friend.userName}.`; }
     });
   }
 
   inviteByEmail() {
-    const email = prompt("Email del invitado:");
-    if (email) {
-      this.tripService.inviteMember(this.tripId, email).subscribe({
-        next: () => { 
-          this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
-        },
-        error: (err) => {
-          console.error(err);
-          alert("Error al invitar por email.");
-        }
-      });
-    }
+    this.errorMessage = '';
+    if (!this.emailInviteInput || !this.emailInviteInput.includes('@')) { this.errorMessage = "Email inválido."; return; }
+    this.tripService.inviteMember(this.tripId, this.emailInviteInput).subscribe({
+      next: () => { 
+        this.emailInviteInput = '';
+        this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
+      },
+      error: (err) => { console.error(err); this.errorMessage = "Error al invitar por email."; }
+    });
   }
 
   togglePaid(expenseId: number, split: any) {
-    const newState = !split.isPaid;
-    split.isPaid = newState; 
-
-    this.tripService.markAsPaid(expenseId, split.userId, newState).subscribe({
-      next: () => {  },
-      error: (err) => { 
-        split.isPaid = !newState; 
-        console.error("Error al cambiar estado de pago:", err);
-      }
+    const oldState = split.isPaid;
+    split.isPaid = !split.isPaid; 
+    this.tripService.markAsPaid(expenseId, split.userId, split.isPaid).subscribe({
+      next: () => { },
+      error: (err) => { split.isPaid = oldState; console.error("Error al cambiar estado:", err); }
     });
   }
 }

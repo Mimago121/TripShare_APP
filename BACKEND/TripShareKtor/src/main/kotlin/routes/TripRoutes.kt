@@ -137,5 +137,24 @@ fun Route.tripRouting(
             val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             call.respond(tripRepo.getTripMembers(id))
         }
+
+        // ELIMINAR MIEMBRO DEL VIAJE
+        delete("/{id}/members/{userId}") {
+            val tripId = call.parameters["id"]?.toLongOrNull()
+            val userId = call.parameters["userId"]?.toLongOrNull()
+
+            if (tripId == null || userId == null) {
+                call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
+                return@delete
+            }
+
+
+            try {
+                tripRepo.removeMemberFromTrip(tripId, userId)
+                call.respond(HttpStatusCode.OK, mapOf("message" to "Miembro eliminado correctamente"))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Error al eliminar miembro: ${e.message}")
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ export interface Trip {
   startDate: string;
   endDate: string;
   createdByUserId: number;
-  imageUrl?: string; // <--- NUEVO: Campo para la URL de la foto
+  imageUrl?: string; 
 }
 
 export interface Activity { id: number; title: string; startDatetime: string; endDatetime: string; }
@@ -44,14 +44,13 @@ export interface CreateMemoryRequest {
   mediaUrl: string;
 }
 
-// Si la tienes dentro del componente o en un archivo de modelos
 export interface Member {
   id: number;
   userName: string;
   email: string;
-  avatarUrl?: string; // El ? es por si es nulo
-  role: string;       // <--- AÑADE ESTO
-  status: string;     // <--- AÑADE ESTO
+  avatarUrl?: string; 
+  role: string;       
+  status: string;     
 }
 
 @Injectable({ providedIn: 'root' })
@@ -81,20 +80,17 @@ export class TripService {
     return this.http.get<Expense[]>(`${this.baseUrl}/${tripId}/expenses`);
   }
 
- getMemories(tripId: number): Observable<any[]> {
-    // Añadimos ?t=... con la fecha actual para que el navegador sepa que es una petición nueva y no use la caché
+  getMemories(tripId: number): Observable<any[]> {
     const uniqueUrl = `${this.baseUrl}/${tripId}/memories?t=${new Date().getTime()}`;
     return this.http.get<any[]>(uniqueUrl);
   }
 
-  // Añade esto en tu TripService
   getUserMemories(userId: number): Observable<any[]> {
-    // Si tu baseUrl es http://localhost:8080/trips, asegúrate de apuntar a la raíz
     return this.http.get<any[]>(`http://localhost:8080/users/${userId}/memories`);
   }
 
   // ==========================================
-  // ADDERS (ESCRITURA) - ¡NUEVOS!
+  // ADDERS (ESCRITURA)
   // ==========================================
 
   addActivity(tripId: number, data: CreateActivityRequest): Observable<Activity> {
@@ -109,7 +105,10 @@ export class TripService {
     return this.http.post<Memory>(`${this.baseUrl}/${tripId}/memories`, data);
   }
 
- 
+  // ==========================================
+  // MIEMBROS Y GESTIÓN
+  // ==========================================
+
   getMyFriends(userId: number): Observable<Member[]> {
     return this.http.get<Member[]>(`${this.friendsUrl}/accepted/${userId}`);
   }
@@ -122,29 +121,32 @@ export class TripService {
     return this.http.post(`${this.baseUrl}/${tripId}/invite`, { email });
   }
 
+  // --- NUEVA FUNCIÓN: ELIMINAR MIEMBRO ---
+  removeMember(tripId: number, userId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${tripId}/members/${userId}`);
+  }
+
   createTrip(tripData: any): Observable<Trip> {
-    // tripData debe coincidir con el DTO del backend:
-    // { name, destination, origin, startDate, endDate, createdByUserId }
     return this.http.post<Trip>(this.baseUrl, tripData);
   }
 
-  // Obtener invitaciones pendientes
+  // ==========================================
+  // INVITACIONES Y RESPUESTAS
+  // ==========================================
+
   getInvitations(userId: number): Observable<Trip[]> {
     return this.http.get<Trip[]>(`${this.baseUrl}/invitations/${userId}`);
   }
 
-  // Responder (Aceptar = true, Rechazar = false)
   respondToInvitation(tripId: number, userId: number, accept: boolean): Observable<any> {
-  // Construimos el objeto explícitamente
-  const body = {
-    tripId: tripId,
-    userId: userId,
-    accept: accept
-  };
-  return this.http.put(`${this.baseUrl}/invitations/respond`, body);
-}
+    const body = {
+      tripId: tripId,
+      userId: userId,
+      accept: accept
+    };
+    return this.http.put(`${this.baseUrl}/invitations/respond`, body);
+  }
 
-// Obtener todos los viajes de un usuario específico
   getTripsByUserId(userId: number): Observable<Trip[]> {
     return this.http.get<Trip[]>(`${this.baseUrl}/user/${userId}`);
   }
@@ -153,27 +155,28 @@ export class TripService {
     return this.http.post('http://localhost:8080/places', place);
   }
 
-  // Y esta para leerlos
   getVisitedPlaces(userId: number): Observable<any[]> {
     return this.http.get<any[]>(`http://localhost:8080/places/user/${userId}`);
   }
 
-  // --- CHAT GRUPAL ---
+  // ==========================================
+  // CHAT GRUPAL
+  // ==========================================
 
-// ✅ BIEN (Quita el /trips que sobra):
-sendTripMessage(tripId: number, userId: number, content: string): Observable<any> {
-  const body = { userId, content };
-  // Fíjate que aquí YA NO pongo /trips, porque this.apiUrl ya lo lleva
-  return this.http.post(`${this.baseUrl}/${tripId}/messages`, body);
-}
+  sendTripMessage(tripId: number, userId: number, content: string): Observable<any> {
+    const body = { userId, content };
+    return this.http.post(`${this.baseUrl}/${tripId}/messages`, body);
+  }
 
-// Revisa también el GET para que no te pase lo mismo:
-getTripMessages(tripId: number): Observable<any[]> {
-  return this.http.get<any[]>(`${this.baseUrl}/${tripId}/messages`);
-}
+  getTripMessages(tripId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/${tripId}/messages`);
+  }
 
-markAsPaid(expenseId: number, userId: number, isPaid: boolean): Observable<any> {
-    // Añadimos isPaid al objeto (body) que enviamos al backend de Ktor
+  // ==========================================
+  // PAGOS
+  // ==========================================
+
+  markAsPaid(expenseId: number, userId: number, isPaid: boolean): Observable<any> {
     return this.http.put(`${this.baseUrl}/expenses/pay`, { expenseId, userId, isPaid });
   }
 }

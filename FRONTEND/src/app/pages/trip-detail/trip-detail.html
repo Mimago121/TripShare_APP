@@ -6,15 +6,7 @@
     
     <div class="trip-hero-modern">
       <div class="hero-top-row">
-        <a routerLink="/trips" class="back-link">← Volver a Mis Viajes</a>
-        <div class="whatsapp-avatars" title="Viajeros en este grupo">
-          <div class="avatar-circle" *ngFor="let m of displayedMembers">
-            {{ m.userName.charAt(0).toUpperCase() }}
-          </div>
-          <div class="avatar-circle avatar-plus" *ngIf="remainingMembersCount > 0">
-            +{{ remainingMembersCount }}
-          </div>
-        </div>
+        <a routerLink="/trips" class="btn-back-pill"><span>←</span> Mis Viajes</a>
       </div>
 
       <h1>{{ trip.name }}</h1>
@@ -27,26 +19,17 @@
       <div class="quick-stats-panel">
         <div class="stat-item" (click)="setTab('expenses')">
           <span class="stat-icon">💸</span>
-          <div class="stat-text">
-            <span class="stat-value">{{ totalExpenses }} €</span>
-            <span class="stat-label">Gastos</span>
-          </div>
+          <div class="stat-text"><span class="stat-value">{{ totalExpenses }} €</span><span class="stat-label">Gastos</span></div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item" (click)="setTab('itinerary')">
           <span class="stat-icon">🗓️</span>
-          <div class="stat-text">
-            <span class="stat-value">{{ activities.length }}</span>
-            <span class="stat-label">Planes</span>
-          </div>
+          <div class="stat-text"><span class="stat-value">{{ activities.length }}</span><span class="stat-label">Planes</span></div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item" (click)="setTab('memories')">
           <span class="stat-icon">📸</span>
-          <div class="stat-text">
-            <span class="stat-value">{{ memories.length }}</span>
-            <span class="stat-label">Fotos</span>
-          </div>
+          <div class="stat-text"><span class="stat-value">{{ memories.length }}</span><span class="stat-label">Fotos</span></div>
         </div>
       </div>
     </div>
@@ -81,17 +64,11 @@
           </div>
           <div class="agenda-body">
             <div class="time-col">
-              <div class="time-slot" *ngFor="let h of hours">
-                <span class="time-label">{{ h }}:00</span>
-              </div>
+              <div class="time-slot" *ngFor="let h of hours"><span class="time-label">{{ h }}:00</span></div>
             </div>
             <div class="day-col" *ngFor="let day of tripDays">
-              <div class="grid-cell" *ngFor="let h of hours" (click)="openModal('activity', day.date, h)">
-                <span class="hover-plus">+</span>
-              </div>
-              <div class="current-time-indicator" *ngIf="day.date === todayString" [style.top]="currentTimePx">
-                <div class="time-dot"></div><div class="time-line"></div>
-              </div>
+              <div class="grid-cell" *ngFor="let h of hours" (click)="openModal('activity', day.date, h)"><span class="hover-plus">+</span></div>
+              <div class="current-time-indicator" *ngIf="day.date === todayString" [style.top]="currentTimePx"><div class="time-dot"></div><div class="time-line"></div></div>
               <div class="agenda-activity" *ngFor="let act of day.activities" [ngStyle]="getActivityStyle(act)" (click)="openModal('activity', day.date)">
                 <div class="act-inner">
                   <div class="act-time-small">{{ act.startDatetime | date:'HH:mm' }}</div>
@@ -110,20 +87,23 @@
           <button class="btn-primary-small" (click)="openModal('expense')">+ Añadir Gasto</button>
         </div>
         <div class="empty-state" *ngIf="expenses.length === 0">
-          <span class="empty-icon">💰</span><p>No hay gastos registrados en este viaje.</p>
+          <span class="empty-icon">💰</span><p>No hay gastos registrados.</p>
         </div>
         <div class="expense-list">
           <div class="expense-item" *ngFor="let exp of expenses">
             <div class="exp-header">
-              <div class="exp-left">
+              <div class="exp-main-info">
                 <div class="exp-icon">💸</div>
-                <div class="exp-info">
-                  <strong>{{ exp.description }}</strong>
-                  <small class="paid-by">Pagado por: <span>{{ exp.paidByUserName }}</span></small>
+                <div class="exp-text-block">
+                  <strong class="exp-title">{{ exp.description }}</strong>
+                  <div class="paid-by-badge">
+                    Pagado por: <span>{{ exp.paidByUserName }}</span>
+                  </div>
                 </div>
               </div>
-              <div class="exp-amount">{{ exp.amount }} €</div>
+              <div class="exp-amount-box">{{ exp.amount }} €</div>
             </div>
+
             <div class="exp-splits" *ngIf="exp.splits && exp.splits.length > 0">
               <div class="split-row" *ngFor="let split of exp.splits" [class.is-paid]="split.isPaid">
                 <div class="custom-checkbox" (click)="togglePaid(exp.id, split)" [class.checked]="split.isPaid">
@@ -182,7 +162,7 @@
 
   <aside class="trip-sidebar fade-in">
     <div class="sidebar-header">
-      <h3>👥 Compañeros de Viaje</h3>
+      <h3>👥 Compañeros</h3>
     </div>
     <div class="sidebar-members-list">
       <div class="sidebar-member-item" *ngFor="let member of members" [class.pending-card]="member.status === 'pending'">
@@ -192,20 +172,31 @@
           <span class="sidebar-m-role">{{ member.role === 'owner' ? '👑 Organizador' : '👤 Viajero' }}</span>
           <span class="sidebar-pending-badge" *ngIf="member.status === 'pending'">Pendiente</span>
         </div>
+        
+        <button class="btn-remove-member" 
+                *ngIf="isOwner && member.id !== currentUserId" 
+                (click)="openDeleteModal(member)" 
+                title="Eliminar del viaje">
+          🗑️
+        </button>
       </div>
     </div>
-    <hr class="sidebar-divider">
-    <div class="sidebar-invite-section">
-      <h4>Invitar a alguien</h4>
-      <select [(ngModel)]="selectedFriendEmail" class="sidebar-select">
-        <option value="" disabled selected>Amigos en TripShare...</option>
-        <option *ngFor="let friend of myFriends" [value]="friend.email">{{ friend.userName }}</option>
-      </select>
-      <div class="sidebar-invite-buttons">
-        <button class="btn-invite-sidebar primary" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">Invitar</button>
-        <button class="btn-invite-sidebar secondary" (click)="inviteByEmail()">Por Email</button>
+    
+    <ng-container *ngIf="isOwner">
+      <hr class="sidebar-divider">
+      <div class="sidebar-invite-section">
+        <h4>Invitar a alguien</h4>
+        <button class="btn-invite-friends-modal" (click)="openModal('invite-friends')">➕ Invitar Amigos</button>
+        <div class="or-divider">o por email</div>
+        <div class="invite-email-box">
+          <input type="email" [(ngModel)]="emailInviteInput" placeholder="ejemplo@email.com" class="sidebar-input">
+          <button class="btn-email-send" (click)="inviteByEmail()" [disabled]="!emailInviteInput">➤</button>
+        </div>
+        <div class="custom-error-banner" *ngIf="errorMessage" style="margin-top: 10px; font-size: 0.8rem; padding: 8px;">
+          <span class="error-text">{{ errorMessage }}</span>
+        </div>
       </div>
-    </div>
+    </ng-container>
   </aside>
 
 </div>
@@ -217,65 +208,61 @@
     <h2 style="margin-top: 0;" *ngIf="modalType === 'activity'">Añadir Plan</h2>
     <h2 style="margin-top: 0;" *ngIf="modalType === 'expense'">Nuevo Gasto</h2>
     <h2 style="margin-top: 0;" *ngIf="modalType === 'memory'">Nuevo Recuerdo</h2>
+    <h2 style="margin-top: 0;" *ngIf="modalType === 'invite-friends'">Invitar Amigos</h2>
+    <h2 style="margin-top: 0; color: #dc2626;" *ngIf="modalType === 'delete-member'">¿Eliminar Viajero?</h2>
 
-    <div class="custom-error-banner" *ngIf="errorMessage">
-      <span class="error-icon">⚠️</span>
-      <span class="error-text">{{ errorMessage }}</span>
+    <div class="custom-error-banner" *ngIf="errorMessage && modalType !== 'invite-friends' && modalType !== 'delete-member'">
+      <span class="error-icon">⚠️</span><span class="error-text">{{ errorMessage }}</span>
+    </div>
+
+    <div *ngIf="modalType === 'delete-member'">
+        <p style="font-size: 1rem; color: var(--text-main); margin-bottom: 20px; line-height: 1.5;">
+            Estás a punto de eliminar a <strong>{{ memberToDelete?.userName }}</strong> de este viaje.<br>
+            <span style="font-size: 0.85rem; color: #666;">Esta acción no se puede deshacer.</span>
+        </p>
+        
+        <div class="custom-error-banner" *ngIf="errorMessage">
+            <span class="error-icon">⚠️</span><span class="error-text">{{ errorMessage }}</span>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn-invite-action" style="flex: 1; border-color: #ccc; color: #666;" (click)="closeModal()">Cancelar</button>
+            <button class="btn-danger" style="flex: 1;" (click)="confirmDeleteMember()">Eliminar</button>
+        </div>
+    </div>
+
+    <div *ngIf="modalType === 'invite-friends'">
+      <div class="empty-state" *ngIf="availableFriends.length === 0" style="padding: 30px 10px;">
+        <p>¡No tienes más amigos disponibles para invitar!</p>
+        <small>Agrega más desde la sección "Social".</small>
+      </div>
+      <div class="invite-friends-list" *ngIf="availableFriends.length > 0">
+        <div class="friend-invite-row" *ngFor="let friend of availableFriends">
+          <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="mini-avatar">
+          <span class="friend-name">{{ friend.userName }}</span>
+          <button class="btn-invite-action" (click)="inviteFriend(friend)">Invitar</button>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="modalType === 'activity'">
-      <p style="color: var(--text-secondary); margin-top: -10px; margin-bottom: 20px;">
-        Para el <strong>{{ newActivity.selectedDate | date:'fullDate' }}</strong>
-      </p>
-      <div class="form-group">
-        <label>¿A dónde vamos?</label>
-        <input type="text" [(ngModel)]="newActivity.location" #locationInput placeholder="Ej: Museo del Prado, Madrid" class="modern-input-chat">
-      </div>
-      <div class="form-group">
-        <label>Título / Notas (Opcional)</label>
-        <input type="text" [(ngModel)]="newActivity.title" placeholder="Ej: Comprar entradas antes">
-      </div>
-      <div class="form-row">
-        <div class="form-group half">
-          <label>Hora Inicio</label>
-          <input type="time" [(ngModel)]="newActivity.startTime">
-        </div>
-        <div class="form-group half">
-          <label>Hora Fin (Opcional)</label>
-          <input type="time" [(ngModel)]="newActivity.endTime">
-        </div>
-      </div>
+      <p style="color: var(--text-secondary); margin-top: -10px; margin-bottom: 20px;">Para el <strong>{{ newActivity.selectedDate | date:'fullDate' }}</strong></p>
+      <div class="form-group"><label>¿A dónde vamos?</label><input type="text" [(ngModel)]="newActivity.location" class="modern-input-chat"></div>
+      <div class="form-group"><label>Título / Notas (Opcional)</label><input type="text" [(ngModel)]="newActivity.title" maxlength="50"></div>
+      <div class="form-row"><div class="form-group half"><label>Hora Inicio</label><input type="time" [(ngModel)]="newActivity.startTime"></div><div class="form-group half"><label>Hora Fin (Opcional)</label><input type="time" [(ngModel)]="newActivity.endTime"></div></div>
       <button class="btn-primary full-width" (click)="saveActivity()">Guardar Plan</button>
     </div>
 
     <div *ngIf="modalType === 'expense'">
-      <div class="form-group">
-        <label>Concepto</label>
-        <input type="text" [(ngModel)]="newExpense.description" placeholder="Ej: Cena primer día">
-      </div>
-      <div class="form-group">
-        <label>Cantidad (€)</label>
-        <input type="number" [(ngModel)]="newExpense.amount" min="1"> 
-      </div>
+      <div class="form-group"><label>Concepto</label><input type="text" [(ngModel)]="newExpense.description" maxlength="50"></div>
+      <div class="form-group"><label>Cantidad (€)</label><input type="number" [(ngModel)]="newExpense.amount" min="1"></div>
       <button class="btn-primary full-width" (click)="saveExpense()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'memory'">
-      <div class="form-group">
-        <label>Tipo</label>
-        <select [(ngModel)]="newMemory.type"><option value="photo">Foto</option><option value="note">Nota</option></select>
-      </div>
-      <div class="form-group" *ngIf="newMemory.type === 'photo'">
-        <label>Subir Foto</label>
-        <input type="file" (change)="onFileSelected($event)" accept="image/*" class="custom-file-input">
-        <div class="image-preview" *ngIf="newMemory.url">
-          <img [src]="newMemory.url" alt="Previsualización" style="max-height: 200px; margin-top: 10px; border-radius: 8px;">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Descripción</label>
-        <textarea [(ngModel)]="newMemory.description" placeholder="Añade un pie de foto..."></textarea>
-      </div>
+      <div class="form-group"><label>Tipo</label><select [(ngModel)]="newMemory.type"><option value="photo">Foto</option><option value="note">Nota</option></select></div>
+      <div class="form-group" *ngIf="newMemory.type === 'photo'"><label>Subir Foto</label><input type="file" (change)="onFileSelected($event)" accept="image/*" class="custom-file-input"><div class="image-preview" *ngIf="newMemory.url"><img [src]="newMemory.url" style="max-height: 200px; margin-top: 10px; border-radius: 8px;"></div></div>
+      <div class="form-group"><label>Descripción</label><textarea [(ngModel)]="newMemory.description" maxlength="200"></textarea></div>
       <button class="btn-primary full-width" (click)="saveMemory()">Guardar</button>
     </div>
 

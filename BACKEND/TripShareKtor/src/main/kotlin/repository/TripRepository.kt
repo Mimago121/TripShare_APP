@@ -179,6 +179,12 @@ class TripRepository {
         }
     }
 
+    suspend fun removeMemberFromTrip(tripId: Long, userId: Long): Boolean = dbQuery {
+        // Asumiendo que tu tabla intermedia se llama TripUsers
+        TripMembers.deleteWhere {
+            (TripMembers.tripId eq tripId) and (TripMembers.userId eq userId)
+        } > 0
+    }
     // ==========================================
     // 3. FUNCIONES MAPPER (TRADUCTORES)
     // ==========================================
