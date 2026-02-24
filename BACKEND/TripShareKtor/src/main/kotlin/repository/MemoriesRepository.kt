@@ -51,7 +51,7 @@ class MemoriesRepository {
             it[this.userId] = userId
             it[this.type] = type
             it[this.description] = description
-            it[this.mediaUrl] = url
+            it[mediaUrl] = mediaUrl
         }
 
         // 2. Extraemos el ID exacto que MySQL le acaba de asignar a esta fila

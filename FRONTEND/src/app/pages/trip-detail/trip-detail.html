@@ -52,62 +52,53 @@
     </div>
 
     <div class="modern-tabs-nav">
-      <button [class.active]="activeTab === 'itinerary'" (click)="setTab('itinerary')">
-        <span class="tab-icon">🗓️</span> Itinerario
-      </button>
-      <button [class.active]="activeTab === 'expenses'" (click)="setTab('expenses')">
-        <span class="tab-icon">💸</span> Gastos
-      </button>
-      <button [class.active]="activeTab === 'memories'" (click)="setTab('memories')">
-        <span class="tab-icon">📸</span> Recuerdos
-      </button>
-      <button [class.active]="activeTab === 'chat'" (click)="setTab('chat')">
-        <span class="tab-icon">💬</span> Chat Grupal
-      </button>
+      <button [class.active]="activeTab === 'itinerary'" (click)="setTab('itinerary')"><span class="tab-icon">🗓️</span> Itinerario</button>
+      <button [class.active]="activeTab === 'expenses'" (click)="setTab('expenses')"><span class="tab-icon">💸</span> Gastos</button>
+      <button [class.active]="activeTab === 'memories'" (click)="setTab('memories')"><span class="tab-icon">📸</span> Recuerdos</button>
+      <button [class.active]="activeTab === 'chat'" (click)="setTab('chat')"><span class="tab-icon">💬</span> Chat Grupal</button>
     </div>
 
     <div class="map-wrapper" *ngIf="showMap && activeTab === 'itinerary'">
-      <google-map 
-        height="350px" 
-        width="100%" 
-        [center]="mapCenter" 
-        [zoom]="13" 
-        [options]="mapOptions">
-        
+      <google-map height="350px" width="100%" [center]="mapCenter" [zoom]="13" [options]="mapOptions">
         <map-directions-renderer *ngIf="directionsResult" [directions]="directionsResult"></map-directions-renderer>
-        
         <ng-container *ngIf="!directionsResult">
           <map-marker *ngFor="let pos of activityMarkers" [position]="pos"></map-marker>
-          
           <map-marker *ngIf="activityMarkers.length === 0 && markerPosition" [position]="markerPosition"></map-marker>
         </ng-container>
-
       </google-map>
     </div>
 
     <div class="tab-content">
-
+      
       <div *ngIf="activeTab === 'itinerary'" class="content-section fade-in">
-        <div class="section-header">
-          <h2>Itinerario de Viaje</h2>
-          <button class="btn-primary-small" (click)="openModal('activity')">+ Nuevo Plan</button>
-        </div>
-        <div class="empty-state" *ngIf="activities.length === 0">
-          <span class="empty-icon">🗺️</span>
-          <p>Aún no hay actividades programadas. ¡Añade lugares para generar tu ruta en el mapa!</p>
-        </div>
-        <div class="activity-list">
-          <div class="activity-card" *ngFor="let act of activities; let i = index">
-            <div class="route-node-indicator">{{ i + 1 }}</div>
-            
-            <div class="time-block">
-              <strong>{{ act.startDatetime | date:'HH:mm' }}</strong>
-              <small>{{ act.startDatetime | date:'dd MMM' }}</small>
+        <div class="agenda-wrapper">
+          <div class="agenda-header">
+            <div class="time-col-header">GMT+1</div>
+            <div class="day-col-header" *ngFor="let day of tripDays">
+              <span class="day-name">{{ day.dateObj | date:'EEEE' }}</span>
+              <span class="day-number">{{ day.dateObj | date:'dd MMM' }}</span>
             </div>
-            <div class="act-details">
-              <h4>{{ act.title }}</h4>
-              <span class="act-location" *ngIf="act.location"><span class="icon">📍</span> {{ act.location }}</span>
-              <span class="act-end" *ngIf="act.endDatetime">Hasta {{ act.endDatetime | date:'HH:mm' }}</span>
+          </div>
+          <div class="agenda-body">
+            <div class="time-col">
+              <div class="time-slot" *ngFor="let h of hours">
+                <span class="time-label">{{ h }}:00</span>
+              </div>
+            </div>
+            <div class="day-col" *ngFor="let day of tripDays">
+              <div class="grid-cell" *ngFor="let h of hours" (click)="openModal('activity', day.date, h)">
+                <span class="hover-plus">+</span>
+              </div>
+              <div class="current-time-indicator" *ngIf="day.date === todayString" [style.top]="currentTimePx">
+                <div class="time-dot"></div><div class="time-line"></div>
+              </div>
+              <div class="agenda-activity" *ngFor="let act of day.activities" [ngStyle]="getActivityStyle(act)" (click)="openModal('activity', day.date)">
+                <div class="act-inner">
+                  <div class="act-time-small">{{ act.startDatetime | date:'HH:mm' }}</div>
+                  <strong>{{ act.title }}</strong>
+                  <div class="act-loc-small" *ngIf="act.location">📍 {{ act.location }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -119,8 +110,7 @@
           <button class="btn-primary-small" (click)="openModal('expense')">+ Añadir Gasto</button>
         </div>
         <div class="empty-state" *ngIf="expenses.length === 0">
-          <span class="empty-icon">💰</span>
-          <p>No hay gastos registrados en este viaje.</p>
+          <span class="empty-icon">💰</span><p>No hay gastos registrados en este viaje.</p>
         </div>
         <div class="expense-list">
           <div class="expense-item" *ngFor="let exp of expenses">
@@ -154,8 +144,7 @@
           <button class="btn-primary-small" (click)="openModal('memory')">+ Subir Foto</button>
         </div>
         <div class="empty-state" *ngIf="memories.length === 0">
-          <span class="empty-icon">📷</span>
-          <p>Sube la primera foto del viaje.</p>
+          <span class="empty-icon">📷</span><p>Sube la primera foto del viaje.</p>
         </div>
         <div class="memories-grid" *ngIf="memories.length > 0">
           <div class="memory-card" *ngFor="let mem of memories">
@@ -170,8 +159,7 @@
         <div class="chat-container">
           <div class="messages-list" #scrollMe [scrollTop]="scrollMe.scrollHeight">
             <div class="empty-state" *ngIf="chatMessages.length === 0">
-              <span class="empty-icon">👋</span>
-              <p>¡Sé el primero en saludar al grupo!</p>
+              <span class="empty-icon">👋</span><p>¡Sé el primero en saludar al grupo!</p>
             </div>
             <div *ngFor="let msg of chatMessages" class="message-row" [ngClass]="{'my-row': currentUserId === msg.user_id, 'other-row': currentUserId !== msg.user_id}">
               <img *ngIf="currentUserId !== msg.user_id" [src]="'https://ui-avatars.com/api/?name=' + msg.user_name + '&background=random&color=fff&size=64'" class="chat-avatar" alt="Avatar">
@@ -202,7 +190,7 @@
         <div class="sidebar-member-info">
           <span class="sidebar-m-name">{{ member.userName }}</span>
           <span class="sidebar-m-role">{{ member.role === 'owner' ? '👑 Organizador' : '👤 Viajero' }}</span>
-          <span class="sidebar-pending-badge" *ngIf="member.status === 'pending'">Invitación Pendiente</span>
+          <span class="sidebar-pending-badge" *ngIf="member.status === 'pending'">Pendiente</span>
         </div>
       </div>
     </div>
@@ -214,7 +202,7 @@
         <option *ngFor="let friend of myFriends" [value]="friend.email">{{ friend.userName }}</option>
       </select>
       <div class="sidebar-invite-buttons">
-        <button class="btn-invite-sidebar primary" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">Invitar Amigo</button>
+        <button class="btn-invite-sidebar primary" (click)="inviteSelectedFriend()" [disabled]="!selectedFriendEmail">Invitar</button>
         <button class="btn-invite-sidebar secondary" (click)="inviteByEmail()">Por Email</button>
       </div>
     </div>
@@ -222,47 +210,57 @@
 
 </div>
 
-<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <button class="close-btn" (click)="closeModal()">✕</button>
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal-content">
+    <button class="close-btn" style="z-index: 10;" (click)="closeModal()">✕</button>
+
+    <h2 style="margin-top: 0;" *ngIf="modalType === 'activity'">Añadir Plan</h2>
+    <h2 style="margin-top: 0;" *ngIf="modalType === 'expense'">Nuevo Gasto</h2>
+    <h2 style="margin-top: 0;" *ngIf="modalType === 'memory'">Nuevo Recuerdo</h2>
+
+    <div class="custom-error-banner" *ngIf="errorMessage">
+      <span class="error-icon">⚠️</span>
+      <span class="error-text">{{ errorMessage }}</span>
+    </div>
 
     <div *ngIf="modalType === 'activity'">
-      <h2>Nueva Actividad</h2>
-      <div class="form-group"><label>Título</label><input type="text" [(ngModel)]="newActivity.title" placeholder="Ej: Visita al museo"></div>
-      
+      <p style="color: var(--text-secondary); margin-top: -10px; margin-bottom: 20px;">
+        Para el <strong>{{ newActivity.selectedDate | date:'fullDate' }}</strong>
+      </p>
       <div class="form-group">
-        <label>Ubicación (Opcional - Para generar ruta)</label>
-        <input type="text" 
-               [(ngModel)]="newActivity.location" 
-               #locationInput 
-               placeholder="Ej: Museo del Prado, Madrid"
-               class="modern-input-chat">
+        <label>¿A dónde vamos?</label>
+        <input type="text" [(ngModel)]="newActivity.location" #locationInput placeholder="Ej: Museo del Prado, Madrid" class="modern-input-chat">
       </div>
-
+      <div class="form-group">
+        <label>Título / Notas (Opcional)</label>
+        <input type="text" [(ngModel)]="newActivity.title" placeholder="Ej: Comprar entradas antes">
+      </div>
       <div class="form-row">
         <div class="form-group half">
-          <label>Inicio</label>
-          <input type="datetime-local" [(ngModel)]="newActivity.start" [min]="minTripDate" [max]="maxTripDate">
+          <label>Hora Inicio</label>
+          <input type="time" [(ngModel)]="newActivity.startTime">
         </div>
         <div class="form-group half">
-          <label>Fin</label>
-          <input type="datetime-local" [(ngModel)]="newActivity.end" [min]="minTripDate" [max]="maxTripDate">
+          <label>Hora Fin (Opcional)</label>
+          <input type="time" [(ngModel)]="newActivity.endTime">
         </div>
       </div>
-      <p style="font-size: 0.8rem; color: #ef4444; margin-top: -10px; margin-bottom: 15px;">* Las fechas deben estar entre el {{trip?.startDate | date:'dd MMM'}} y el {{trip?.endDate | date:'dd MMM'}}.</p>
-      
       <button class="btn-primary full-width" (click)="saveActivity()">Guardar Plan</button>
     </div>
 
     <div *ngIf="modalType === 'expense'">
-      <h2>Nuevo Gasto</h2>
-      <div class="form-group"><label>Concepto</label><input type="text" [(ngModel)]="newExpense.description"></div>
-      <div class="form-group"><label>Cantidad (€)</label><input type="number" [(ngModel)]="newExpense.amount"></div>
+      <div class="form-group">
+        <label>Concepto</label>
+        <input type="text" [(ngModel)]="newExpense.description" placeholder="Ej: Cena primer día">
+      </div>
+      <div class="form-group">
+        <label>Cantidad (€)</label>
+        <input type="number" [(ngModel)]="newExpense.amount" min="1"> 
+      </div>
       <button class="btn-primary full-width" (click)="saveExpense()">Guardar</button>
     </div>
 
     <div *ngIf="modalType === 'memory'">
-      <h2>Nuevo Recuerdo</h2>
       <div class="form-group">
         <label>Tipo</label>
         <select [(ngModel)]="newMemory.type"><option value="photo">Foto</option><option value="note">Nota</option></select>

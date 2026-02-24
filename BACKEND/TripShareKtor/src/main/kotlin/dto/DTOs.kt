@@ -249,3 +249,12 @@ data class UserAdminView(
     val role: String,
     val trips: List<TripModel> // Usamos modelos de dominio limpios
 )
+
+@Serializable
+data class MemoryRequest(
+    val tripId: Int,
+    val userId: Int,
+    val type: String,
+    val description: String?,
+    val mediaUrl: String? // <--- TIENE QUE ESTAR AQUÍ
+)

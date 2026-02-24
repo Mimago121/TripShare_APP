@@ -19,13 +19,12 @@ export class ProfileComponent implements OnInit {
 
   user: any = {};
   isEditModalOpen: boolean = false;
-  activeTab: string = 'trips'; // Pestañas: 'trips', 'photos', 'map'
+  activeTab: string = 'trips'; 
   
   stats = { countries: 0, trips: 0, followers: 145 };
   myTrips: any[] = [];
-  myPhotos: any[] = []; // <--- Aquí guardaremos las fotos del usuario
+  myPhotos: any[] = []; 
 
-  // Configuración del Mapa
   worldMapOptions: google.maps.MapOptions = {
     center: { lat: 20, lng: 0 },
     zoom: 2,
@@ -46,29 +45,21 @@ export class ProfileComponent implements OnInit {
     if (userData) {
       this.user = JSON.parse(userData);
       
-      // 1. Cargar Viajes
       this.loadUserTrips(this.user.id);
-
-      // 2. Cargar Pines Manuales
       this.loadVisitedPlaces(this.user.id);
-
-      // 3. Cargar Fotos del Usuario
       this.loadUserPhotos(this.user.id);
     }
   }
 
-  // --- NUEVA LÓGICA DE FOTOS ---
   loadUserPhotos(userId: number) {
     this.tripService.getUserMemories(userId).subscribe({
       next: (memories) => {
-        // Filtramos para mostrar SOLO las memorias que son tipo 'photo'
         this.myPhotos = memories.filter((m: any) => m.type === 'photo');
       },
       error: (err) => console.error("Error cargando fotos del perfil:", err)
     });
   }
 
-  // --- MAPAS Y PINES ---
   loadVisitedPlaces(userId: number) {
     this.tripService.getVisitedPlaces(userId).subscribe({
       next: (places) => {
@@ -147,12 +138,64 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  // --- LÓGICA DE IMÁGENES BASE64 ---
+  onFileSelected(event: any, type: 'avatar' | 'cover') {
+    const file: File = event.target.files[0];
+    if (file && file.type.match(/image\/*/)) {
+      // Si es avatar lo hacemos pequeñito (400px), si es portada más grande (1200px)
+      const maxWidth = type === 'avatar' ? 400 : 1200;
+      
+      this.compressImage(file, maxWidth, 0.8).then(compressedBase64 => {
+        if (type === 'avatar') {
+          this.user.avatarUrl = compressedBase64;
+        } else {
+          this.user.coverUrl = compressedBase64;
+        }
+      });
+    }
+  }
+
+  compressImage(file: File, maxWidth: number, quality: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event: any) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+             ctx.drawImage(img, 0, 0, width, height);
+             resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+             reject(new Error("Canvas error"));
+          }
+        };
+      };
+      reader.onerror = error => reject(error);
+    });
+  }
+
   // --- UI Y MODALES ---
   openEditModal() { this.isEditModalOpen = true; }
   closeEditModal() { this.isEditModalOpen = false; }
+  
   saveProfile() {
+    // Aquí actualizamos el LocalStorage con las nuevas fotos en Base64
     localStorage.setItem('user', JSON.stringify(this.user));
+    // IMPORTANTE: En el futuro deberías enviar este objeto 'this.user' a tu backend Ktor
+    // this.authService.updateProfile(this.user).subscribe(...)
     this.closeEditModal();
   }
+  
   setActiveTab(tab: string) { this.activeTab = tab; }
 }

@@ -172,7 +172,8 @@ getTripMessages(tripId: number): Observable<any[]> {
   return this.http.get<any[]>(`${this.baseUrl}/${tripId}/messages`);
 }
 
-markAsPaid(expenseId: number, userId: number): Observable<any> {
-    return this.http.put(`${this.baseUrl}/expenses/pay`, { expenseId, userId });
+markAsPaid(expenseId: number, userId: number, isPaid: boolean): Observable<any> {
+    // Añadimos isPaid al objeto (body) que enviamos al backend de Ktor
+    return this.http.put(`${this.baseUrl}/expenses/pay`, { expenseId, userId, isPaid });
   }
 }

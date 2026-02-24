@@ -22,6 +22,11 @@ export class TripDetailComponent implements OnInit {
   members: any[] = []; 
   myFriends: Member[] = []; 
   
+  tripDays: { date: string, dateObj: Date, activities: any[] }[] = [];
+  hours: string[] = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
+  todayString: string = new Date().toISOString().split('T')[0];
+  currentTimePx: string = '0px';
+
   chatMessages: any[] = [];
   newMessageText: string = '';
 
@@ -34,13 +39,14 @@ export class TripDetailComponent implements OnInit {
   showModal: boolean = false;
   modalType: string = '';
   selectedFriendEmail: string = '';
+  
+  // NUEVO: Variable para controlar los mensajes de error del formulario
+  errorMessage: string = '';
 
-  // --- NUEVAS VARIABLES PARA RUTAS Y FECHAS ---
-  newActivity = { title: '', start: '', end: '', location: '' };
+  newActivity = { title: '', startTime: '10:00', endTime: '', location: '', selectedDate: '' };
   minTripDate: string = '';
   maxTripDate: string = '';
-
-  newExpense = { description: '', amount: 0 };
+  newExpense = { description: '', amount: 1 }; 
   newMemory = { type: 'photo', description: '', url: '' };
 
   mapOptions: google.maps.MapOptions = {
@@ -51,26 +57,22 @@ export class TripDetailComponent implements OnInit {
   markerPosition: google.maps.LatLngLiteral | undefined;
   mapCenter: google.maps.LatLngLiteral = { lat: 40.416, lng: -3.703 };
   showMap: boolean = false;
-  // Lista de pines sueltos por si falla la ruta
-  activityMarkers: google.maps.LatLngLiteral[] = [];
   
-  // Variable para guardar la ruta generada (Wanderlog style)
   directionsResult: google.maps.DirectionsResult | undefined;
+  activityMarkers: google.maps.LatLngLiteral[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private tripService: TripService,
     private geocoder: MapGeocoder,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone // <-- 1. AÑADIMOS ESTO
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
     if (typeof localStorage !== 'undefined') {
       const userStr = localStorage.getItem('user');
-      if (userStr) {
-        this.currentUserId = JSON.parse(userStr).id;
-      }
+      if (userStr) this.currentUserId = JSON.parse(userStr).id;
     }
 
     this.route.params.subscribe(params => {
@@ -80,21 +82,19 @@ export class TripDetailComponent implements OnInit {
         this.loadFriends();
       }
     });
+
+    const now = new Date();
+    this.currentTimePx = `${(now.getHours() * 60) + now.getMinutes()}px`;
   }
 
-  // --- MAGIA DEL AUTOCOMPLETADO DE GOOGLE PLACES ---
   @ViewChild('locationInput') set locationInput(el: ElementRef) {
     if (el && typeof google !== 'undefined' && google.maps.places) {
-      // Convertimos el input en un buscador de lugares
       const autocomplete = new google.maps.places.Autocomplete(el.nativeElement, {
-        fields: ['formatted_address', 'name'] // Queremos que nos devuelva la dirección completa
+        fields: ['formatted_address', 'name']
       });
-
-      // Escuchamos cuando el usuario hace clic en una sugerencia
       autocomplete.addListener('place_changed', () => {
         this.ngZone.run(() => {
           const place = autocomplete.getPlace();
-          // Guardamos la dirección oficial (Ej: "Museo Nacional del Prado, Madrid, España")
           this.newActivity.location = place.formatted_address || place.name || '';
         });
       });
@@ -109,21 +109,17 @@ export class TripDetailComponent implements OnInit {
     this.tripService.getTripById(this.tripId).subscribe({
       next: (data) => {
         this.trip = data;
-
-        // Configuramos los límites del calendario para que coincidan con el viaje
         if (this.trip) {
           this.minTripDate = this.formatDateForInput(this.trip.startDate);
-          // Le sumamos 23:59 al día de fin para permitir actividades el último día
           this.maxTripDate = this.formatDateForInput(this.trip.endDate, true);
-        }
-
-        if (this.trip && this.trip.destination) {
-            this.cargarUbicacion(this.trip.destination);
+          if (this.trip.destination) this.cargarUbicacion(this.trip.destination);
+          this.generateTripDays();
         }
 
         this.tripService.getActivities(this.tripId).subscribe(a => {
           this.activities = a;
-          this.updateMapRoute(); // <-- DIBUJA LA RUTA AUTOMÁTICAMENTE
+          this.groupActivitiesByDay(); 
+          this.updateMapRoute(); 
         });
         
         this.tripService.getExpenses(this.tripId).subscribe(e => {
@@ -132,7 +128,7 @@ export class TripDetailComponent implements OnInit {
         });
         
         this.loadMemories();
-        this.tripService.getMembers(this.tripId).subscribe(mem => this.members = mem);
+        this.tripService.getMembers(this.tripId).subscribe(mem => this.members = this.sortMembersList(mem));
         this.loadChat();
         
         this.isLoading = false;
@@ -141,27 +137,68 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  // --- LÓGICA DE RUTAS AUTOMÁTICAS (WANDERLOG STYLE) ---
-  // --- LÓGICA DE RUTAS AUTOMÁTICAS MEJORADA ---
+  generateTripDays() {
+    if (!this.trip) return;
+    const start = new Date(this.trip.startDate);
+    const end = new Date(this.trip.endDate);
+    this.tripDays = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      this.tripDays.push({
+        date: d.toISOString().split('T')[0],
+        dateObj: new Date(d),
+        activities: []
+      });
+    }
+  }
+
+  groupActivitiesByDay() {
+    this.tripDays.forEach(day => day.activities = []);
+    this.activities.forEach(act => {
+      const actDate = act.startDatetime.split('T')[0];
+      const dayColumn = this.tripDays.find(d => d.date === actDate);
+      if (dayColumn) dayColumn.activities.push(act);
+    });
+    this.tripDays.forEach(day => {
+      day.activities.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
+    });
+  }
+
+  getActivityStyle(act: any) {
+    const start = new Date(act.startDatetime);
+    let end = act.endDatetime ? new Date(act.endDatetime) : new Date(start.getTime() + 60 * 60000); 
+    if (end <= start) end = new Date(start.getTime() + 60 * 60000); 
+
+    const topPx = (start.getHours() * 60) + start.getMinutes();
+    const durationMins = (end.getTime() - start.getTime()) / 60000;
+    const heightPx = Math.max(durationMins, 30); 
+
+    return { top: `${topPx}px`, height: `${heightPx}px` };
+  }
+
+  private sortMembersList(membersList: any[]): any[] {
+    return membersList.sort((a, b) => {
+      if (a.role === 'owner' && b.role !== 'owner') return -1;
+      if (a.role !== 'owner' && b.role === 'owner') return 1;
+      if (a.status === 'pending' && b.status !== 'pending') return 1;
+      if (a.status !== 'pending' && b.status === 'pending') return -1;
+      return a.userName.localeCompare(b.userName);
+    });
+  }
+
   updateMapRoute() {
     const locations = this.activities
       .filter(act => act.location && act.location.trim() !== '')
       .sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime())
       .map(act => act.location);
 
-    // 1. Limpiamos los marcadores previos de la pantalla
     this.activityMarkers = [];
-
     if (locations.length === 0) return;
 
-    // 2. Convertimos todos los textos a coordenadas reales (Pines sueltos)
     locations.forEach(loc => {
       this.geocoder.geocode({ address: loc }).subscribe(({ results }) => {
         if (results && results.length) {
           const latLng = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
           this.activityMarkers.push(latLng);
-          
-          // Centramos la cámara en el último pin añadido
           this.mapCenter = latLng; 
           this.cdr.detectChanges();
         }
@@ -173,63 +210,44 @@ export class TripDetailComponent implements OnInit {
       return;
     }
 
-    // 3. Intentamos trazar la RUTA CONECTADA (La línea azul)
     const origin = locations[0];
     const destination = locations[locations.length - 1];
     const waypoints = locations.slice(1, -1).map(loc => ({ location: loc, stopover: true }));
 
     const directionsService = new google.maps.DirectionsService();
     directionsService.route({
-      origin: origin,
-      destination: destination,
-      waypoints: waypoints,
-      optimizeWaypoints: false, // Falso para respetar el orden cronológico
-      travelMode: google.maps.TravelMode.WALKING // O DRIVING
+      origin: origin, destination: destination, waypoints: waypoints,
+      optimizeWaypoints: false, travelMode: google.maps.TravelMode.WALKING 
     }, (result, status) => {
       if (status === google.maps.DirectionsStatus.OK && result) {
-        // ¡ÉXITO! Google nos devuelve la ruta
         this.directionsResult = result;
       } else {
-        // ¡FALLO! (Probablemente la Directions API esté apagada)
         this.directionsResult = undefined;
-        console.error("⚠️ No se pudo trazar la ruta azul. Estado devuelto por Google:", status);
-        console.warn("👉 SOLUCIÓN: Ve a Google Cloud Console -> APIs y Servicios -> Habilita la 'Directions API'.");
       }
       this.cdr.detectChanges();
     });
   }
 
-  // Formatea las fechas para el input de HTML
   formatDateForInput(dateStr: string, isEnd: boolean = false): string {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    const isoString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const isoString = date.toISOString().split('T')[0];
     return isEnd ? `${isoString}T23:59` : `${isoString}T00:00`;
   }
 
   loadMemories() {
     this.tripService.getMemories(this.tripId).subscribe({
-      next: (m) => {
-        if (Array.isArray(m)) {
-           this.memories = m;
-           this.cdr.detectChanges(); 
-        }
-      },
-      error: (err) => console.error("Error cargando recuerdos:", err)
+      next: (m) => { if (Array.isArray(m)) { this.memories = m; this.cdr.detectChanges(); } },
+      error: (err) => console.error(err)
     });
   }
 
-  loadChat() {
-    this.tripService.getTripMessages(this.tripId).subscribe(msgs => this.chatMessages = msgs);
-  }
+  loadChat() { this.tripService.getTripMessages(this.tripId).subscribe(msgs => this.chatMessages = msgs); }
 
   sendMessage() {
     if (!this.newMessageText.trim() || !this.currentUserId) return;
     this.tripService.sendTripMessage(this.tripId, this.currentUserId, this.newMessageText)
-      .subscribe(() => {
-        this.newMessageText = ''; 
-        this.loadChat(); 
-      });
+      .subscribe(() => { this.newMessageText = ''; this.loadChat(); });
   }
 
   cargarUbicacion(destino: string) {
@@ -244,9 +262,7 @@ export class TripDetailComponent implements OnInit {
   }
 
   loadFriends() {
-    if (this.currentUserId) {
-      this.tripService.getMyFriends(this.currentUserId).subscribe(f => this.myFriends = f);
-    }
+    if (this.currentUserId) this.tripService.getMyFriends(this.currentUserId).subscribe(f => this.myFriends = f);
   }
 
   setTab(tab: string) {
@@ -254,27 +270,30 @@ export class TripDetailComponent implements OnInit {
     if (tab === 'chat') this.loadChat();
   }
 
-  calculateTotal() {
-    this.totalExpenses = this.expenses.reduce((sum, item) => sum + item.amount, 0);
-  }
+  calculateTotal() { this.totalExpenses = this.expenses.reduce((sum, item) => sum + item.amount, 0); }
 
-  openModal(type: string) {
+  openModal(type: string, dateStr?: string, hourStr?: string) {
     this.modalType = type;
+    this.errorMessage = ''; // Limpiamos errores previos al abrir
     this.showModal = true;
     
-    if (type === 'activity') this.newActivity = { title: '', start: '', end: '', location: '' };
-    if (type === 'expense') this.newExpense = { description: '', amount: 0 };
+    if (type === 'activity') {
+      const defaultTime = hourStr ? `${hourStr}:00` : '10:00';
+      this.newActivity = { title: '', startTime: defaultTime, endTime: '', location: '', selectedDate: dateStr || '' };
+    }
+    if (type === 'expense') this.newExpense = { description: '', amount: 1 };
     if (type === 'memory') this.newMemory = { type: 'photo', description: '', url: '' };
   }
 
-  closeModal() { this.showModal = false; }
+  closeModal() { 
+    this.showModal = false; 
+    this.errorMessage = ''; // Limpiamos errores al cerrar
+  }
 
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
     if (file && file.type.match(/image\/*/)) {
-      this.compressImage(file, 800, 0.7).then(compressedBase64 => {
-        this.newMemory.url = compressedBase64;
-      });
+      this.compressImage(file, 800, 0.7).then(compressedBase64 => this.newMemory.url = compressedBase64);
     }
   }
 
@@ -286,103 +305,106 @@ export class TripDetailComponent implements OnInit {
         const img = new Image();
         img.src = event.target.result;
         img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
+          let width = img.width; let height = img.height;
+          if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
           const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) {
-             ctx.drawImage(img, 0, 0, width, height);
-             const dataUrl = canvas.toDataURL('image/jpeg', quality);
-             resolve(dataUrl);
-          } else { reject(new Error("Canvas error")); }
+          if (ctx) { ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); } 
+          else { reject(new Error("Canvas error")); }
         };
       };
       reader.onerror = error => reject(error);
     });
   }
 
-saveActivity() {
-    // Verificación de fechas
-    const actDate = new Date(this.newActivity.start);
-    const minD = new Date(this.minTripDate);
-    const maxD = new Date(this.maxTripDate);
+  saveActivity() {
+    this.errorMessage = ''; // Reseteamos error
 
-    if(actDate < minD || actDate > maxD) {
-      alert("Por favor, selecciona una fecha que esté dentro del viaje.");
+    if (!this.newActivity.title.trim() && !this.newActivity.location.trim()) {
+      this.errorMessage = "Debes indicar al menos un título o una ubicación para el plan.";
       return;
     }
 
-    // 🛑 MODO PRUEBA VISUAL (SIN BACKEND) 🛑
-    // Creamos una actividad simulada con los datos que has puesto en el modal
-    const mockActivity = {
-      id: Math.floor(Math.random() * 1000), // ID inventado
-      title: this.newActivity.title,
-      startDatetime: this.newActivity.start,
-      endDatetime: this.newActivity.end || this.newActivity.start,
-      location: this.newActivity.location // Guardamos la ubicación localmente
-    };
+    const startDT = `${this.newActivity.selectedDate}T${this.newActivity.startTime}:00`;
+    const endDT = this.newActivity.endTime ? `${this.newActivity.selectedDate}T${this.newActivity.endTime}:00` : startDT;
 
-    // 1. Añadimos la actividad directamente a la lista visual de Angular
-    this.activities.push(mockActivity);
-
-    // 2. Obligamos al mapa a recalcular y dibujar la ruta
-    this.updateMapRoute();
-
-    // 3. Cerramos el modal
-    this.closeModal();
-
-    /* // === CÓDIGO REAL PARA CUANDO ARREGLES EL BACKEND ===
-    // (Déjalo comentado de momento)
     const data = { 
-      ...this.newActivity, 
-      tripId: this.tripId, 
-      createdByUserId: this.currentUserId,
-      startDatetime: this.newActivity.start,
-      endDatetime: this.newActivity.end || this.newActivity.start,
-      location: this.newActivity.location
+      tripId: this.tripId, createdByUserId: this.currentUserId, title: this.newActivity.title,
+      startDatetime: startDT, endDatetime: endDT, location: this.newActivity.location
     };
     
     this.tripService.addActivity(this.tripId, data as any).subscribe(() => {
       this.loadTripData(); 
       this.closeModal();
     });
-    */
   }
 
   saveExpense() {
+    this.errorMessage = ''; // Reseteamos error
+
+    if (!this.newExpense.description || this.newExpense.description.trim() === '') {
+      this.errorMessage = "El concepto del gasto no puede estar vacío.";
+      return;
+    }
+    if (this.newExpense.amount < 1) {
+      this.errorMessage = "La cantidad mínima para un gasto es de 1 €.";
+      return;
+    }
+
     const data = { ...this.newExpense, paidByUserId: this.currentUserId };
-    this.tripService.addExpense(this.tripId, data as any).subscribe(() => {
-      this.loadTripData();
-      this.closeModal();
+    this.tripService.addExpense(this.tripId, data as any).subscribe(() => { 
+      this.loadTripData(); 
+      this.closeModal(); 
     });
   }
 
-  saveMemory() {
+saveMemory() {
+    this.errorMessage = ''; 
+    
+    // 1. Validamos que haya una foto seleccionada
+    if (this.newMemory.type === 'photo' && !this.newMemory.url) {
+      this.errorMessage = "Debes seleccionar una foto para subir.";
+      return;
+    }
+
+    // 2. Preparamos los datos con el código Base64 gigante de la imagen
     const payload = { 
-      tripId: this.tripId,
-      userId: this.currentUserId,
+      tripId: this.tripId, 
+      userId: this.currentUserId, 
       type: this.newMemory.type,
-      description: this.newMemory.description || '',
-      mediaUrl: this.newMemory.url 
+      description: this.newMemory.description || '', 
+      mediaUrl: this.newMemory.url // <-- Aquí va la foto comprimida
     };
+
+    // 3. Lo enviamos al servidor real
     this.tripService.addMemory(this.tripId, payload as any).subscribe({
-      next: () => { this.loadMemories(); this.closeModal(); },
-      error: () => alert("Fallo al guardar.")
+      next: () => { 
+        // Si todo va bien, recargamos la lista desde la Base de Datos y cerramos
+        this.loadMemories(); 
+        this.closeModal(); 
+      },
+      error: (err) => {
+        console.error("Error del backend:", err);
+        // Si el backend explota, mostramos el banner de error
+        this.errorMessage = "El servidor rechazó la imagen. Asegúrate de que el backend acepta textos largos (LONGTEXT).";
+      }
     });
   }
 
   inviteSelectedFriend() {
+    this.errorMessage = '';
     if (!this.selectedFriendEmail) return;
+    
     this.tripService.inviteMember(this.tripId, this.selectedFriendEmail).subscribe({
-      next: () => {
-        this.selectedFriendEmail = '';
-        this.tripService.getMembers(this.tripId).subscribe(m => this.members = m);
+      next: () => { 
+        this.selectedFriendEmail = ''; 
+        // Recargamos y ordenamos la lista de miembros
+        this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
+      },
+      error: (err) => {
+        console.error(err);
+        alert("Error al invitar al usuario.");
       }
     });
   }
@@ -390,17 +412,28 @@ saveActivity() {
   inviteByEmail() {
     const email = prompt("Email del invitado:");
     if (email) {
-      this.tripService.inviteMember(this.tripId, email).subscribe(() => {
-        this.tripService.getMembers(this.tripId).subscribe(m => this.members = m);
+      this.tripService.inviteMember(this.tripId, email).subscribe({
+        next: () => { 
+          this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
+        },
+        error: (err) => {
+          console.error(err);
+          alert("Error al invitar por email.");
+        }
       });
     }
   }
 
   togglePaid(expenseId: number, split: any) {
-    if (split.isPaid) return; 
-    this.tripService.markAsPaid(expenseId, split.userId).subscribe({
-      next: () => { split.isPaid = true; },
-      error: (err) => console.error(err)
+    const newState = !split.isPaid;
+    split.isPaid = newState; 
+
+    this.tripService.markAsPaid(expenseId, split.userId, newState).subscribe({
+      next: () => {  },
+      error: (err) => { 
+        split.isPaid = !newState; 
+        console.error("Error al cambiar estado de pago:", err);
+      }
     });
   }
 }

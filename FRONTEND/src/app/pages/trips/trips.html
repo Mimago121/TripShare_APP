@@ -25,7 +25,7 @@
         <img *ngIf="trip.imageUrl" 
              [src]="trip.imageUrl" 
              alt="{{ trip.name }}"
-             (error)="trip.imageUrl == null"> 
+             (error)="trip.imageUrl = ''"> 
         <div *ngIf="!trip.imageUrl" class="no-image-placeholder">
           <span class="placeholder-icon">🗺️</span>
         </div>
@@ -55,12 +55,15 @@
   </div>
 </div>
 
-<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <button class="close-btn" (click)="closeCreateModal()">✕</button>
+<div class="modal-overlay" *ngIf="showCreateModal">
+  <div class="modal-content">
+    <button class="close-btn" style="z-index: 10;" (click)="closeCreateModal()">✕</button>
     
-    <div class="modal-header">
-      <h2>Planear Nuevo Viaje 🌍</h2>
+    <h2 style="margin-top: 0; margin-bottom: 20px;">Planear Nuevo Viaje 🌍</h2>
+
+    <div class="custom-error-banner" *ngIf="errorMessage">
+      <span class="error-icon">⚠️</span>
+      <span class="error-text">{{ errorMessage }}</span>
     </div>
     
     <div class="modal-body">
@@ -72,7 +75,7 @@
 
       <div class="form-group">
         <label>Destino *</label>
-        <input type="text" [(ngModel)]="newTrip.destination" class="custom-input" placeholder="Ej: Atenas">
+        <input type="text" [(ngModel)]="newTrip.destination" #destinationInput class="custom-input" placeholder="Ej: Atenas, Grecia">
       </div>
 
       <div class="form-row">
@@ -87,12 +90,19 @@
       </div>
 
       <div class="form-group">
-        <label>Foto de Portada (URL Opcional)</label>
-        <input type="text" 
-               [(ngModel)]="newTrip.imageUrl" 
-               class="custom-input" 
-               placeholder="Pega aquí un enlace de imagen (http...)">
-        <small style="color: #666; font-size: 0.8rem;">Si lo dejas vacío, usaremos un diseño por defecto.</small>
+        <label>Foto de Portada (Opcional)</label>
+        <input type="file" 
+               (change)="onFileSelected($event)" 
+               accept="image/*" 
+               class="custom-file-input">
+               
+        <div class="image-preview" *ngIf="newTrip.imageUrl">
+          <img [src]="newTrip.imageUrl" alt="Previsualización de portada">
+        </div>
+        
+        <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 5px; display: block;">
+          Sube una foto desde tu dispositivo. Si lo dejas vacío, usaremos un diseño por defecto.
+        </small>
       </div>
 
     </div>
