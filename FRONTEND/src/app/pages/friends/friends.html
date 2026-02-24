@@ -4,9 +4,14 @@
   
   <div class="friends-header">
     <h1>Social</h1>
+    
+    <div class="search-bar-global">
+      <input type="text" placeholder="🔍 Buscar personas..." [(ngModel)]="searchTerm" (input)="filterUsers()">
+    </div>
+
     <div class="tabs">
       <button [class.active]="activeTab === 'my-friends'" (click)="setTab('my-friends')">
-        Mis Amigos ({{ myFriends.length }})
+        Mis Amigos ({{ filteredFriends.length }})
       </button>
       <button [class.active]="activeTab === 'explore'" (click)="setTab('explore')">
         Explorar
@@ -14,30 +19,30 @@
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'my-friends'" class="tab-content">
+  <div *ngIf="activeTab === 'my-friends'" class="tab-content fade-in">
     
-    <div *ngIf="myFriends.length === 0" class="empty-state">
-      <p>Aún no tienes amigos agregados.</p>
+    <div *ngIf="filteredFriends.length === 0" class="empty-state">
+      <p>No se encontraron amigos.</p>
     </div>
 
     <div class="users-grid">
-      <div class="user-card friend-card" *ngFor="let friend of myFriends">
+      <div class="user-card friend-card" *ngFor="let friend of filteredFriends">
         <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
         <div class="user-info">
           <h3>{{ friend.userName }}</h3>
-          <p class="friend-badge">✅ Agregado</p>
+          <p class="friend-badge">✅ Amigos</p>
         </div>
-        <button class="btn-chat" (click)="openChat(friend)">💬 Chat</button>
+        
+        <div class="card-actions">
+          <button class="btn-chat" (click)="openChat(friend)">💬 Chat</button>
+          <button class="btn-delete-icon" (click)="openDeleteConfirm(friend)" title="Eliminar amigo">🗑️</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'explore'" class="tab-content">
+  <div *ngIf="activeTab === 'explore'" class="tab-content fade-in">
     
-    <div class="search-bar">
-      <input type="text" placeholder="Buscar personas..." [(ngModel)]="searchTerm" (input)="filterUsers()">
-    </div>
-
     <div *ngIf="isLoading" class="loading">Cargando usuarios...</div>
 
     <div class="users-grid" *ngIf="!isLoading">
@@ -59,11 +64,24 @@
     </div>
   </div>
 
-</div> <app-chat 
+</div> 
+
+<app-chat 
   *ngIf="chatFriend" 
   [friend]="chatFriend" 
   [myId]="currentUser.id"
   (close)="closeChat()">
 </app-chat>
+
+<div class="modal-overlay" *ngIf="showDeleteModal">
+  <div class="modal-content"> <h2 style="color: #dc2626; margin-top:0;">¿Eliminar Amigo?</h2>
+    <p>¿Seguro que quieres eliminar a <strong>{{ friendToDelete?.userName }}</strong> de tu lista de amigos?</p>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeDeleteModal()">Cancelar</button>
+      <button class="btn-danger" (click)="confirmDelete()">Sí, Eliminar</button>
+    </div>
+  </div>
+</div>
 
 <app-footer></app-footer>

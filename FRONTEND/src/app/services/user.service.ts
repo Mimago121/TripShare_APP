@@ -62,4 +62,8 @@ export class UserService {
   getMyFriends(userId: number): Observable<User[]> {
     return this.http.get<User[]>(`${this.baseUrl}/friends/accepted/${userId}`);
   }
+
+  deleteFriend(userId: number, friendId: number): Observable<any> {
+  return this.http.delete(`${this.baseUrl}/friends/${userId}/${friendId}`);
+}
 }

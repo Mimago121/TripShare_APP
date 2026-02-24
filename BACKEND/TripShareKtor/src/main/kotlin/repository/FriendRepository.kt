@@ -7,6 +7,7 @@ import database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or // <--- IMPORTANTE: Faltaba este import para el 'or'
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -18,9 +19,7 @@ class FriendRepository {
     // 1. GESTIÓN DE SOLICITUDES
     // ==========================================
 
-
     // Envía una solicitud de amistad de un usuario a otro.
-
     suspend fun sendFriendRequest(fromId: Long, toId: Long): Boolean = dbQuery {
         val existing = FriendRequests.select {
             ((FriendRequests.fromUser eq fromId) and (FriendRequests.toUser eq toId))
@@ -36,18 +35,14 @@ class FriendRepository {
         true
     }
 
-
     // Acepta una solicitud de amistad pendiente.
-
     suspend fun acceptFriendRequest(requestId: Long): Boolean = dbQuery {
         FriendRequests.update ({ FriendRequests.id eq requestId }) {
             it[status] = "accepted"
-        } > 0 // Devuelve true si filas afectadas > 0
+        } > 0
     }
 
-
     // Rechaza (elimina) una solicitud de amistad.
-
     suspend fun rejectFriendRequest(requestId: Long): Boolean = dbQuery {
         FriendRequests.deleteWhere { FriendRequests.id eq requestId } > 0
     }
@@ -56,19 +51,15 @@ class FriendRepository {
     // 2. CONSULTAS DE RED SOCIAL
     // ==========================================
 
-
     // Obtiene la lista definitiva de amigos de un usuario.
-
     suspend fun getAcceptedFriends(userId: Long): List<UserModel> = dbQuery {
 
         // 1. Amigos a los que YO invité
-        // Usamos 'slice' para decirle a MySQL que SOLO queremos la columna 'toUser'
         val sentIds = FriendRequests.slice(FriendRequests.toUser)
             .select { (FriendRequests.fromUser eq userId) and (FriendRequests.status eq "accepted") }
             .map { it[FriendRequests.toUser] }
 
         // 2. Amigos que ME invitaron
-        // Usamos 'slice' para decirle a MySQL que SOLO queremos la columna 'fromUser'
         val receivedIds = FriendRequests.slice(FriendRequests.fromUser)
             .select { (FriendRequests.toUser eq userId) and (FriendRequests.status eq "accepted") }
             .map { it[FriendRequests.fromUser] }
@@ -82,9 +73,7 @@ class FriendRepository {
         UserEntity.find { Users.id inList allFriendIds }.map { it.toModel() }
     }
 
-
     // Obtiene las solicitudes de amistad que le han enviado a este usuario y están pendientes.
-
     suspend fun getPendingRequestsForUser(userId: Long): List<FriendRequestDto> = dbQuery {
         FriendRequests.join(Users, JoinType.INNER, onColumn = FriendRequests.fromUser, otherColumn = Users.id)
             .slice(FriendRequests.id, Users.userName, FriendRequests.status)
@@ -99,11 +88,25 @@ class FriendRepository {
     }
 
     // ==========================================
-    // 3. FUNCIONES MAPPER (TRADUCTORES)
+    // CORRECCIÓN AQUÍ ABAJO 👇
     // ==========================================
 
+    // Función para eliminar la amistad (o cancelar solicitud)
+    suspend fun removeFriendship(userId1: Long, userId2: Long): Boolean = dbQuery {
+        // Usamos FriendRequests, fromUser y toUser (no Friends ni requesterId)
 
-    // Convierte una entidad de base de datos (UserEntity) en un DTO limpio (UserModel).
+        FriendRequests.deleteWhere {
+            (
+                    (FriendRequests.fromUser eq userId1) and (FriendRequests.toUser eq userId2)
+                    ) or (
+                    (FriendRequests.fromUser eq userId2) and (FriendRequests.toUser eq userId1)
+                    )
+        } > 0
+    }
+
+    // ==========================================
+    // 3. FUNCIONES MAPPER (TRADUCTORES)
+    // ==========================================
 
     private fun UserEntity.toModel() = UserModel(
         id = id.value,

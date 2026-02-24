@@ -45,5 +45,28 @@ fun Route.friendRouting(friendRepo: FriendRepository) {
             val userId = call.parameters["userId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             call.respond(friendRepo.getAcceptedFriends(userId))
         }
+
+        authenticate("auth-session") {
+            delete("/{userId}/{friendId}") {
+                val userId = call.parameters["userId"]?.toLongOrNull()
+                val friendId = call.parameters["friendId"]?.toLongOrNull()
+
+                if (userId == null || friendId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
+                    return@delete
+                }
+
+                try {
+                    val deleted = friendRepo.removeFriendship(userId, friendId)
+                    if (deleted) {
+                        call.respond(HttpStatusCode.OK, mapOf("message" to "Amigo eliminado correctamente"))
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, "No eran amigos o no se encontró la relación")
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error del servidor: ${e.message}")
+                }
+            }
+        }
     }
 }

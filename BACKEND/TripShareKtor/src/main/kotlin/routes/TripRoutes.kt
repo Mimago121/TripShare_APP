@@ -138,7 +138,7 @@ fun Route.tripRouting(
             call.respond(tripRepo.getTripMembers(id))
         }
 
-        // ELIMINAR MIEMBRO DEL VIAJE
+        authenticate("auth-session") {
         delete("/{id}/members/{userId}") {
             val tripId = call.parameters["id"]?.toLongOrNull()
             val userId = call.parameters["userId"]?.toLongOrNull()
@@ -155,6 +155,7 @@ fun Route.tripRouting(
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, "Error al eliminar miembro: ${e.message}")
             }
+        }
         }
     }
 }

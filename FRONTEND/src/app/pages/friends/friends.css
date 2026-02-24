@@ -1,30 +1,26 @@
-/* ========================================= */
-/* 1. CONFIGURACIÓN DEL COMPONENTE (:host)   */
-/* ========================================= */
-/* Esto fuerza a que el componente ocupe toda la pantalla y tenga el color de fondo correcto */
+/* =========================================
+   CONFIGURACIÓN DEL COMPONENTE
+   ========================================= */
 :host {
-  display: flex;             /* <--- Flexbox al rescate */
-  flex-direction: column;    /* <--- Orden vertical */
-  min-height: 100vh;         /* <--- Altura mínima: 100% de la ventana */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   background-color: var(--bg-color);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ========================================= */
-/* 2. CONTENEDOR PRINCIPAL                   */
-/* ========================================= */
 .friends-container {
-  flex: 1;                   /* <--- ESTO ES LA MAGIA: Ocupa todo el espacio disponible */
-  width: 100%;               /* <--- Asegura ancho completo */
+  flex: 1;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
 }
 
-/* ========================================= */
-/* 3. CABECERA Y PESTAÑAS                    */
-/* ========================================= */
+/* =========================================
+   CABECERA Y BUSCADOR GLOBAL
+   ========================================= */
 .friends-header {
   text-align: center;
   margin-bottom: 40px;
@@ -33,8 +29,34 @@
 .friends-header h1 {
   font-size: 2.5rem;
   margin-bottom: 25px;
-  color: var(--text-main); /* Se adapta al tema (blanco en dark, negro en light) */
+  color: var(--text-main);
   font-weight: 800;
+}
+
+/* Buscador centrado arriba */
+.search-bar-global {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.search-bar-global input {
+  width: 100%;
+  max-width: 500px;
+  padding: 14px 25px;
+  border-radius: 50px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-main);
+  font-size: 1rem;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.search-bar-global input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Pestañas */
@@ -53,18 +75,14 @@
   border: none;
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-secondary); /* Gris cuando inactivo */
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 10px 15px;
   position: relative;
   transition: all 0.3s ease;
 }
 
-.tabs button:hover {
-  color: var(--primary);
-}
-
-.tabs button.active {
+.tabs button:hover, .tabs button.active {
   color: var(--primary);
 }
 
@@ -79,48 +97,18 @@
   border-radius: 3px 3px 0 0;
 }
 
-/* ========================================= */
-/* 4. BUSCADOR                               */
-/* ========================================= */
-.search-bar {
-  margin-bottom: 40px;
-  display: flex;
-  justify-content: center;
-}
-
-.search-bar input {
-  width: 100%;
-  max-width: 500px;
-  padding: 14px 25px;
-  border-radius: 50px;
-  border: 1px solid var(--border-color);
-  background-color: var(--card-bg); /* Fondo de la tarjeta (oscuro en dark mode) */
-  color: var(--text-main);          /* Texto legible */
-  font-size: 1rem;
-  transition: all 0.3s;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-
-.search-bar input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.2); /* Si no tienes primary-rgb, usa rgba(0,123,255,0.2) */
-}
-
-/* ========================================= */
-/* 5. GRID DE TARJETAS (Uniformidad)         */
-/* ========================================= */
+/* =========================================
+   GRID DE TARJETAS
+   ========================================= */
 .users-grid {
   display: grid;
-  /* Ajuste automático: mínimo 260px por tarjeta */
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 30px;
   padding-bottom: 50px;
 }
 
-/* TARJETA INDIVIDUAL */
 .user-card {
-  background-color: var(--card-bg); /* Fondo oscuro en dark mode */
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 30px 20px;
@@ -129,33 +117,29 @@
   align-items: center;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  
-  /* ALTURA FIJA: Importante para que todas sean iguales */
   height: 380px; 
   position: relative;
 }
 
 .user-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 15px 30px var(--shadow); /* Sombra adaptativa */
+  box-shadow: 0 15px 30px var(--shadow);
   border-color: var(--primary);
 }
 
-/* IMAGEN DE PERFIL */
 .user-card img {
   width: 110px;
   height: 110px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--bg-color); /* Borde del color del fondo para efecto "recorte" */
+  border: 4px solid var(--bg-color);
   box-shadow: 0 5px 15px rgba(0,0,0,0.2);
   margin-bottom: 15px;
 }
 
-/* INFO USUARIO */
 .user-info {
   width: 100%;
-  flex-grow: 1; /* Ocupa el espacio disponible hasta los botones */
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -166,8 +150,6 @@
   margin: 0 0 8px 0;
   color: var(--text-main);
   font-weight: 700;
-  
-  /* Limitar a 2 líneas y poner ... si es muy largo */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -179,8 +161,6 @@
   color: var(--text-secondary);
   line-height: 1.5;
   margin: 0;
-  
-  /* Limitar Bio a 3 líneas fijas */
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -188,9 +168,8 @@
   text-overflow: ellipsis;
 }
 
-/* BADGE DE AMIGO */
 .friend-badge {
-  color: #2ecc71 !important; /* Verde brillante */
+  color: #2ecc71 !important;
   font-weight: 700;
   font-size: 0.9rem;
   margin-top: 5px !important;
@@ -199,9 +178,17 @@
   border-radius: 20px;
 }
 
-/* ========================================= */
-/* 6. BOTONES                                */
-/* ========================================= */
+/* =========================================
+   ACCIONES Y BOTONES
+   ========================================= */
+.card-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+}
+
 .btn-add, .btn-chat {
   width: 100%;
   padding: 12px 0;
@@ -211,24 +198,23 @@
   border: none;
   font-size: 1rem;
   transition: 0.2s;
-  margin-top: auto; /* Empuja el botón al final de la tarjeta */
+  margin-top: auto;
 }
 
-/* Botón Añadir / Pendiente */
 .btn-add {
   background-color: var(--primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); /* Sombra suave */
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 .btn-add:hover { background-color: var(--primary-hover); transform: scale(1.02); }
 .btn-add:disabled { background-color: var(--border-color); color: var(--text-secondary); cursor: default; box-shadow: none; }
 .btn-add.pending { background-color: #f39c12; color: white; }
 
-/* Botón Chat */
 .btn-chat {
   background-color: transparent;
   border: 2px solid var(--border-color);
   color: var(--text-main);
+  flex: 1; /* Ocupa el espacio */
 }
 .btn-chat:hover {
   border-color: var(--primary);
@@ -236,9 +222,82 @@
   background-color: rgba(0, 123, 255, 0.05);
 }
 
-/* ========================================= */
-/* 7. ESTADOS Y ANIMACIONES                  */
-/* ========================================= */
+/* Botón de Borrar (Papelera) */
+.btn-delete-icon {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-delete-icon:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* =========================================
+   MODAL Y OTROS
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  color: var(--text-main);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-cancel {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+.btn-cancel:hover { background-color: #e5e7eb; }
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+.btn-danger:hover { background-color: #dc2626; }
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -253,7 +312,6 @@
 .fade-in { animation: fadeIn 0.4s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Loading */
 .loading {
   text-align: center;
   padding: 40px;

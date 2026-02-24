@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router'; // <--- IMPORTANTE: Para leer la URL
+import { ActivatedRoute } from '@angular/router'; 
 
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
@@ -21,22 +21,30 @@ interface UserUI extends User {
   styleUrls: ['./friends.css']
 })
 export class FriendsComponent implements OnInit {
-  // Pestaña activa: 'my-friends' o 'explore'
-  activeTab: string = 'my-friends'; // Cambiado String -> string (tipo primitivo es mejor)
+  activeTab: string = 'my-friends';
 
-  myFriends: UserUI[] = [];      // Lista de amigos ya aceptados
-  exploreUsers: UserUI[] = [];   // Lista de gente para agregar
-  filteredExplore: UserUI[] = []; // Para el buscador
+  // Listas "Brutas" (Todos los datos)
+  allMyFriends: UserUI[] = [];      
+  allExploreUsers: UserUI[] = [];   
+
+  // Listas "Filtradas" (Lo que se ve en pantalla)
+  filteredFriends: UserUI[] = [];
+  filteredExplore: UserUI[] = []; 
   
   searchTerm: string = '';
   isLoading: boolean = false;
   currentUser: any = null;
 
-  chatFriend: UserUI | null = null; // El amigo con el que hablas
+  chatFriend: UserUI | null = null; 
+
+  // MODAL DE BORRADO
+  showDeleteModal: boolean = false;
+  friendToDelete: UserUI | null = null;
+  errorMessage: string = '';
 
   constructor(
     private userService: UserService,
-    private route: ActivatedRoute // <--- INYECTADO
+    private route: ActivatedRoute 
   ) {}
 
   ngOnInit(): void {
@@ -45,70 +53,64 @@ export class FriendsComponent implements OnInit {
       if (userStr) this.currentUser = JSON.parse(userStr);
     }
     
-    // Carga inicial
     if (this.currentUser) {
       this.loadInitialData();
     }
   }
 
-  // Carga coordinada: Primero amigos -> Luego revisar URL -> Luego Explorar
   loadInitialData() {
+    this.isLoading = true;
     this.userService.getMyFriends(this.currentUser.id).subscribe({
       next: (friends) => {
-        this.myFriends = friends;
+        // 1. FILTRO DE ADMIN EN MIS AMIGOS
+        this.allMyFriends = friends.filter(f => (f as any).role !== 'admin');
         
-        // 1. AHORA QUE TENEMOS AMIGOS, REVISAMOS SI HAY QUE ABRIR CHAT
-        this.checkUrlForChat();
+        // Inicializamos la lista filtrada
+        this.filteredFriends = [...this.allMyFriends];
 
-        // 2. Cargamos el resto de usuarios para "Explorar"
+        this.checkUrlForChat();
         this.loadExploreUsers(); 
       },
       error: () => this.loadExploreUsers()
     });
   }
 
-  // 👇 LÓGICA NUEVA: Abrir chat si la URL lo dice (?chatWith=5)
   checkUrlForChat() {
     this.route.queryParams.subscribe(params => {
       const friendId = params['chatWith'];
-      
       if (friendId) {
-        // Buscamos al amigo en la lista cargada (convirtiendo ID a número por si acaso)
-        const friendToOpen = this.myFriends.find(f => f.id == friendId);
-        
+        const friendToOpen = this.allMyFriends.find(f => f.id.toString() === friendId.toString());
         if (friendToOpen) {
-          this.activeTab = 'my-friends'; // Aseguramos estar en la pestaña correcta
-          this.openChat(friendToOpen);   // ¡ABRIMOS CHAT!
+          this.activeTab = 'my-friends'; 
+          this.openChat(friendToOpen);   
         }
       }
     });
   }
 
-  // Cambiar de pestaña
   setTab(tab: string) {
     this.activeTab = tab;
+    // Al cambiar de pestaña, limpiamos búsqueda o reaplicamos filtro si quieres
+    // this.searchTerm = ''; 
+    // this.filterUsers();
   }
 
-  // CARGAR RESTO DE USUARIOS (EXPLORAR)
   loadExploreUsers() {
-    this.isLoading = true;
+    // isLoading ya estaba true desde loadInitialData o lo ponemos aquí si se llama aparte
     
-    // Sacamos los IDs de mis amigos para no mostrarlos en "Explorar"
-    const myFriendIds = this.myFriends.map(f => f.id);
+    const myFriendIds = this.allMyFriends.map(f => f.id);
 
     this.userService.getUsers().subscribe({
       next: (data) => {
-        this.exploreUsers = data
+        this.allExploreUsers = data
           .filter(u => 
-            u.id !== this.currentUser?.id && // No mostrarme a mí mismo
-            !myFriendIds.includes(u.id)      // No mostrar a mis amigos actuales
+            u.id !== this.currentUser?.id && 
+            !myFriendIds.includes(u.id) && 
+            (u as any).role !== 'admin' // FILTRO ADMIN EN EXPLORAR
           )
-          .map(u => ({ 
-            ...u, 
-            requestStatus: 'none' 
-          }));
+          .map(u => ({ ...u, requestStatus: 'none' }));
         
-        this.filteredExplore = [...this.exploreUsers];
+        this.filteredExplore = [...this.allExploreUsers];
         this.isLoading = false;
       },
       error: (err) => {
@@ -118,26 +120,62 @@ export class FriendsComponent implements OnInit {
     });
   }
 
+  // --- BUSCADOR UNIFICADO ---
+  filterUsers() {
+    const term = this.searchTerm.toLowerCase().trim();
+
+    // Filtramos AMBAS listas a la vez
+    this.filteredFriends = this.allMyFriends.filter(u => 
+      u.userName.toLowerCase().includes(term)
+    );
+
+    this.filteredExplore = this.allExploreUsers.filter(u => 
+      u.userName.toLowerCase().includes(term)
+    );
+  }
+
+  // --- LÓGICA DE BORRADO DE AMIGOS ---
+  openDeleteConfirm(friend: UserUI) {
+    this.friendToDelete = friend;
+    this.showDeleteModal = true;
+  }
+
+  closeDeleteModal() {
+    this.showDeleteModal = false;
+    this.friendToDelete = null;
+  }
+
+  confirmDelete() {
+    if (!this.friendToDelete || !this.currentUser) return;
+
+    this.userService.deleteFriend(this.currentUser.id, this.friendToDelete.id).subscribe({
+      next: () => {
+        // Eliminar de la lista local
+        this.allMyFriends = this.allMyFriends.filter(f => f.id !== this.friendToDelete!.id);
+        
+        // Actualizar filtros y mover usuario a "Explorar" si se desea
+        this.filterUsers();
+        this.loadExploreUsers(); // Recargamos explorar para que aparezca allí de nuevo
+        
+        this.closeDeleteModal();
+      },
+      error: (err) => {
+        console.error("Error eliminando amigo", err);
+        alert("Error al eliminar amigo."); // O usa un banner si prefieres
+      }
+    });
+  }
+
   sendRequest(user: UserUI) {
     if (!this.currentUser) return;
     this.userService.sendFriendRequest(this.currentUser.id, user.id).subscribe({
       next: () => {
         user.requestStatus = 'pending';
-        alert(`Solicitud enviada a ${user.userName}`);
       },
       error: (err) => {
-        if (err.status === 409) {
-          user.requestStatus = 'pending';
-          alert('Ya habías enviado solicitud a este usuario.');
-        }
+        if (err.status === 409) user.requestStatus = 'pending';
       }
     });
-  }
-
-  filterUsers() {
-    this.filteredExplore = this.exploreUsers.filter(u => 
-      u.userName.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
   }
   
   openChat(friend: UserUI) {
@@ -146,7 +184,5 @@ export class FriendsComponent implements OnInit {
   
   closeChat() {
     this.chatFriend = null;
-    // Opcional: Limpiar la URL para que si recargas no se vuelva a abrir solo
-    // window.history.replaceState({}, '', '/friends'); 
   }
 }
