@@ -31,7 +31,7 @@ src/
      ├── components/      # Componentes visuales
      ├── services/        # Servicios HTTP (comunicación con backend)
      ├── interfaces/      # Modelos y tipado de datos
-     ├── pages/           # Pantallas principales (si aplica)
+     ├── pages/           # Pantallas principales 
      ├── app.routes.ts    # Configuración de rutas
      └── app.component.ts
 ```
