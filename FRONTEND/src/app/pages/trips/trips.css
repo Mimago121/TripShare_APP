@@ -72,6 +72,7 @@
   background-color: #eaeaea;
   cursor: pointer;
   overflow: hidden;
+  position: relative;
 }
 
 .trip-card-img img {
@@ -173,8 +174,23 @@
   100% { transform: rotate(360deg); } 
 }
 
+/* Cuando no hay foto, mostramos este cuadro gris */
+.no-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%); /* Un gris azulado suave */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
 /* ============================== */
-/* MODAL Y FORMULARIO             */
+/* MODAL Y FORMULARIO (COMPACTO)  */
 /* ============================== */
 
 .modal-overlay {
@@ -191,13 +207,23 @@
 
 .modal-content {
   background-color: var(--card-bg);
-  padding: 30px;
+  padding: 20px 25px; /* Más compacto */
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
   position: relative;
   box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   border: 1px solid var(--border-color);
+  max-height: 90vh; 
+  overflow-y: auto;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 10px;
 }
 
 .close-btn {
@@ -210,29 +236,45 @@
 
 .modal-header h2 {
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 15px; 
   color: var(--text-main);
+  font-size: 1.5rem; 
 }
 
 .custom-input {
   width: 100%;
-  padding: 12px;
+  padding: 10px 12px; 
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-main);
   box-sizing: border-box;
+  font-size: 0.95rem;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 12px; 
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 5px; 
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem; 
+}
+
+/* Estilos de inputs de texto/selects/textareas del modal general */
+.form-group input, 
+.form-group textarea, 
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  box-sizing: border-box;
+  font-size: 0.95rem;
 }
 
 .form-row {
@@ -245,25 +287,23 @@
 }
 
 /* ============================== */
-/* ACCIONES DEL MODAL (IGUALADAS) */
+/* ACCIONES DEL MODAL             */
 /* ============================== */
 .modal-actions {
   display: flex;
   gap: 15px;
-  margin-top: 30px;
+  margin-top: 15px; 
 }
 
-/* Ambos botones ocupan el 50% */
 .modal-actions button {
   flex: 1; 
-  padding: 12px;
+  padding: 10px 12px; 
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
-/* Botón Cancelar */
 .btn-cancel {
   background-color: transparent;
   border: 1px solid var(--border-color);
@@ -277,78 +317,42 @@
   border-color: var(--text-secondary);
 }
 
-/* Botón Confirmar */
-.btn-confirm {
+.btn-confirm, .btn-save {
   background-color: var(--primary);
   color: white;
   border: none;
   transition: background-color 0.2s;
 }
 
-.btn-confirm:hover {
+.btn-confirm:hover, .btn-save:hover {
   opacity: 0.9;
 }
-/* Cuando no hay foto, mostramos este cuadro gris */
-.no-image-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%); /* Un gris azulado suave */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.placeholder-icon {
-  font-size: 3rem;
-  opacity: 0.5;
-}
-
-/* Ajuste para que la imagen o el placeholder llenen el hueco */
-.trip-card-img {
-  height: 180px; /* Altura fija para la portada */
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-  background-color: #f0f0f0;
-}
-
-.trip-card-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Para que la foto no se deforme */
-}
 
 /* ============================== */
-/* RESTO DE TU CSS ORIGINAL ARRIBA*/
-/* ============================== */
-/* (Deja intacto todo tu CSS actual y pega esto debajo) */
-
-
-/* ============================== */
-/* MENSAJE DE ERROR DEL MODAL     */
+/* MENSAJE DE ERROR DEL MODAL     */
 /* ============================== */
 .custom-error-banner {
   background-color: #fef2f2; 
   border: 1px solid #fca5a5; 
   color: #991b1b; 
-  padding: 12px 15px;
-  border-radius: 10px;
+  padding: 8px 12px; 
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.05);
+  gap: 8px; 
+  margin-bottom: 12px; 
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.05);
   animation: slideDownFade 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .custom-error-banner .error-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .custom-error-banner .error-text {
-  font-size: 0.95rem;
+  font-size: 0.85rem; 
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 @keyframes slideDownFade {
@@ -367,14 +371,15 @@
 /* ============================== */
 .custom-file-input {
   width: 100%;
-  padding: 12px;
+  padding: 8px; 
   border-radius: 8px;
-  border: 1px dashed var(--primary); /* Borde punteado para que parezca una zona de arrastrar/subir */
+  border: 1px dashed var(--primary); 
   background-color: rgba(99, 102, 241, 0.03);
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.2s;
   box-sizing: border-box;
+  font-size: 0.85rem;
 }
 
 .custom-file-input:hover {
@@ -382,14 +387,13 @@
   border-color: #4f46e5;
 }
 
-/* Ocultar el botón feo nativo del input file si es posible en algunos navegadores */
 .custom-file-input::-webkit-file-upload-button {
   background: var(--primary);
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
-  margin-right: 15px;
+  margin-right: 10px;
   font-weight: bold;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -400,16 +404,16 @@
 }
 
 .image-preview {
-  margin-top: 15px;
+  margin-top: 10px; 
   text-align: center;
   background: var(--bg-color);
   border-radius: 8px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--border-color);
 }
 
 .image-preview img {
-  max-height: 150px;
+  max-height: 100px; 
   width: 100%;
   object-fit: cover;
   border-radius: 6px;

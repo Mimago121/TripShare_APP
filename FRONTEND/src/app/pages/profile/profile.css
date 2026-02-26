@@ -206,10 +206,6 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ============================== */
-/* RESTO DE TU CSS ORIGINAL ARRIBA*/
-/* ============================== */
-
-/* ============================== */
 /* ESTILOS PARA SUBIDA DE ARCHIVOS*/
 /* ============================== */
 .custom-file-input {

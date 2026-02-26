@@ -12,7 +12,7 @@
 
       <div class="profile-header-content">
         <div class="avatar-wrapper">
-          <img [src]="user.avatarUrl" alt="Profile" class="avatar-img">
+          <img [src]="user.avatarUrl || 'https://ui-avatars.com/api/?name=' + user.userName + '&background=random&color=fff&size=150'" alt="Profile" class="avatar-img">
         </div>
 
         <div class="user-details">
@@ -32,15 +32,15 @@
       <div class="profile-stats">
         <div class="stat-item">
           <span class="stat-num">{{ stats.countries }}</span>
-          <span class="stat-label">Países</span>
+          <span class="stat-label">Destinos</span>
         </div>
         <div class="stat-item">
           <span class="stat-num">{{ stats.trips }}</span>
           <span class="stat-label">Viajes</span>
         </div>
         <div class="stat-item">
-          <span class="stat-num">{{ stats.followers }}</span>
-          <span class="stat-label">Seguidores</span>
+          <span class="stat-num">{{ stats.friends }}</span>
+          <span class="stat-label">Amigos</span>
         </div>
       </div>
 
@@ -67,8 +67,7 @@
           <div class="card-info">
             <h3>{{ trip.title }}</h3>
             <div class="card-meta">
-              <span>✈️ 2 Destinos</span>
-              <span>👥 3 Amigos</span>
+              <span>✈️ {{ trip.destination }}</span>
             </div>
           </div>
         </div>

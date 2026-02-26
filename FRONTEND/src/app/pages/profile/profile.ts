@@ -21,7 +21,9 @@ export class ProfileComponent implements OnInit {
   isEditModalOpen: boolean = false;
   activeTab: string = 'trips'; 
   
-  stats = { countries: 0, trips: 0, followers: 145 };
+  // STATS REALES (Cambiamos followers por friends)
+  stats = { countries: 0, trips: 0, friends: 0 };
+  
   myTrips: any[] = [];
   myPhotos: any[] = []; 
 
@@ -40,7 +42,7 @@ export class ProfileComponent implements OnInit {
     private geocoder: MapGeocoder
   ) {}
 
- ngOnInit(): void {
+  ngOnInit(): void {
     const userData = localStorage.getItem('user');
     if (userData) {
       this.user = JSON.parse(userData);
@@ -48,7 +50,19 @@ export class ProfileComponent implements OnInit {
       this.loadUserTrips(this.user.id);
       this.loadVisitedPlaces(this.user.id);
       this.loadUserPhotos(this.user.id);
+      this.loadUserFriends(this.user.id); // <-- CARGAMOS AMIGOS REALES
     }
+  }
+
+  // --- CARGA DE DATOS REALES ---
+
+  loadUserFriends(userId: number) {
+    this.tripService.getMyFriends(userId).subscribe({
+      next: (friends) => {
+        this.stats.friends = friends.length; // Cantidad real de amigos
+      },
+      error: (err) => console.error("Error cargando amigos:", err)
+    });
   }
 
   loadUserPhotos(userId: number) {
@@ -83,13 +97,23 @@ export class ProfileComponent implements OnInit {
           title: t.name,
           destination: t.destination,
           date: new Date(t.startDate).toLocaleDateString(), 
-          image: `https://source.unsplash.com/random/800x600/?travel,${t.destination}`
+          // SOLUCIÓN IMÁGENES: Usa la de BD, o una de Unsplash que SÍ funciona (la API antigua cerró)
+          image: t.imageUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop'
         }));
+        
+        // 1. Número real de viajes
         this.stats.trips = trips.length;
+
+        // 2. Número de destinos únicos ("países")
+        const uniqueDestinations = new Set(trips.map((t: any) => t.destination.toLowerCase().trim()));
+        this.stats.countries = uniqueDestinations.size;
+
         this.generateMapMarkers(trips);
       }
     });
   }
+
+  // --- MAPAS Y PINES ---
 
   generateMapMarkers(trips: any[]) {
     trips.forEach((trip) => {
@@ -139,10 +163,10 @@ export class ProfileComponent implements OnInit {
   }
 
   // --- LÓGICA DE IMÁGENES BASE64 ---
+  
   onFileSelected(event: any, type: 'avatar' | 'cover') {
     const file: File = event.target.files[0];
     if (file && file.type.match(/image\/*/)) {
-      // Si es avatar lo hacemos pequeñito (400px), si es portada más grande (1200px)
       const maxWidth = type === 'avatar' ? 400 : 1200;
       
       this.compressImage(file, maxWidth, 0.8).then(compressedBase64 => {
@@ -190,10 +214,8 @@ export class ProfileComponent implements OnInit {
   closeEditModal() { this.isEditModalOpen = false; }
   
   saveProfile() {
-    // Aquí actualizamos el LocalStorage con las nuevas fotos en Base64
     localStorage.setItem('user', JSON.stringify(this.user));
-    // IMPORTANTE: En el futuro deberías enviar este objeto 'this.user' a tu backend Ktor
-    // this.authService.updateProfile(this.user).subscribe(...)
+    // IMPORTANTE: En el futuro deberías enviar este objeto 'this.user' a tu backend
     this.closeEditModal();
   }
   
