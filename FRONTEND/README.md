@@ -1,59 +1,197 @@
-# GestorViajes
+# Frontend (Angular) — TripShare
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.6.
+Este directorio contiene el **frontend web** de TripShare, desarrollado con **Angular**.  
+Se encarga de la interfaz de usuario (pantallas, formularios y navegación) y de la comunicación con el backend (Ktor) mediante peticiones HTTP en formato JSON.
 
-## Development server
+---
 
-To start a local development server, run:
+## 📌 Funcionalidades principales
+
+El frontend implementa las siguientes funcionalidades del MVP:
+
+- Registro e inicio de sesión de usuarios.
+- Visualización y edición básica del perfil.
+- Listado de viajes en los que participa el usuario.
+- Creación de nuevos viajes.
+- Visualización del detalle de un viaje.
+- Gestión del itinerario (añadir actividades y verlas ordenadas).
+- Gestión de gastos compartidos y visualización del balance.
+- Subida y visualización de recuerdos (según implementación actual).
+- Validación de formularios y control de errores en el lado cliente.
+
+---
+
+## 🧱 Estructura del proyecto
+
+La estructura del frontend sigue una arquitectura basada en componentes y servicios:
+
+```
+src/
+ └── app/
+     ├── components/      # Componentes visuales
+     ├── services/        # Servicios HTTP (comunicación con backend)
+     ├── interfaces/      # Modelos y tipado de datos
+     ├── pages/           # Pantallas principales 
+     ├── app.routes.ts    # Configuración de rutas
+     └── app.component.ts
+```
+
+### Componentes
+Gestionan la interfaz y la interacción con el usuario.
+
+### Servicios
+Centralizan las peticiones HTTP al backend.
+
+### Interfaces / Modelos
+Definen la estructura de los datos (Trip, User, Expense, etc.), mejorando la seguridad y mantenibilidad del código.
+
+### Rutas
+Permiten la navegación entre vistas.
+
+---
+
+## ⚙️ Requisitos previos
+
+- Node.js (v18 o superior recomendado)
+- npm
+- Angular CLI (opcional pero recomendado)
+
+---
+
+## ▶️ Instalación y ejecución
+
+### 1️⃣ Instalar dependencias
+
+```bash
+cd frontend
+npm install
+```
+
+### 2️⃣ Ejecutar en desarrollo
+
+```bash
+npm start
+```
+
+o
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+La aplicación se ejecutará en:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
+## 🔁 Configuración del Proxy (Desarrollo)
+
+Para evitar problemas de CORS, se utiliza un archivo `proxy.conf.json`.
+
+### Ejemplo:
+
+```json
+{
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
 ```
 
-## Building
+Esto permite:
 
-To build the project run:
+- Llamar desde Angular a `/api/trips`
+- Redirigir automáticamente a `http://localhost:8080/trips`
 
-```bash
-ng build
+### Recomendación importante
+
+En los servicios Angular, utilizar siempre rutas relativas:
+
+```ts
+this.http.get('/api/trips');
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Evitar usar directamente `http://localhost:8080/...`.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## 🔌 Flujo de comunicación
 
-```bash
-ng test
+El flujo de datos sigue este patrón:
+
+1. El usuario interactúa con un componente.
+2. El componente llama a un servicio.
+3. El servicio realiza una petición HTTP al backend.
+4. El backend devuelve datos en formato JSON.
+5. El componente actualiza la vista con los datos recibidos.
+
+---
+
+## 🍪 Gestión de sesión (si se usan cookies)
+
+Si el backend utiliza cookies de sesión, puede ser necesario incluir:
+
+```ts
+{ withCredentials: true }
 ```
 
-## Running end-to-end tests
+Ejemplo:
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+```ts
+this.http.get('/api/trips', { withCredentials: true });
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## 🧪 Tests
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Para ejecutar los tests unitarios:
+
+```bash
+npm test
+```
+
+---
+
+## 🧯 Problemas comunes
+
+### No conecta con el backend
+- Verificar que el backend está activo en `http://localhost:8080`.
+- Comprobar que el proxy está correctamente configurado.
+- Asegurarse de usar rutas `/api/...`.
+
+### Problemas de CORS
+- Confirmar que el proxy está activo.
+- Revisar configuración CORS en el backend.
+
+### Errores de dependencias
+- Ejecutar nuevamente `npm install`.
+- Verificar versión de Node.js.
+
+---
+
+## 📦 Build para producción
+
+Para generar la versión optimizada:
+
+```bash
+ng build --configuration production
+```
+
+El resultado se generará en la carpeta:
+
+```
+dist/
+```
+
+---
+
+## 📌 Notas finales
+
+El frontend está diseñado siguiendo una separación clara entre presentación (componentes) y comunicación (servicios), facilitando el mantenimiento y la escalabilidad futura del sistema.
