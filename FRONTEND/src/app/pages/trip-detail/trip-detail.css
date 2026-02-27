@@ -1258,29 +1258,6 @@
 .btn-danger:hover {
   background-color: #dc2626; /* Rojo más oscuro */
 }
-<<<<<<< HEAD
-::ng-deep .pac-container {
-  z-index: 99999 !important;
-}
-
-=======
-
-/* ESTILOS PARA BOTÓN DE PELIGRO (BORRAR / SALIR) */
-.btn-danger {
-  background-color: #ef4444; /* Rojo */
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-  font-size: 0.95rem;
-}
-
-.btn-danger:hover {
-  background-color: #dc2626; /* Rojo más oscuro */
-}
 
 /* BOTÓN: ABANDONAR VIAJE (SIDEBAR) */
 .btn-leave-trip-sidebar {
@@ -1306,4 +1283,10 @@
   transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(220, 38, 38, 0.1);
 }
->>>>>>> 96199ce08273c43901f672067654fa9502f82fca
+
+/* =========================================
+   FORZAR QUE EL DESPLEGABLE DE GOOGLE SE VEA
+   ========================================= */
+::ng-deep .pac-container {
+  z-index: 99999 !important;
+}

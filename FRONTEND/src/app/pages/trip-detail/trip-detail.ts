@@ -227,21 +227,21 @@ export class TripDetailComponent implements OnInit {
 
     this.showModal = true;
   }
-
-  confirmLeaveTrip() {
+confirmLeaveTrip() {
     if (!this.currentUserId) return;
 
+    // Como no podemos tocar el backend para borrar el viaje de la base de datos,
+    // simplemente nos "desvinculamos" de él. Al hacer esto, el viaje desaparecerá
+    // de tu lista de "Mis Viajes", logrando el efecto visual que queremos.
     this.tripService.removeMember(this.tripId, this.currentUserId).subscribe({
       next: () => {
         this.closeModal();
-        // Redirigimos a Mis Viajes Y forzamos una recarga limpia
-        this.router.navigate(['/trips']).then(() => {
-          window.location.reload(); 
-        });
+        this.router.navigate(['/trips']);
       },
       error: (err) => {
-        console.error("Error al abandonar viaje", err);
-        this.errorMessage = "No se pudo abandonar el viaje. Inténtalo de nuevo.";
+        console.error("Error del backend al salir del viaje:", err);
+        // Si incluso esto falla, mostramos el error en el modal
+        this.errorMessage = "El servidor rechazó la petición. Revisa la consola (F12).";
       }
     });
   }

@@ -179,4 +179,8 @@ export class TripService {
   markAsPaid(expenseId: number, userId: number, isPaid: boolean): Observable<any> {
     return this.http.put(`${this.baseUrl}/expenses/pay`, { expenseId, userId, isPaid });
   }
+
+  deleteTrip(tripId: number) {
+    return this.http.delete(`${this.baseUrl}/trips/${tripId}`);
+  }
 }
