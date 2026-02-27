@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms'; 
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
@@ -23,8 +23,9 @@ export class TripDetailComponent implements OnInit {
   myFriends: Member[] = []; 
   availableFriends: Member[] = []; 
   
-  // Variable nueva para controlar a quién borramos
+  // Variables para modales
   memberToDelete: Member | null = null;
+  leaveModalMessage: string = ''; 
 
   tripDays: { date: string, dateObj: Date, activities: any[] }[] = [];
   hours: string[] = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
@@ -40,7 +41,7 @@ export class TripDetailComponent implements OnInit {
   totalExpenses: number = 0;
 
   showModal: boolean = false;
-  modalType: string = ''; // 'activity', 'expense', 'memory', 'invite-friends', 'delete-member'
+  modalType: string = ''; 
   errorMessage: string = ''; 
   
   emailInviteInput: string = '';
@@ -67,7 +68,8 @@ export class TripDetailComponent implements OnInit {
     private tripService: TripService,
     private geocoder: MapGeocoder,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -130,7 +132,7 @@ export class TripDetailComponent implements OnInit {
           this.generateTripDays();
         }
 
-       this.tripService.getActivities(this.tripId).subscribe(a => {
+        this.tripService.getActivities(this.tripId).subscribe(a => {
           // TRUCO NINJA: Extraemos la ubicación del título y la restauramos
           this.activities = a.map((act: any) => {
             if (act.title && act.title.includes('||LOC||')) {
@@ -183,7 +185,6 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  // --- NUEVA LÓGICA DE BORRADO ---
   openDeleteModal(member: Member) {
     if (!this.isOwner) return;
     this.memberToDelete = member;
@@ -204,6 +205,43 @@ export class TripDetailComponent implements OnInit {
       error: (err) => {
         console.error("Error eliminando miembro", err);
         this.errorMessage = "Hubo un error al eliminar al usuario. Inténtalo de nuevo.";
+      }
+    });
+  }
+
+  // --- NUEVA LÓGICA: ABANDONAR VIAJE (Para Todos) ---
+  openLeaveModal() {
+    this.modalType = 'leave-trip';
+    this.errorMessage = '';
+    
+    // Configuramos el mensaje según quién seas y cuántos queden
+    if (this.isOwner) {
+      if (this.members.length > 1) {
+        this.leaveModalMessage = "Al ser el organizador, si sales, se asignará automáticamente un nuevo administrador entre los miembros restantes.";
+      } else {
+        this.leaveModalMessage = "Eres el único miembro. Si sales, el viaje se eliminará permanentemente.";
+      }
+    } else {
+      this.leaveModalMessage = "¿Estás seguro de que quieres abandonar el grupo? Tendrán que volverte a invitar si quieres regresar.";
+    }
+
+    this.showModal = true;
+  }
+
+  confirmLeaveTrip() {
+    if (!this.currentUserId) return;
+
+    this.tripService.removeMember(this.tripId, this.currentUserId).subscribe({
+      next: () => {
+        this.closeModal();
+        // Redirigimos a Mis Viajes Y forzamos una recarga limpia
+        this.router.navigate(['/trips']).then(() => {
+          window.location.reload(); 
+        });
+      },
+      error: (err) => {
+        console.error("Error al abandonar viaje", err);
+        this.errorMessage = "No se pudo abandonar el viaje. Inténtalo de nuevo.";
       }
     });
   }
@@ -244,7 +282,7 @@ export class TripDetailComponent implements OnInit {
     return { top: `${topPx}px`, height: `${heightPx}px` };
   }
 
-updateMapRoute() {
+  updateMapRoute() {
     const locations = this.activities
       .filter(act => act.location && act.location.trim() !== '')
       .sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime())
@@ -382,7 +420,6 @@ updateMapRoute() {
     // 🛡️ VALIDACIÓN DE SOLAPAMIENTO DE HORARIOS
     // ==========================================
     const newStartMs = new Date(startDT).getTime();
-    // Si no pones hora de fin, calculamos que dura 1 hora para evitar que pises la siguiente
     const newEndMs = this.newActivity.endTime 
         ? new Date(endDT).getTime() 
         : newStartMs + (60 * 60 * 1000); 
@@ -391,15 +428,14 @@ updateMapRoute() {
       const actStartMs = new Date(act.startDatetime).getTime();
       const actEndMs = act.endDatetime && act.endDatetime !== act.startDatetime 
           ? new Date(act.endDatetime).getTime() 
-          : actStartMs + (60 * 60 * 1000); // 1 hora por defecto si no tiene fin
+          : actStartMs + (60 * 60 * 1000);
 
-      // Fórmula de solapamiento: (A empieza antes de que B termine) Y (A termina después de que B empiece)
       return newStartMs < actEndMs && newEndMs > actStartMs;
     });
 
     if (isOverlapping) {
       this.errorMessage = "¡Atención! Este plan se solapa en horario con otra actividad que ya tienes programada.";
-      return; // Detenemos el guardado
+      return; 
     }
     // ==========================================
 

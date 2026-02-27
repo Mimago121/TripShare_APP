@@ -197,6 +197,12 @@
         </div>
       </div>
     </ng-container>
+
+    <hr class="sidebar-divider">
+    <button class="btn-leave-trip-sidebar" (click)="openLeaveModal()">
+      🚪 Abandonar Viaje
+    </button>
+
   </aside>
 
 </div>
@@ -209,10 +215,29 @@
     <h2 style="margin-top: 0;" *ngIf="modalType === 'expense'">Nuevo Gasto</h2>
     <h2 style="margin-top: 0;" *ngIf="modalType === 'memory'">Nuevo Recuerdo</h2>
     <h2 style="margin-top: 0;" *ngIf="modalType === 'invite-friends'">Invitar Amigos</h2>
+    
     <h2 style="margin-top: 0; color: #dc2626;" *ngIf="modalType === 'delete-member'">¿Eliminar Viajero?</h2>
+    <h2 style="margin-top: 0; color: #dc2626;" *ngIf="modalType === 'leave-trip'">¿Salir del grupo?</h2>
 
-    <div class="custom-error-banner" *ngIf="errorMessage && modalType !== 'invite-friends' && modalType !== 'delete-member'">
+    <div class="custom-error-banner" *ngIf="errorMessage && modalType !== 'invite-friends' && modalType !== 'delete-member' && modalType !== 'leave-trip'">
       <span class="error-icon">⚠️</span><span class="error-text">{{ errorMessage }}</span>
+    </div>
+
+    <div *ngIf="modalType === 'leave-trip'">
+        <p style="font-size: 1rem; color: var(--text-main); margin-bottom: 20px; line-height: 1.5;">
+            {{ leaveModalMessage }}
+        </p>
+        
+        <div class="custom-error-banner" *ngIf="errorMessage">
+            <span class="error-icon">⚠️</span><span class="error-text">{{ errorMessage }}</span>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn-invite-action" style="flex: 1; border-color: #ccc; color: #666;" (click)="closeModal()">Cancelar</button>
+            <button class="btn-danger" style="flex: 1;" (click)="confirmLeaveTrip()">
+              {{ isOwner && members.length == 1 ? 'Borrar Viaje' : 'Sí, Salir' }}
+            </button>
+        </div>
     </div>
 
     <div *ngIf="modalType === 'delete-member'">

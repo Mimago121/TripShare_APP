@@ -124,8 +124,7 @@ fun Route.tripRouting(
 
         authenticate("auth-session") {
             post("/{id}/invite") {
-                val tripId =
-                    call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val tripId = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val params = call.receive<Map<String, String>>()
                 val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                 if (tripRepo.addMemberByEmail(tripId, email)) call.respond(HttpStatusCode.OK)
@@ -139,23 +138,26 @@ fun Route.tripRouting(
         }
 
         authenticate("auth-session") {
-        delete("/{id}/members/{userId}") {
-            val tripId = call.parameters["id"]?.toLongOrNull()
-            val userId = call.parameters["userId"]?.toLongOrNull()
+            delete("/{id}/members/{userId}") {
+                val tripId = call.parameters["id"]?.toLongOrNull()
+                val userId = call.parameters["userId"]?.toLongOrNull()
 
-            if (tripId == null || userId == null) {
-                call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
-                return@delete
+                if (tripId == null || userId == null) {
+                    call.respond(HttpStatusCode.BadRequest, "IDs inválidos")
+                    return@delete
+                }
+
+                try {
+                    val success = tripRepo.removeMemberFromTrip(tripId, userId)
+                    if (success) {
+                        call.respond(HttpStatusCode.OK, mapOf("message" to "Miembro eliminado correctamente"))
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, mapOf("error" to "No se pudo eliminar al miembro o el viaje ya no existe"))
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error al eliminar miembro: ${e.message}")
+                }
             }
-
-
-            try {
-                tripRepo.removeMemberFromTrip(tripId, userId)
-                call.respond(HttpStatusCode.OK, mapOf("message" to "Miembro eliminado correctamente"))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Error al eliminar miembro: ${e.message}")
-            }
-        }
         }
     }
 }
