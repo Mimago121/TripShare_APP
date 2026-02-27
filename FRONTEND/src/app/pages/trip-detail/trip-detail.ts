@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router'; // <-- Importado Router
 import { FormsModule } from '@angular/forms'; 
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
@@ -23,8 +23,9 @@ export class TripDetailComponent implements OnInit {
   myFriends: Member[] = []; 
   availableFriends: Member[] = []; 
   
-  // Variable nueva para controlar a quién borramos
+  // Variables para modales
   memberToDelete: Member | null = null;
+  leaveModalMessage: string = ''; // <-- Mensaje dinámico para abandonar
 
   tripDays: { date: string, dateObj: Date, activities: any[] }[] = [];
   hours: string[] = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'));
@@ -40,7 +41,7 @@ export class TripDetailComponent implements OnInit {
   totalExpenses: number = 0;
 
   showModal: boolean = false;
-  modalType: string = ''; // 'activity', 'expense', 'memory', 'invite-friends', 'delete-member'
+  modalType: string = ''; // 'activity', 'expense', 'memory', 'invite-friends', 'delete-member', 'leave-trip'
   errorMessage: string = ''; 
   
   emailInviteInput: string = '';
@@ -67,7 +68,8 @@ export class TripDetailComponent implements OnInit {
     private tripService: TripService,
     private geocoder: MapGeocoder,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private router: Router // <-- Añadido al constructor
   ) {}
 
   ngOnInit(): void {
@@ -158,24 +160,20 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  // --- NUEVA LÓGICA DE BORRADO ---
-  
-  // 1. Abre el modal (NO borra todavía)
+  // --- LÓGICA DE BORRAR MIEMBRO (Admin) ---
   openDeleteModal(member: Member) {
     if (!this.isOwner) return;
     this.memberToDelete = member;
     this.errorMessage = '';
-    this.modalType = 'delete-member'; // Tipo especial para este modal
+    this.modalType = 'delete-member'; 
     this.showModal = true;
   }
 
-  // 2. Confirma y llama al backend
   confirmDeleteMember() {
     if (!this.memberToDelete) return;
 
     this.tripService.removeMember(this.tripId, this.memberToDelete.id).subscribe({
       next: () => {
-        // Borrado exitoso
         this.members = this.members.filter(m => m.id !== this.memberToDelete!.id);
         this.loadFriends(); 
         this.closeModal();
@@ -186,6 +184,45 @@ export class TripDetailComponent implements OnInit {
       }
     });
   }
+
+  // --- NUEVA LÓGICA: ABANDONAR VIAJE (Para Todos) ---
+  openLeaveModal() {
+    this.modalType = 'leave-trip';
+    this.errorMessage = '';
+    
+    // Configuramos el mensaje según quién seas y cuántos queden
+    if (this.isOwner) {
+      if (this.members.length > 1) {
+        this.leaveModalMessage = "Al ser el organizador, si sales, se asignará automáticamente un nuevo administrador entre los miembros restantes.";
+      } else {
+        this.leaveModalMessage = "Eres el único miembro. Si sales, el viaje se eliminará permanentemente.";
+      }
+    } else {
+      this.leaveModalMessage = "¿Estás seguro de que quieres abandonar el grupo? Tendrán que volverte a invitar si quieres regresar.";
+    }
+
+    this.showModal = true;
+  }
+
+  confirmLeaveTrip() {
+    if (!this.currentUserId) return;
+
+    this.tripService.removeMember(this.tripId, this.currentUserId).subscribe({
+      next: () => {
+        this.closeModal();
+        // Redirigimos a Mis Viajes Y forzamos una recarga limpia
+        this.router.navigate(['/trips']).then(() => {
+          window.location.reload(); 
+        });
+      },
+      error: (err) => {
+        console.error("Error al abandonar viaje", err);
+        this.errorMessage = "No se pudo abandonar el viaje. Inténtalo de nuevo.";
+      }
+    });
+  }
+
+  // --- RESTO DE FUNCIONES (Sin Cambios) ---
 
   generateTripDays() {
     if (!this.trip) return;
@@ -307,7 +344,7 @@ export class TripDetailComponent implements OnInit {
   closeModal() { 
     this.showModal = false; 
     this.errorMessage = ''; 
-    this.memberToDelete = null; // Limpiamos selección al cerrar
+    this.memberToDelete = null; 
   }
 
   saveActivity() {

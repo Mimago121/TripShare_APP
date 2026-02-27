@@ -1258,3 +1258,45 @@
 .btn-danger:hover {
   background-color: #dc2626; /* Rojo más oscuro */
 }
+
+/* ESTILOS PARA BOTÓN DE PELIGRO (BORRAR / SALIR) */
+.btn-danger {
+  background-color: #ef4444; /* Rojo */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.95rem;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626; /* Rojo más oscuro */
+}
+
+/* BOTÓN: ABANDONAR VIAJE (SIDEBAR) */
+.btn-leave-trip-sidebar {
+  width: 100%;
+  padding: 12px;
+  background-color: #fee2e2; /* Fondo rojo muy suave */
+  color: #dc2626; /* Texto rojo oscuro */
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  margin-top: 10px;
+}
+
+.btn-leave-trip-sidebar:hover {
+  background-color: #fecaca;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.1);
+}
