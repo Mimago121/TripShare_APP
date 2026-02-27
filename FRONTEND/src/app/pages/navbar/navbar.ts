@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { UserService } from '../../services/user.service';
 import { ChatService, ChatNotification } from '../../services/chat.service';
 import { TripService, Trip } from '../../services/trip.service';
 import { AuthService } from '../../services/auth.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -29,6 +30,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   chatNotifications: ChatNotification[] = [];
   tripInvitations: Trip[] = [];
 
+  // 🔥 LA MAGIA: Guardamos la "foto" exacta de las notificaciones que ya hemos clicado
+  private static acknowledgedChats: Map<number, string> = new Map();
+  
   private intervalId: any;
 
   constructor(
@@ -42,6 +46,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.checkLoginStatus();
+
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      this.refreshAllNotifications();
+    });
 
     if (this.isLoggedIn && !this.isAdmin) {
       this.refreshAllNotifications();
@@ -75,7 +83,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   refreshAllNotifications() {
     if (!this.currentUserId || this.isAdmin) return;
     this.loadFriendRequests();
-    this.loadChatNotifications();
+    this.loadChatNotifications(); 
     this.loadTripInvitations();
   }
 
@@ -88,7 +96,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   loadChatNotifications() {
     this.chatService.getUnreadNotifications(this.currentUserId).subscribe({
-      next: (notifs) => this.chatNotifications = notifs || [],
+      next: (notifs) => {
+        const incoming = notifs || [];
+        
+        this.chatNotifications = incoming.filter(n => {
+          // 1. Si estás dentro del chat con esa persona, NO molestamos con el "1"
+          if (this.router.url.includes(`chatWith=${n.fromUserId}`)) return false;
+
+          // 2. Comprobamos si es una notificación vieja que ya habíamos clicado
+          const notifString = JSON.stringify(n);
+          if (NavbarComponent.acknowledgedChats.get(n.fromUserId) === notifString) {
+            // El servidor nos manda exactamente lo mismo que ya cerramos. Lo ocultamos.
+            return false;
+          }
+
+          // Si es un mensaje realmente nuevo (o no lo habíamos visto), lo mostramos.
+          return true;
+        });
+      },
       error: () => {}
     });
   }
@@ -106,38 +131,44 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   acceptRequest(reqId: number) {
-    this.userService.acceptFriendRequest(reqId).subscribe({
-      next: () => this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId),
-      error: (e) => console.error('Error al aceptar amigo:', e)
-    });
+    this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId); 
+    this.userService.acceptFriendRequest(reqId).subscribe({ error: (e) => console.error(e) });
   }
 
   rejectRequest(reqId: number) {
-    this.userService.rejectFriendRequest(reqId).subscribe({
-      next: () => this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId),
-      error: (e) => console.error('Error al rechazar amigo:', e)
-    });
+    this.pendingRequests = this.pendingRequests.filter(req => req.id !== reqId); 
+    this.userService.rejectFriendRequest(reqId).subscribe({ error: (e) => console.error(e) });
   }
 
   respondToTrip(tripId: number | undefined, accept: boolean) {
     if (!tripId) return;
+    this.tripInvitations = this.tripInvitations.filter(t => t.id !== tripId); 
+    
     this.tripService.respondToInvitation(tripId, this.currentUserId, accept).subscribe({
       next: () => {
-        this.tripInvitations = this.tripInvitations.filter(t => t.id !== tripId);
         if (accept) {
           this.closeAllMenus();
           this.router.navigate(['/trip-detail', tripId]);
         }
       },
-      error: (e) => console.error('Error al responder viaje:', e)
+      error: (e) => console.error(e)
     });
   }
 
   openChatFromNotification(notification: ChatNotification) {
+    // 1. Le hacemos la "foto" a ESTA notificación exacta y la guardamos
+    NavbarComponent.acknowledgedChats.set(notification.fromUserId, JSON.stringify(notification));
+
+    // 2. La borramos de la vista de inmediato para que desaparezca el "1"
+    this.chatNotifications = this.chatNotifications.filter(n => n.fromUserId !== notification.fromUserId);
+
+    // 3. Avisamos al backend
     this.chatService.markAsRead(this.currentUserId, notification.fromUserId).subscribe({
-      next: () => this.chatNotifications = this.chatNotifications.filter(n => n.fromUserId !== notification.fromUserId),
-      error: () => {}
+      next: () => {},
+      error: (err) => console.error("Error al marcar leído", err)
     });
+
+    // 4. Vamos a la pantalla de chat
     this.closeAllMenus();
     this.router.navigate(['/friends'], { queryParams: { chatWith: notification.fromUserId } });
   }
@@ -168,9 +199,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   confirmLogout() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
+    if (this.intervalId) clearInterval(this.intervalId);
     
     this.authService.logout().subscribe({
       next: () => {
