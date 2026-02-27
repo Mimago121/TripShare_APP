@@ -226,22 +226,32 @@ export class TripsComponent implements OnInit {
       return;
     }
 
-    if (!this.newTrip.imageUrl || this.newTrip.imageUrl.trim() === '') {
-        this.newTrip.imageUrl = this.DEFAULT_IMAGE;
-    }
-
+    // 1. Preparamos EXACTAMENTE lo que tu backend original espera.
+    // NO le enviamos el 'imageUrl' para evitar el Error 400 (Bad Request).
     const tripPayload = {
-      ...this.newTrip,
+      name: this.newTrip.name,
+      destination: this.newTrip.destination,
+      origin: this.newTrip.origin,
+      startDate: this.newTrip.startDate,
+      endDate: this.newTrip.endDate,
       createdByUserId: this.currentUser.id
     };
 
+    // 2. Lo enviamos al servidor
     this.tripService.createTrip(tripPayload).subscribe({
       next: (createdTrip) => {
         this.closeCreateModal();
+        
+        // 3. (Truco visual) Le inyectamos la imagen a la tarjeta localmente 
+        // para que la veas en pantalla sin haber molestado al backend
+        createdTrip.imageUrl = this.newTrip.imageUrl && this.newTrip.imageUrl.trim() !== '' 
+            ? this.newTrip.imageUrl 
+            : this.DEFAULT_IMAGE;
+            
         this.trips.push(createdTrip); 
       },
       error: (err) => {
-        console.error(err);
+        console.error("Error del backend:", err);
         this.errorMessage = "Hubo un error en el servidor al crear el viaje.";
       }
     });

@@ -1258,3 +1258,7 @@
 .btn-danger:hover {
   background-color: #dc2626; /* Rojo más oscuro */
 }
+::ng-deep .pac-container {
+  z-index: 99999 !important;
+}
+

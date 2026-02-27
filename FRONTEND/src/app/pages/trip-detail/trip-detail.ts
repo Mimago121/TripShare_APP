@@ -88,6 +88,22 @@ export class TripDetailComponent implements OnInit {
     this.currentTimePx = `${(now.getHours() * 60) + now.getMinutes()}px`;
   }
 
+  // --- MAGIA DEL AUTOCOMPLETADO DE GOOGLE PLACES ---
+  @ViewChild('locationInput') set locationInput(el: ElementRef) {
+    if (el && typeof google !== 'undefined' && google.maps.places) {
+      const autocomplete = new google.maps.places.Autocomplete(el.nativeElement, {
+        fields: ['formatted_address', 'name']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        this.ngZone.run(() => {
+          const place = autocomplete.getPlace();
+          this.newActivity.location = place.formatted_address || place.name || '';
+        });
+      });
+    }
+  }
+
   get isOwner(): boolean {
     if (!this.trip || !this.currentUserId) return false;
     return this.trip.createdByUserId === this.currentUserId;
@@ -114,8 +130,17 @@ export class TripDetailComponent implements OnInit {
           this.generateTripDays();
         }
 
-        this.tripService.getActivities(this.tripId).subscribe(a => {
-          this.activities = a;
+       this.tripService.getActivities(this.tripId).subscribe(a => {
+          // TRUCO NINJA: Extraemos la ubicación del título y la restauramos
+          this.activities = a.map((act: any) => {
+            if (act.title && act.title.includes('||LOC||')) {
+              const parts = act.title.split('||LOC||');
+              act.title = parts[0].trim();
+              act.location = parts[1].trim();
+            }
+            return act;
+          });
+          
           this.groupActivitiesByDay(); 
           this.updateMapRoute(); 
         });
@@ -159,23 +184,19 @@ export class TripDetailComponent implements OnInit {
   }
 
   // --- NUEVA LÓGICA DE BORRADO ---
-  
-  // 1. Abre el modal (NO borra todavía)
   openDeleteModal(member: Member) {
     if (!this.isOwner) return;
     this.memberToDelete = member;
     this.errorMessage = '';
-    this.modalType = 'delete-member'; // Tipo especial para este modal
+    this.modalType = 'delete-member'; 
     this.showModal = true;
   }
 
-  // 2. Confirma y llama al backend
   confirmDeleteMember() {
     if (!this.memberToDelete) return;
 
     this.tripService.removeMember(this.tripId, this.memberToDelete.id).subscribe({
       next: () => {
-        // Borrado exitoso
         this.members = this.members.filter(m => m.id !== this.memberToDelete!.id);
         this.loadFriends(); 
         this.closeModal();
@@ -223,21 +244,58 @@ export class TripDetailComponent implements OnInit {
     return { top: `${topPx}px`, height: `${heightPx}px` };
   }
 
-  updateMapRoute() {
+updateMapRoute() {
     const locations = this.activities
       .filter(act => act.location && act.location.trim() !== '')
       .sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime())
       .map(act => act.location);
+    
+    this.showMap = true; 
     this.activityMarkers = [];
+    this.directionsResult = undefined; 
+
     if (locations.length === 0) return;
+
     locations.forEach(loc => {
-      this.geocoder.geocode({ address: loc }).subscribe(({ results }) => {
-        if (results && results.length) {
-          const latLng = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
-          this.activityMarkers.push(latLng);
-          this.mapCenter = latLng; 
-          this.cdr.detectChanges();
+      this.geocoder.geocode({ address: loc }).subscribe({
+        next: (response) => {
+          if (response.results && response.results.length) {
+            const latLng = { 
+              lat: response.results[0].geometry.location.lat(), 
+              lng: response.results[0].geometry.location.lng() 
+            };
+            this.ngZone.run(() => {
+              this.activityMarkers = [...this.activityMarkers, latLng];
+              this.mapCenter = latLng; 
+              this.cdr.detectChanges();
+            });
+          }
         }
+      });
+    });
+
+    if (locations.length === 1) return;
+
+    const origin = locations[0];
+    const destination = locations[locations.length - 1];
+    const waypoints = locations.slice(1, -1).map(loc => ({ location: loc, stopover: true }));
+
+    const directionsService = new google.maps.DirectionsService();
+    
+    directionsService.route({
+      origin: origin,
+      destination: destination,
+      waypoints: waypoints,
+      optimizeWaypoints: false, 
+      travelMode: 'DRIVING' as google.maps.TravelMode 
+    }, (result, status) => {
+      this.ngZone.run(() => {
+        if (status === 'OK' && result) {
+          this.directionsResult = result;
+        } else {
+          this.directionsResult = undefined;
+        }
+        this.cdr.detectChanges(); 
       });
     });
   }
@@ -307,16 +365,62 @@ export class TripDetailComponent implements OnInit {
   closeModal() { 
     this.showModal = false; 
     this.errorMessage = ''; 
-    this.memberToDelete = null; // Limpiamos selección al cerrar
+    this.memberToDelete = null; 
   }
 
   saveActivity() {
     this.errorMessage = '';
-    if (!this.newActivity.title.trim() && !this.newActivity.location.trim()) { this.errorMessage = "Debes indicar al menos un título o una ubicación."; return; }
+    if (!this.newActivity.title.trim() && !this.newActivity.location.trim()) { 
+      this.errorMessage = "Debes indicar al menos un título o una ubicación."; 
+      return; 
+    }
+    
     const startDT = `${this.newActivity.selectedDate}T${this.newActivity.startTime}:00`;
     const endDT = this.newActivity.endTime ? `${this.newActivity.selectedDate}T${this.newActivity.endTime}:00` : startDT;
-    const data = { tripId: this.tripId, createdByUserId: this.currentUserId, title: this.newActivity.title, startDatetime: startDT, endDatetime: endDT, location: this.newActivity.location };
-    this.tripService.addActivity(this.tripId, data as any).subscribe({ next: () => { this.loadTripData(); this.closeModal(); }, error: () => this.errorMessage = "Error al guardar." });
+    
+    // ==========================================
+    // 🛡️ VALIDACIÓN DE SOLAPAMIENTO DE HORARIOS
+    // ==========================================
+    const newStartMs = new Date(startDT).getTime();
+    // Si no pones hora de fin, calculamos que dura 1 hora para evitar que pises la siguiente
+    const newEndMs = this.newActivity.endTime 
+        ? new Date(endDT).getTime() 
+        : newStartMs + (60 * 60 * 1000); 
+
+    const isOverlapping = this.activities.some(act => {
+      const actStartMs = new Date(act.startDatetime).getTime();
+      const actEndMs = act.endDatetime && act.endDatetime !== act.startDatetime 
+          ? new Date(act.endDatetime).getTime() 
+          : actStartMs + (60 * 60 * 1000); // 1 hora por defecto si no tiene fin
+
+      // Fórmula de solapamiento: (A empieza antes de que B termine) Y (A termina después de que B empiece)
+      return newStartMs < actEndMs && newEndMs > actStartMs;
+    });
+
+    if (isOverlapping) {
+      this.errorMessage = "¡Atención! Este plan se solapa en horario con otra actividad que ya tienes programada.";
+      return; // Detenemos el guardado
+    }
+    // ==========================================
+
+    // TRUCO NINJA: Escondemos la ubicación dentro del título
+    let finalTitle = this.newActivity.title.trim() || "Plan";
+    if (this.newActivity.location) {
+       finalTitle = `${finalTitle}||LOC||${this.newActivity.location}`;
+    }
+
+    const data = { 
+      tripId: this.tripId, 
+      createdByUserId: this.currentUserId, 
+      title: finalTitle, 
+      startDatetime: startDT, 
+      endDatetime: endDT 
+    };
+    
+    this.tripService.addActivity(this.tripId, data as any).subscribe({ 
+      next: () => { this.loadTripData(); this.closeModal(); }, 
+      error: () => this.errorMessage = "Error al guardar." 
+    });
   }
 
   saveExpense() {
