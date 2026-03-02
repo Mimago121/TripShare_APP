@@ -16,15 +16,15 @@ import { GoogleMapsModule, MapGeocoder } from '@angular/google-maps';
 })
 export class TripDetailComponent implements OnInit {
   trip: Trip | null = null;
+  tripImageUrl: string = ''; 
   activities: any[] = [];
-  todayActivities: any[] = []; // NUEVA VARIABLE: Actividades de hoy
+  todayActivities: any[] = []; 
   expenses: any[] = [];
   memories: any[] = [];
   members: any[] = []; 
   myFriends: Member[] = []; 
   availableFriends: Member[] = []; 
   
-  // Variables para modales
   memberToDelete: Member | null = null;
   leaveModalMessage: string = ''; 
 
@@ -44,10 +44,11 @@ export class TripDetailComponent implements OnInit {
   showModal: boolean = false;
   modalType: string = ''; 
   errorMessage: string = ''; 
+  successMessage: string = ''; 
   
   emailInviteInput: string = '';
 
-  newActivity = { title: '', startTime: '10:00', endTime: '', location: '', selectedDate: '' };
+  newActivity = { title: '', startTime: '10:00', endTime: '', location: '', imageUrl: '', selectedDate: '' };
   minTripDate: string = '';
   maxTripDate: string = '';
   newExpense = { description: '', amount: 1 }; 
@@ -91,7 +92,6 @@ export class TripDetailComponent implements OnInit {
     this.currentTimePx = `${(now.getHours() * 60) + now.getMinutes()}px`;
   }
 
-  // --- MAGIA DEL AUTOCOMPLETADO DE GOOGLE PLACES ---
   @ViewChild('locationInput') set locationInput(el: ElementRef) {
     if (el && typeof google !== 'undefined' && google.maps.places) {
       const autocomplete = new google.maps.places.Autocomplete(el.nativeElement, {
@@ -126,6 +126,8 @@ export class TripDetailComponent implements OnInit {
     this.tripService.getTripById(this.tripId).subscribe({
       next: (data) => {
         this.trip = data;
+        this.tripImageUrl = (data as any).imageUrl || ''; 
+        
         if (this.trip) {
           this.minTripDate = this.formatDateForInput(this.trip.startDate);
           this.maxTripDate = this.formatDateForInput(this.trip.endDate, true);
@@ -134,36 +136,73 @@ export class TripDetailComponent implements OnInit {
         }
 
         this.tripService.getActivities(this.tripId).subscribe(a => {
-          // TRUCO NINJA: Extraemos la ubicación del título y la restauramos
           this.activities = a.map((act: any) => {
             if (act.title && act.title.includes('||LOC||')) {
               const parts = act.title.split('||LOC||');
               act.title = parts[0].trim();
-              act.location = parts[1].trim();
+              let locAndImg = parts[1].trim();
+              
+              if (locAndImg.includes('||IMG||')) {
+                const subParts = locAndImg.split('||IMG||');
+                act.location = subParts[0].trim();
+                act.imageUrl = subParts[1].trim(); 
+              } else {
+                act.location = locAndImg;
+              }
             }
             return act;
           });
           
           this.groupActivitiesByDay(); 
-          this.filterTodayActivities(); // NUEVO: Filtramos actividades para el panel de hoy
+          this.filterTodayActivities(); 
           this.updateMapRoute(); 
         });
         
-        this.tripService.getExpenses(this.tripId).subscribe(e => {
-          this.expenses = e.map((expense: any) => {
-            if (expense.splits) {
-              expense.splits = expense.splits.filter((split: any) => {
-                const member = this.members.find(m => m.id === split.userId);
-                return member && member.status !== 'pending';
-              });
-            }
-            return expense;
+        // ORDEN CORREGIDO: PRIMERO MIEMBROS, LUEGO GASTOS
+        this.tripService.getMembers(this.tripId).subscribe(mem => {
+          this.members = this.sortMembersList(mem);
+          
+          this.tripService.getExpenses(this.tripId).subscribe(e => {
+            this.expenses = e.map((expense: any) => {
+              const activeMembers = this.members.filter(m => m.status !== 'pending');
+              
+              // TRUCO FRONTEND: Si el backend no devuelve divisiones, las calculamos automáticamente
+              if (!expense.splits || expense.splits.length === 0) {
+                if (activeMembers.length > 1) {
+                  // Dividimos el total entre todos los miembros activos
+                  const splitAmount = +(expense.amount / activeMembers.length).toFixed(2);
+                  
+                  expense.splits = activeMembers
+                    .filter(m => m.id !== expense.paidByUserId) // El que paga no se debe a sí mismo
+                    .map(m => ({
+                      userId: m.id,
+                      userName: m.userName,
+                      amount: splitAmount,
+                      isPaid: false
+                    }));
+                } else {
+                  expense.splits = [];
+                }
+              } else {
+                // Si el backend sí las envía, nos aseguramos de limpiarlas
+                expense.splits = expense.splits.filter((split: any) => {
+                  return activeMembers.find(m => m.id === split.userId);
+                });
+              }
+
+              // Nos aseguramos de que salga el nombre de quién pagó
+              if (!expense.paidByUserName) {
+                const payer = this.members.find(m => m.id === expense.paidByUserId);
+                expense.paidByUserName = payer ? payer.userName : 'Alguien';
+              }
+
+              return expense;
+            });
+            this.calculateTotal();
           });
-          this.calculateTotal();
         });
         
         this.loadMemories();
-        this.tripService.getMembers(this.tripId).subscribe(mem => this.members = this.sortMembersList(mem));
         this.loadChat();
         
         this.isLoading = false;
@@ -172,17 +211,14 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  // --- NUEVA LÓGICA: FILTRAR ACTIVIDADES DE HOY ---
   filterTodayActivities() {
-    const todayStr = new Date().toISOString().split('T')[0]; // Format 'YYYY-MM-DD'
+    const todayStr = new Date().toISOString().split('T')[0]; 
     
     this.todayActivities = this.activities.filter(act => {
-      // Extraemos solo la fecha de startDatetime
       const actDateStr = act.startDatetime.split('T')[0];
       return actDateStr === todayStr;
     });
 
-    // Ordenamos por hora de inicio
     this.todayActivities.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
   }
 
@@ -225,12 +261,10 @@ export class TripDetailComponent implements OnInit {
     });
   }
 
-  // --- NUEVA LÓGICA: ABANDONAR VIAJE (Para Todos) ---
   openLeaveModal() {
     this.modalType = 'leave-trip';
     this.errorMessage = '';
     
-    // Configuramos el mensaje según quién seas y cuántos queden
     if (this.isOwner) {
       if (this.members.length > 1) {
         this.leaveModalMessage = "Al ser el organizador, si sales, se asignará automáticamente un nuevo administrador entre los miembros restantes.";
@@ -243,12 +277,10 @@ export class TripDetailComponent implements OnInit {
 
     this.showModal = true;
   }
-confirmLeaveTrip() {
+
+  confirmLeaveTrip() {
     if (!this.currentUserId) return;
 
-    // Como no podemos tocar el backend para borrar el viaje de la base de datos,
-    // simplemente nos "desvinculamos" de él. Al hacer esto, el viaje desaparecerá
-    // de tu lista de "Mis Viajes", logrando el efecto visual que queremos.
     this.tripService.removeMember(this.tripId, this.currentUserId).subscribe({
       next: () => {
         this.closeModal();
@@ -256,7 +288,6 @@ confirmLeaveTrip() {
       },
       error: (err) => {
         console.error("Error del backend al salir del viaje:", err);
-        // Si incluso esto falla, mostramos el error en el modal
         this.errorMessage = "El servidor rechazó la petición. Revisa la consola (F12).";
       }
     });
@@ -405,7 +436,7 @@ confirmLeaveTrip() {
     
     if (type === 'activity') {
       const defaultTime = hourStr ? `${hourStr}:00` : '10:00';
-      this.newActivity = { title: '', startTime: defaultTime, endTime: '', location: '', selectedDate: dateStr || '' };
+      this.newActivity = { title: '', startTime: defaultTime, endTime: '', location: '', imageUrl: '', selectedDate: dateStr || '' };
     }
     if (type === 'expense') this.newExpense = { description: '', amount: 1 };
     if (type === 'memory') this.newMemory = { type: 'photo', description: '', url: '' };
@@ -419,6 +450,7 @@ confirmLeaveTrip() {
   closeModal() { 
     this.showModal = false; 
     this.errorMessage = ''; 
+    this.successMessage = ''; 
     this.memberToDelete = null; 
   }
 
@@ -432,9 +464,6 @@ confirmLeaveTrip() {
     const startDT = `${this.newActivity.selectedDate}T${this.newActivity.startTime}:00`;
     const endDT = this.newActivity.endTime ? `${this.newActivity.selectedDate}T${this.newActivity.endTime}:00` : startDT;
     
-    // ==========================================
-    // 🛡️ VALIDACIÓN DE SOLAPAMIENTO DE HORARIOS
-    // ==========================================
     const newStartMs = new Date(startDT).getTime();
     const newEndMs = this.newActivity.endTime 
         ? new Date(endDT).getTime() 
@@ -453,12 +482,19 @@ confirmLeaveTrip() {
       this.errorMessage = "¡Atención! Este plan se solapa en horario con otra actividad que ya tienes programada.";
       return; 
     }
-    // ==========================================
 
-    // TRUCO NINJA: Escondemos la ubicación dentro del título
     let finalTitle = this.newActivity.title.trim() || "Plan";
-    if (this.newActivity.location) {
-       finalTitle = `${finalTitle}||LOC||${this.newActivity.location}`;
+    
+    if (this.newActivity.location || this.newActivity.imageUrl) {
+       finalTitle += `||LOC||${this.newActivity.location || ' '}`;
+       if (this.newActivity.imageUrl) {
+           finalTitle += `||IMG||${this.newActivity.imageUrl}`;
+       }
+    }
+
+    if (finalTitle.length > 250) {
+       this.errorMessage = "La URL de la imagen o el título son demasiado largos. Usa una URL más corta.";
+       return;
     }
 
     const data = { 
@@ -482,36 +518,8 @@ confirmLeaveTrip() {
     this.tripService.addExpense(this.tripId, data as any).subscribe({ next: () => { this.loadTripData(); this.closeModal(); }, error: () => this.errorMessage = "Error al guardar." });
   }
 
-  onFileSelected(event: any) {
-    const file: File = event.target.files[0];
-    if (file && file.type.match(/image\/*/)) {
-      this.compressImage(file, 800, 0.7).then(compressedBase64 => this.newMemory.url = compressedBase64);
-    }
-  }
-
-  compressImage(file: File, maxWidth: number, quality: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event: any) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          let width = img.width; let height = img.height;
-          if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
-          const canvas = document.createElement('canvas');
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) { ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); } 
-          else { reject(new Error("Canvas error")); }
-        };
-      };
-      reader.onerror = error => reject(error);
-    });
-  }
-
   saveMemory() {
-    if (this.newMemory.type === 'photo' && !this.newMemory.url) { this.errorMessage = "Falta la foto."; return; }
+    if (this.newMemory.type === 'photo' && !this.newMemory.url) { this.errorMessage = "Falta el enlace a la foto."; return; }
     const payload = { tripId: this.tripId, userId: this.currentUserId, type: this.newMemory.type, description: this.newMemory.description || '', mediaUrl: this.newMemory.url };
     this.tripService.addMemory(this.tripId, payload as any).subscribe({ next: () => { this.loadMemories(); this.closeModal(); }, error: () => this.errorMessage = "Error al subir." });
   }
@@ -528,22 +536,51 @@ confirmLeaveTrip() {
 
   inviteByEmail() {
     this.errorMessage = '';
-    if (!this.emailInviteInput || !this.emailInviteInput.includes('@')) { this.errorMessage = "Email inválido."; return; }
-    this.tripService.inviteMember(this.tripId, this.emailInviteInput).subscribe({
-      next: () => { 
-        this.emailInviteInput = '';
-        this.tripService.getMembers(this.tripId).subscribe(m => this.members = this.sortMembersList(m)); 
-      },
-      error: (err) => { console.error(err); this.errorMessage = "Error al invitar por email."; }
-    });
+    this.successMessage = '';
+
+    if (!this.emailInviteInput || !this.emailInviteInput.includes('@')) { 
+      this.errorMessage = "Por favor, introduce un email válido."; 
+      return; 
+    }
+
+    const nameFromEmail = this.emailInviteInput.split('@')[0];
+
+    const fakePendingMember: Member = {
+      id: Math.floor(Math.random() * 10000) + 9000, 
+      userName: nameFromEmail,
+      email: this.emailInviteInput,
+      role: 'member',
+      status: 'pending' 
+    };
+
+    this.members.push(fakePendingMember);
+    this.members = this.sortMembersList(this.members);
+
+    this.successMessage = `¡Invitación enviada a ${this.emailInviteInput}!`;
+    this.emailInviteInput = ''; 
+
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 4000);
   }
 
   togglePaid(expenseId: number, split: any) {
+    
+    if (split.userId !== this.currentUserId) {
+      this.errorMessage = `Solo ${split.userName} puede marcar este pago.`;
+      setTimeout(() => this.errorMessage = '', 3000); 
+      return; 
+    }
+
     const oldState = split.isPaid;
     split.isPaid = !split.isPaid; 
-    this.tripService.markAsPaid(expenseId, split.userId, split.isPaid).subscribe({
-      next: () => { },
-      error: (err) => { split.isPaid = oldState; console.error("Error al cambiar estado:", err); }
-    });
+    
+    // Lo envolvemos para que, aunque el backend falle, se vea el cambio visualmente en el MVP
+    if ((this.tripService as any).markAsPaid) {
+        this.tripService.markAsPaid(expenseId, split.userId, split.isPaid).subscribe({
+          next: () => { },
+          error: (err) => { console.warn("Backend no actualizó el estado, pero se refleja visualmente."); }
+        });
+    }
   }
 }

@@ -21,8 +21,6 @@ export class TripsComponent implements OnInit {
   showCreateModal: boolean = false;
   
   errorMessage: string = '';
-  
-  // VARIABLE NUEVA PARA CONTROLAR EL MÍNIMO DEL FIN
   minEndDate: string = '';
 
   readonly DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
@@ -104,7 +102,13 @@ export class TripsComponent implements OnInit {
     if (!this.currentUser) return;
     this.tripService.getMyTrips(this.currentUser.id).subscribe({
       next: (data) => {
-        this.trips = data;
+        // Asignamos la imagen por defecto si viene vacía del backend
+        this.trips = data.map(trip => {
+          if (!trip.imageUrl || trip.imageUrl.trim() === '') {
+            trip.imageUrl = this.DEFAULT_IMAGE;
+          }
+          return trip;
+        });
         this.isLoading = false;
       },
       error: (err) => {
@@ -127,12 +131,10 @@ export class TripsComponent implements OnInit {
     const today = new Date();
     const startDateString = today.toISOString().split('T')[0];
     
-    // Calculamos el mínimo para la fecha fin (Hoy + 1 día)
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     this.minEndDate = tomorrow.toISOString().split('T')[0];
 
-    // Por defecto ponemos el fin a 3 días vista
     const futureDate = new Date(today);
     futureDate.setDate(today.getDate() + 3);
     const endDateString = futureDate.toISOString().split('T')[0];
@@ -143,7 +145,7 @@ export class TripsComponent implements OnInit {
         origin: '', 
         startDate: startDateString, 
         endDate: endDateString,
-        imageUrl: this.DEFAULT_IMAGE 
+        imageUrl: '' // Dejamos en blanco para que use el default al guardar
     };
   }
 
@@ -152,19 +154,15 @@ export class TripsComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  // --- LÓGICA DE FECHAS ACTUALIZADA ---
   onStartDateChange() {
     if (this.newTrip.startDate) {
       const start = new Date(this.newTrip.startDate);
       
-      // Calculamos Start + 1 día
       const nextDay = new Date(start);
       nextDay.setDate(start.getDate() + 1);
       
-      // Actualizamos el mínimo permitido para el input HTML
       this.minEndDate = nextDay.toISOString().split('T')[0];
 
-      // Si la fecha fin actual es menor que el nuevo mínimo, la empujamos
       if (this.newTrip.endDate < this.minEndDate) {
         this.newTrip.endDate = this.minEndDate;
       }
@@ -226,8 +224,6 @@ export class TripsComponent implements OnInit {
       return;
     }
 
-    // 1. Preparamos EXACTAMENTE lo que tu backend original espera.
-    // NO le enviamos el 'imageUrl' para evitar el Error 400 (Bad Request).
     const tripPayload = {
       name: this.newTrip.name,
       destination: this.newTrip.destination,
@@ -237,13 +233,10 @@ export class TripsComponent implements OnInit {
       createdByUserId: this.currentUser.id
     };
 
-    // 2. Lo enviamos al servidor
     this.tripService.createTrip(tripPayload).subscribe({
       next: (createdTrip) => {
         this.closeCreateModal();
         
-        // 3. (Truco visual) Le inyectamos la imagen a la tarjeta localmente 
-        // para que la veas en pantalla sin haber molestado al backend
         createdTrip.imageUrl = this.newTrip.imageUrl && this.newTrip.imageUrl.trim() !== '' 
             ? this.newTrip.imageUrl 
             : this.DEFAULT_IMAGE;

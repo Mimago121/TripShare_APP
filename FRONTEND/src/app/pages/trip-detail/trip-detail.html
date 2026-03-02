@@ -9,11 +9,16 @@
         <a routerLink="/trips" class="btn-back-pill"><span>←</span> Mis Viajes</a>
       </div>
 
-      <h1>{{ trip.name }}</h1>
-      
-      <div class="hero-info-modern">
-        <span class="badge-location">📍 {{ trip.origin ? trip.origin + ' ➔ ' : '' }}{{ trip.destination }}</span>
-        <span class="badge-date">📅 {{ trip.startDate | date:'dd MMM' }} - {{ trip.endDate | date:'dd MMM yyyy' }}</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+        <div style="flex: 1;">
+          <h1>{{ trip.name }}</h1>
+          <div class="hero-info-modern">
+            <span class="badge-location">📍 {{ trip.origin ? trip.origin + ' ➔ ' : '' }}{{ trip.destination }}</span>
+            <span class="badge-date">📅 {{ trip.startDate | date:'dd MMM' }} - {{ trip.endDate | date:'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+
+        <img *ngIf="tripImageUrl" [src]="tripImageUrl" style="width: 100px; height: 100px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.4);" alt="Preview del destino">
       </div>
 
       <div class="quick-stats-panel">
@@ -39,6 +44,10 @@
       <button [class.active]="activeTab === 'expenses'" (click)="setTab('expenses')"><span class="tab-icon">💸</span> Gastos</button>
       <button [class.active]="activeTab === 'memories'" (click)="setTab('memories')"><span class="tab-icon">📸</span> Recuerdos</button>
       <button [class.active]="activeTab === 'chat'" (click)="setTab('chat')"><span class="tab-icon">💬</span> Chat Grupal</button>
+    </div>
+
+    <div class="custom-error-banner" *ngIf="errorMessage && modalType === ''" style="margin-bottom: 20px;">
+      <span class="error-icon">⚠️</span><span class="error-text">{{ errorMessage }}</span>
     </div>
 
     <div class="map-wrapper" *ngIf="showMap && activeTab === 'itinerary'">
@@ -106,9 +115,16 @@
 
             <div class="exp-splits" *ngIf="exp.splits && exp.splits.length > 0">
               <div class="split-row" *ngFor="let split of exp.splits" [class.is-paid]="split.isPaid">
-                <div class="custom-checkbox" (click)="togglePaid(exp.id, split)" [class.checked]="split.isPaid">
+                
+                <div class="custom-checkbox" 
+                     (click)="togglePaid(exp.id, split)" 
+                     [class.checked]="split.isPaid"
+                     [style.opacity]="split.userId !== currentUserId ? '0.4' : '1'"
+                     [style.cursor]="split.userId !== currentUserId ? 'not-allowed' : 'pointer'"
+                     [title]="split.userId !== currentUserId ? 'Solo ' + split.userName + ' puede marcar esto' : 'Marcar como pagado'">
                   <span *ngIf="split.isPaid">✓</span>
                 </div>
+                
                 <span class="split-name">{{ split.userName }}</span>
                 <span class="split-status" *ngIf="!split.isPaid">debe <span class="debt-amount">{{ split.amount }} €</span></span>
                 <span class="split-status paid-text" *ngIf="split.isPaid">¡Pagado!</span>
@@ -198,8 +214,9 @@
           <input type="email" [(ngModel)]="emailInviteInput" placeholder="ejemplo@email.com" class="sidebar-input">
           <button class="btn-email-send" (click)="inviteByEmail()" [disabled]="!emailInviteInput">➤</button>
         </div>
-        <div class="custom-error-banner" *ngIf="errorMessage && modalType === ''" style="margin-top: 10px; font-size: 0.8rem; padding: 8px;">
-          <span class="error-text">{{ errorMessage }}</span>
+        
+        <div *ngIf="successMessage" style="margin-top: 10px; font-size: 0.85rem; padding: 10px; background-color: #dcfce7; border: 1px solid #86efac; color: #166534; border-radius: 8px; display: flex; align-items: center; gap: 8px; animation: fadeIn 0.3s;">
+          <span>✅</span> {{ successMessage }}
         </div>
       </div>
     </ng-container>
@@ -219,7 +236,7 @@
         <div class="today-activity-card" *ngFor="let act of todayActivities">
           
           <div class="today-act-image-container">
-             <img [src]="act.imageUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=600&auto=format&fit=crop'" alt="Ubicación de actividad">
+            <img [src]="act.imageUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=600&auto=format&fit=crop'" alt="Ubicación de actividad" onerror="this.src='https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=600&auto=format&fit=crop'">
             <div class="today-act-gradient"></div>
             
             <div class="today-act-location" *ngIf="act.location">
@@ -316,6 +333,15 @@
         <label>¿A dónde vamos?</label>
         <input type="text" [(ngModel)]="newActivity.location" #locationInput class="modern-input-chat" placeholder="Ej: Museo del Prado, Madrid">
       </div>
+
+      <div class="form-group">
+        <label>URL de la Foto (Opcional)</label>
+        <input type="text" [(ngModel)]="newActivity.imageUrl" placeholder="Haz clic derecho en una foto -> Copiar dirección">
+        
+        <div class="image-preview" *ngIf="newActivity.imageUrl">
+          <img [src]="newActivity.imageUrl" style="max-height: 150px; margin-top: 10px; border-radius: 8px; width: 100%; object-fit: cover;" onerror="this.src='https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png'">
+        </div>
+      </div>
       
       <div class="form-group"><label>Título / Notas (Opcional)</label><input type="text" [(ngModel)]="newActivity.title" maxlength="50"></div>
       <div class="form-row"><div class="form-group half"><label>Hora Inicio</label><input type="time" [(ngModel)]="newActivity.startTime"></div><div class="form-group half"><label>Hora Fin (Opcional)</label><input type="time" [(ngModel)]="newActivity.endTime"></div></div>
@@ -329,9 +355,27 @@
     </div>
 
     <div *ngIf="modalType === 'memory'">
-      <div class="form-group"><label>Tipo</label><select [(ngModel)]="newMemory.type"><option value="photo">Foto</option><option value="note">Nota</option></select></div>
-      <div class="form-group" *ngIf="newMemory.type === 'photo'"><label>Subir Foto</label><input type="file" (change)="onFileSelected($event)" accept="image/*" class="custom-file-input"><div class="image-preview" *ngIf="newMemory.url"><img [src]="newMemory.url" style="max-height: 200px; margin-top: 10px; border-radius: 8px;"></div></div>
-      <div class="form-group"><label>Descripción</label><textarea [(ngModel)]="newMemory.description" maxlength="200"></textarea></div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select [(ngModel)]="newMemory.type">
+          <option value="photo">Foto</option>
+          <option value="note">Nota</option>
+        </select>
+      </div>
+      
+      <div class="form-group" *ngIf="newMemory.type === 'photo'">
+        <label>URL de la Imagen</label>
+        <input type="text" [(ngModel)]="newMemory.url" placeholder="Haz clic derecho en una foto -> Copiar dirección">
+        
+        <div class="image-preview" *ngIf="newMemory.url">
+          <img [src]="newMemory.url" style="max-height: 200px; margin-top: 10px; border-radius: 8px; width: 100%; object-fit: cover;" onerror="this.src='https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png'">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="newMemory.description" maxlength="200"></textarea>
+      </div>
       <button class="btn-primary full-width" (click)="saveMemory()">Guardar</button>
     </div>
 

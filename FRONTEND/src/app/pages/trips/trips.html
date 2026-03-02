@@ -22,13 +22,10 @@
     <div *ngFor="let trip of trips" class="trip-card" (click)="goToDetail(trip.id)">
       
       <div class="trip-card-img">
-        <img *ngIf="trip.imageUrl" 
-             [src]="trip.imageUrl" 
+        <img [src]="trip.imageUrl" 
              alt="{{ trip.name }}"
-             (error)="trip.imageUrl = ''"> 
-        <div *ngIf="!trip.imageUrl" class="no-image-placeholder">
-          <span class="placeholder-icon">🗺️</span>
-        </div>
+             onerror="this.src='https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'"> 
+        
         <span class="card-badge-dest">📍 {{ trip.destination }}</span>
       </div>
       
