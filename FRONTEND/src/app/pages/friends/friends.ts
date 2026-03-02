@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router'; 
+import { ActivatedRoute, RouterModule } from '@angular/router'; // <-- AÑADIDO RouterModule
 
 import { NavbarComponent } from '../navbar/navbar';
 import { FooterComponent } from '../footer/footer';
@@ -16,7 +16,8 @@ interface UserUI extends User {
 @Component({
   selector: 'app-friends',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, FooterComponent, FormsModule, ChatComponent],
+  // <-- AÑADIDO RouterModule a los imports
+  imports: [CommonModule, NavbarComponent, FooterComponent, FormsModule, ChatComponent, RouterModule], 
   templateUrl: './friends.html',
   styleUrls: ['./friends.css']
 })
@@ -90,14 +91,9 @@ export class FriendsComponent implements OnInit {
 
   setTab(tab: string) {
     this.activeTab = tab;
-    // Al cambiar de pestaña, limpiamos búsqueda o reaplicamos filtro si quieres
-    // this.searchTerm = ''; 
-    // this.filterUsers();
   }
 
   loadExploreUsers() {
-    // isLoading ya estaba true desde loadInitialData o lo ponemos aquí si se llama aparte
-    
     const myFriendIds = this.allMyFriends.map(f => f.id);
 
     this.userService.getUsers().subscribe({
@@ -161,7 +157,7 @@ export class FriendsComponent implements OnInit {
       },
       error: (err) => {
         console.error("Error eliminando amigo", err);
-        alert("Error al eliminar amigo."); // O usa un banner si prefieres
+        alert("Error al eliminar amigo."); 
       }
     });
   }

@@ -7,8 +7,7 @@
       
       <div class="profile-cover">
         <img [src]="user.coverUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2000'" alt="Cover" class="cover-img">
-        <button class="btn-edit-cover" (click)="openEditModal()">📷 Cambiar portada</button>
-      </div>
+        </div>
 
       <div class="profile-header-content">
         <div class="avatar-wrapper">
@@ -17,14 +16,23 @@
 
         <div class="user-details">
           <div class="name-row">
-            <h1>{{ user.userName }} <span class="badge-pro">PRO</span></h1>
-            <button class="btn-edit-profile" (click)="openEditModal()">✏️ Editar perfil</button>
+            <h1>{{ user.userName }} <span class="badge-pro">NIVEL {{ level }}</span></h1>
+            <button class="btn-edit-profile" *ngIf="isMyProfile" (click)="openEditModal()">✏️ Editar perfil</button>
           </div>
-          <p class="user-handle">@{{ user.userName | lowercase }} • Unido en 2024</p>
-          <p class="user-bio">{{ user.bio || 'Sin biografía aún. ¡Escribe algo sobre ti!' }}</p>
+          <p class="user-handle">@{{ user.userName | lowercase }} • Explorador</p>
+          <p class="user-bio">{{ user.bio || 'Sin biografía aún. ¡Explorando el mundo!' }}</p>
           
-          <div class="location-row" *ngIf="user.location">
-            📍 {{ user.location }}
+          <div class="gamification-section">
+            <div class="xp-bar-container">
+              <div class="xp-bar-fill" [style.width]="xpProgress + '%'"></div>
+            </div>
+            <div class="xp-text">{{ xp }} / {{ nextLevelXp }} XP para el siguiente nivel</div>
+            
+            <div class="badges-row">
+              <span class="badge-pill" *ngFor="let badge of badges" [style.background]="badge.bg" [style.color]="badge.color">
+                {{ badge.icon }} {{ badge.name }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -45,7 +53,7 @@
       </div>
 
       <div class="profile-tabs">
-        <button class="tab-link" [class.active]="activeTab === 'trips'" (click)="setActiveTab('trips')">Mis Viajes</button>
+        <button class="tab-link" [class.active]="activeTab === 'trips'" (click)="setActiveTab('trips')">Viajes</button>
         <button class="tab-link" [class.active]="activeTab === 'photos'" (click)="setActiveTab('photos')">Fotos</button>
         <button class="tab-link" [class.active]="activeTab === 'map'" (click)="setActiveTab('map')">Mapa Mundial</button>
       </div>
@@ -54,7 +62,7 @@
     <section class="profile-body fade-in" *ngIf="activeTab === 'trips'">
       <div class="trips-grid">
         
-        <div class="trip-card create-new" routerLink="/trips">
+        <div class="trip-card create-new" routerLink="/trips" *ngIf="isMyProfile">
           <div class="plus-circle">+</div>
           <h3>Planear nuevo viaje</h3>
         </div>
@@ -71,27 +79,22 @@
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
     <section class="profile-body fade-in" *ngIf="activeTab === 'photos'">
       <div class="profile-section" style="background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        
         <div class="empty-state" *ngIf="myPhotos.length === 0" style="text-align: center; padding: 40px; color: #666;">
-          Aún no has subido ninguna foto a tus viajes.
+          Aún no hay fotos subidas.
         </div>
-
         <div class="memories-grid" *ngIf="myPhotos.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
           <div class="memory-card" *ngFor="let photo of myPhotos" style="border-radius: 12px; overflow: hidden; background: #f8f9fa; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            <img [src]="photo.mediaUrl" alt="Recuerdo de viaje" style="width: 100%; height: 200px; object-fit: cover; display: block;">
-            
+            <img [src]="photo.mediaUrl" alt="Recuerdo" style="width: 100%; height: 200px; object-fit: cover; display: block;">
             <div class="memory-caption" *ngIf="photo.description" style="padding: 12px; font-size: 14px; color: #333; text-align: center;">
               {{ photo.description }}
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
@@ -99,33 +102,19 @@
       <div class="world-map-container">
         <div class="map-header">
             <div>
-                <h3>🌍 Mi Mapa de Viajes</h3>
-                <p>Has marcado {{ tripMarkers.length }} destinos en el mundo.</p>
+                <h3>🌍 Mapa de Viajes</h3>
+                <p>{{ tripMarkers.length }} destinos marcados en el mundo.</p>
             </div>
             
-            <div class="add-pin-box">
-                <input 
-                    type="text" 
-                    [(ngModel)]="newPlaceName" 
-                    (keyup.enter)="addPlace()"
-                    placeholder="Ej: Kioto, Japón...">
+            <div class="add-pin-box" *ngIf="isMyProfile">
+                <input type="text" [(ngModel)]="newPlaceName" (keyup.enter)="addPlace()" placeholder="Ej: Kioto, Japón...">
                 <button class="btn-primary-small" (click)="addPlace()">+ Pin</button>
             </div>
         </div>
         
         <div class="map-frame">
-            <google-map 
-                height="500px" 
-                width="100%" 
-                [options]="worldMapOptions">
-                
-                <map-marker 
-                    *ngFor="let marker of tripMarkers" 
-                    [position]="marker.position"
-                    [title]="marker.title"
-                    [icon]="marker.icon">
-                </map-marker>
-
+            <google-map height="500px" width="100%" [options]="worldMapOptions">
+                <map-marker *ngFor="let marker of tripMarkers" [position]="marker.position" [title]="marker.title" [icon]="marker.icon"></map-marker>
             </google-map>
         </div>
       </div>

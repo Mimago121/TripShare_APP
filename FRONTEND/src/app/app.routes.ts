@@ -17,6 +17,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'home', component: HomeComponent },
   { path: 'profile', component: ProfileComponent },
+  { path: 'profile/:id', component: ProfileComponent },
   { path: 'activities', component: ActivitiesComponent },
   { path: 'expenses', component: ExpensesComponent },
   { path: 'memories', component: MemoriesComponent },

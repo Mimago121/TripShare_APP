@@ -123,7 +123,7 @@
 
 .user-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 15px 30px var(--shadow);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.05);
   border-color: var(--primary);
 }
 
@@ -135,6 +135,20 @@
   border: 4px solid var(--bg-color);
   box-shadow: 0 5px 15px rgba(0,0,0,0.2);
   margin-bottom: 15px;
+  transition: all 0.2s;
+}
+
+/* Hover effects for clickable elements */
+.clickable-avatar:hover {
+  transform: scale(1.05);
+  border-color: var(--primary);
+}
+
+.clickable-name {
+  transition: color 0.2s;
+}
+.clickable-name:hover {
+  color: var(--primary) !important;
 }
 
 .user-info {
@@ -185,20 +199,26 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px; /* Espacio reducido para que quepan todos */
   margin-top: auto;
 }
 
-.btn-add, .btn-chat {
-  width: 100%;
-  padding: 12px 0;
+.btn-add, .btn-chat, .btn-profile {
+  flex: 1;
+  padding: 10px 0; /* Un poco menos de padding vertical */
   border-radius: 50px;
   font-weight: 600;
   cursor: pointer;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: 0.2s;
-  margin-top: auto;
+  text-align: center;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .btn-add {
@@ -214,12 +234,23 @@
   background-color: transparent;
   border: 2px solid var(--border-color);
   color: var(--text-main);
-  flex: 1; /* Ocupa el espacio */
 }
 .btn-chat:hover {
   border-color: var(--primary);
   color: var(--primary);
-  background-color: rgba(0, 123, 255, 0.05);
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+/* Estilo para el nuevo botón de Perfil */
+.btn-profile {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+.btn-profile:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(99, 102, 241, 0.05);
 }
 
 /* Botón de Borrar (Papelera) */
@@ -227,8 +258,8 @@
   background: #fee2e2;
   border: 1px solid #ef4444;
   color: #ef4444;
-  width: 45px;
-  height: 45px;
+  width: 42px; /* Ligeramente más pequeño para hacer hueco */
+  height: 42px;
   border-radius: 50%;
   cursor: pointer;
   font-size: 1.1rem;
@@ -236,6 +267,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0; /* Evita que se aplaste */
 }
 
 .btn-delete-icon:hover {

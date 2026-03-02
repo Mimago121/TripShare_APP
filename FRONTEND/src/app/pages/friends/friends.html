@@ -27,13 +27,19 @@
 
     <div class="users-grid">
       <div class="user-card friend-card" *ngFor="let friend of filteredFriends">
-        <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
+        
+        <a [routerLink]="['/profile', friend.id]" [state]="{ memberData: friend }" style="cursor: pointer; display: block;">
+          <img [src]="friend.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar" class="clickable-avatar">
+        </a>
         <div class="user-info">
-          <h3>{{ friend.userName }}</h3>
+          <a [routerLink]="['/profile', friend.id]" [state]="{ memberData: friend }" style="text-decoration: none;">
+            <h3 class="clickable-name">{{ friend.userName }}</h3>
+          </a>
           <p class="friend-badge">✅ Amigos</p>
         </div>
         
         <div class="card-actions">
+          <a class="btn-profile" [routerLink]="['/profile', friend.id]" [state]="{ memberData: friend }">👤 Perfil</a>
           <button class="btn-chat" (click)="openChat(friend)">💬 Chat</button>
           <button class="btn-delete-icon" (click)="openDeleteConfirm(friend)" title="Eliminar amigo">🗑️</button>
         </div>
@@ -47,19 +53,27 @@
 
     <div class="users-grid" *ngIf="!isLoading">
       <div class="user-card" *ngFor="let user of filteredExplore">
-        <img [src]="user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar">
+        
+        <a [routerLink]="['/profile', user.id]" [state]="{ memberData: user }" style="cursor: pointer; display: block;">
+          <img [src]="user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" alt="Avatar" class="clickable-avatar">
+        </a>
         <div class="user-info">
-          <h3>{{ user.userName }}</h3>
+          <a [routerLink]="['/profile', user.id]" [state]="{ memberData: user }" style="text-decoration: none;">
+            <h3 class="clickable-name">{{ user.userName }}</h3>
+          </a>
           <p *ngIf="user.bio">{{ user.bio }}</p>
         </div>
         
-        <button 
-          class="btn-add" 
-          [disabled]="user.requestStatus === 'pending'"
-          [class.pending]="user.requestStatus === 'pending'"
-          (click)="sendRequest(user)">
-          {{ user.requestStatus === 'pending' ? 'Pendiente 🕒' : 'Añadir ➕' }}
-        </button>
+        <div class="card-actions">
+          <a class="btn-profile" [routerLink]="['/profile', user.id]" [state]="{ memberData: user }">👤 Perfil</a>
+          <button 
+            class="btn-add" 
+            [disabled]="user.requestStatus === 'pending'"
+            [class.pending]="user.requestStatus === 'pending'"
+            (click)="sendRequest(user)">
+            {{ user.requestStatus === 'pending' ? 'Pendiente 🕒' : 'Añadir ➕' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

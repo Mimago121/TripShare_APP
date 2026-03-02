@@ -17,6 +17,7 @@ import { GoogleMapsModule, MapGeocoder } from '@angular/google-maps';
 export class TripDetailComponent implements OnInit {
   trip: Trip | null = null;
   activities: any[] = [];
+  todayActivities: any[] = []; // NUEVA VARIABLE: Actividades de hoy
   expenses: any[] = [];
   memories: any[] = [];
   members: any[] = []; 
@@ -144,6 +145,7 @@ export class TripDetailComponent implements OnInit {
           });
           
           this.groupActivitiesByDay(); 
+          this.filterTodayActivities(); // NUEVO: Filtramos actividades para el panel de hoy
           this.updateMapRoute(); 
         });
         
@@ -168,6 +170,20 @@ export class TripDetailComponent implements OnInit {
       },
       error: () => this.isLoading = false
     });
+  }
+
+  // --- NUEVA LÓGICA: FILTRAR ACTIVIDADES DE HOY ---
+  filterTodayActivities() {
+    const todayStr = new Date().toISOString().split('T')[0]; // Format 'YYYY-MM-DD'
+    
+    this.todayActivities = this.activities.filter(act => {
+      // Extraemos solo la fecha de startDatetime
+      const actDateStr = act.startDatetime.split('T')[0];
+      return actDateStr === todayStr;
+    });
+
+    // Ordenamos por hora de inicio
+    this.todayActivities.sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
   }
 
   private sortMembersList(membersList: any[]): any[] {
